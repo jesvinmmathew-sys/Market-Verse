@@ -1,0 +1,6 @@
+{
+  "name": "MarketVerse India",
+  "description": "AI-powered real-time Indian stock market intelligence platform with professional charting, news, and learning tools.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
