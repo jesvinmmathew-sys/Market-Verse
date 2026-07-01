@@ -342,10 +342,10 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 text-xs font-mono mb-8"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-red-500/20 bg-red-500/5 text-red-400 text-xs font-mono mb-8"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>MarketVerse India v2.5 with Twelve Data & Advanced AI is Live</span>
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block" />
+          <span>Market Verse India v2.4 with NOVA AI DEMO</span>
         </motion.div>
 
         {/* Cinematic Title */}
@@ -360,7 +360,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           <span 
             className="animate-shiny inline-block font-black"
             style={{
-              color: '#a0a0a0',
+              color: '#e2e8f0',
               filter: 'url(#c3-noise)'
             }}
           >
