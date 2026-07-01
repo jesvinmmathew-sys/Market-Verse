@@ -296,6 +296,13 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} id="nav-brand-logo">
             <LogoMark className="w-8 h-8 text-[#22d3ee] hover:text-[#22d3ee]/80 transition-colors" />
             <span className="text-lg font-black tracking-widest bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent font-sans">MARKETVERSE</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-[10px] font-mono tracking-wider font-semibold h-5" id="navbar-demo-pill">
+              <span>DEMO</span>
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" style={{ animationDuration: '0.4s' }}></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500 animate-pulse" style={{ animationDuration: '0.4s' }}></span>
+              </span>
+            </div>
           </div>
 
           {/* Center Links */}
