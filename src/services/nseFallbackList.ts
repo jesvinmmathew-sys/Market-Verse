@@ -169,7 +169,7 @@ export const REAL_NSE_STOCKS: IndianStockMetadata[] = [
   { symbol: "GLAXO", name: "GlaxoSmithKline Consumer Healthcare Limited", sector: "FMCG", exchange: "NSE" },
 
   // INFRASTRUCTURE, MATERIALS & CONSTRUCTION
-  { symbol: "L&T", name: "Larsen & Toubro Limited", sector: "Infrastructure", exchange: "NSE" },
+  { symbol: "LT", name: "Larsen & Toubro Limited", sector: "Infrastructure", exchange: "NSE" },
   { symbol: "ADANIENT", name: "Adani Enterprises Limited", sector: "Infrastructure", exchange: "NSE" },
   { symbol: "ADANIPORTS", name: "Adani Ports and Special Economic Zone Limited", sector: "Infrastructure", exchange: "NSE" },
   { symbol: "GMRINFRA", name: "GMR Airports Infrastructure Limited", sector: "Infrastructure", exchange: "NSE" },

@@ -4,6 +4,7 @@ import {
   Search, 
   ChevronRight, 
   Menu, 
+  X, 
   TrendingUp, 
   TrendingDown, 
   Activity, 
@@ -206,6 +207,7 @@ const AnimatedHeroGraph: React.FC = () => {
 
 export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavigate: (path: string) => void }> = ({ onLaunchTerminal, onNavigate }) => {
   const [activeFeatureTab, setActiveFeatureTab] = useState<number>(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const activeTabClass = "bg-white/10 text-white";
   const inactiveTabClass = "text-white/60 hover:bg-white/5";
@@ -295,7 +297,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           {/* Left: Brand Logo & Title */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} id="nav-brand-logo">
             <LogoMark className="w-8 h-8 text-[#22d3ee] hover:text-[#22d3ee]/80 transition-colors" />
-            <span className="text-lg font-black tracking-widest bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent font-sans">MARKETVERSE</span>
+            <span className="text-base sm:text-lg font-black tracking-widest bg-gradient-to-r from-white via-white/90 to-white/60 bg-clip-text text-transparent font-sans">MARKETVERSE</span>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-[10px] font-mono tracking-wider font-semibold h-5" id="navbar-demo-pill">
               <span>DEMO</span>
               <span className="relative flex h-1.5 w-1.5">
@@ -305,7 +307,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
             </div>
           </div>
 
-          {/* Center Links */}
+          {/* Center Links - Desktop Only */}
           <div className="hidden md:flex items-center gap-6" id="nav-links-container">
             {[
               { name: 'Dashboard', path: '/dashboard' },
@@ -328,18 +330,81 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
             ))}
           </div>
 
-          {/* Right Action: Launch Terminal */}
+          {/* Right Action: Launch Terminal / Mobile Hamburger */}
           <div className="flex items-center gap-4" id="nav-actions-container">
             <button 
               onClick={onLaunchTerminal}
               id="btn-nav-launch-terminal"
-              className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.15)] animate-pulse"
+              className="hidden md:flex px-5 py-2.5 rounded-full text-xs font-semibold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all cursor-pointer items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.15)] animate-pulse"
             >
               <TrendingUp className="w-3.5 h-3.5" />
               <span>LAUNCH TERMINAL</span>
             </button>
+
+            {/* Mobile Hamburger Trigger */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex md:hidden p-2 text-white/80 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+              aria-label="Toggle mobile menu"
+              id="btn-mobile-hamburger"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6 text-white" />
+              ) : (
+                <Menu className="w-6 h-6 text-white" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="md:hidden border-t border-white/5 bg-[#090b0e]/95 backdrop-blur-xl overflow-hidden relative z-30"
+              id="mobile-nav-drawer"
+            >
+              <div className="px-6 py-5 flex flex-col gap-4 text-left">
+                {[
+                  { name: 'Dashboard', path: '/dashboard' },
+                  { name: 'Indian Market Hub', path: '/stocks' },
+                  { name: 'NOVA AI Workspace', path: '/ai' },
+                  { name: 'News Intelligence', path: '/news' },
+                  { name: 'Quant Academy', path: '/learn' }
+                ].map((item, i) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onNavigate(item.path);
+                    }}
+                    className="text-white/80 hover:text-white text-sm font-semibold py-2.5 border-b border-white/[0.03] transition-colors bg-transparent border-none outline-none text-left w-full cursor-pointer flex items-center justify-between"
+                    id={`mobile-nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <span>{item.name}</span>
+                    <ChevronRight className="w-4 h-4 text-white/30" />
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLaunchTerminal();
+                  }}
+                  id="btn-mobile-nav-launch-terminal"
+                  className="mt-2 w-full py-3.5 rounded-xl text-center text-xs font-bold uppercase bg-gradient-to-r from-cyan-500/25 to-blue-500/15 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/30 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                >
+                  <TrendingUp className="w-4 h-4 text-cyan-300" />
+                  <span>LAUNCH FULL TERMINAL</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       {/* Hero Section */}
@@ -360,7 +425,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-4xl md:text-7xl font-bold tracking-tight leading-[1.05] max-w-5xl"
+          className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] max-w-5xl"
           id="hero-headline"
         >
           Understand Markets. <br />Predict Movements. <br />
@@ -380,7 +445,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.7 }}
-          className="mt-8 text-white/60 max-w-2xl text-base md:text-lg leading-[1.6]"
+          className="mt-8 text-white/60 max-w-2xl text-sm md:text-lg leading-[1.6]"
           id="hero-description"
         >
           MarketVerse India combines real-time market intelligence, AI analysis, and powerful analytics to help investors navigate every market condition.
@@ -391,13 +456,13 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.7 }}
-          className="mt-10 flex flex-col sm:flex-row gap-4 items-center justify-center"
+          className="mt-10 flex flex-col sm:flex-row gap-4 items-center justify-center w-full max-w-xs sm:max-w-none"
           id="hero-ctas"
         >
           <button 
             onClick={onLaunchTerminal}
             id="btn-explore-markets"
-            className="group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-semibold text-sm px-6 py-3.5 transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer shadow-lg"
+            className="group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-semibold text-sm px-6 py-3.5 transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer shadow-lg w-full sm:w-auto"
           >
             <span>Explore Markets</span>
             <ChevronRight className="w-4 h-4 text-black transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -406,7 +471,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           <button 
             onClick={onLaunchTerminal}
             id="btn-open-dashboard"
-            className="group flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-semibold text-sm cursor-pointer transition-all shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+            className="group flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-semibold text-sm cursor-pointer transition-all shadow-[0_0_20px_rgba(34,211,238,0.1)] w-full sm:w-auto"
           >
             <span>Open Dashboard</span>
             <ArrowRight className="w-4 h-4 text-cyan-300 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -427,8 +492,8 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
             { value: "AI Powered", label: "Market Intelligence", desc: "Dynamic sentiment models" }
           ].map((stat, i) => (
             <div key={i} className="space-y-1">
-              <div className="text-2xl md:text-4xl font-black font-mono text-white tracking-tight">{stat.value}</div>
-              <div className="text-xs font-semibold text-cyan-400">{stat.label}</div>
+              <div className="text-lg sm:text-2xl md:text-4xl font-black font-mono text-white tracking-tight">{stat.value}</div>
+              <div className="text-[10px] sm:text-xs font-semibold text-cyan-400">{stat.label}</div>
               <div className="text-[10px] text-white/40 hidden sm:block">{stat.desc}</div>
             </div>
           ))}
@@ -439,7 +504,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0, duration: 0.8 }}
-          className="w-full max-w-4xl mt-16 p-8 rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-black via-slate-950/90 to-blue-950/20 relative overflow-hidden group shadow-[0_0_50px_rgba(34,211,238,0.15)] text-left"
+          className="w-full max-w-4xl mt-16 p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-black via-slate-950/90 to-blue-950/20 relative overflow-hidden group shadow-[0_0_50px_rgba(34,211,238,0.15)] text-left"
           id="nova-premium-intro-card"
         >
           {/* Futuristic animated glow backdrops */}
@@ -459,11 +524,11 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
                 <span>Flagship AI Assistant</span>
               </div>
               
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white font-sans" id="introducing-nova-heading">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white font-sans" id="introducing-nova-heading">
                 Introducing NOVA
               </h2>
               
-              <p className="text-white/85 text-sm md:text-base leading-relaxed font-sans">
+              <p className="text-white/85 text-xs sm:text-sm md:text-base leading-relaxed font-sans">
                 NOVA is your intelligent market analyst, helping you understand Indian stock markets through real-time insights, technical analysis, and smarter market intelligence.
               </p>
               
@@ -475,7 +540,7 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
               <div className="pt-2">
                 <button
                   onClick={() => onNavigate("/ai")}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-200 border border-cyan-400/30 hover:border-cyan-400/60 hover:from-cyan-500/30 hover:to-blue-500/30 transition-all cursor-pointer inline-flex items-center gap-2 shadow-inner"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-200 border border-cyan-400/30 hover:border-cyan-400/60 hover:from-cyan-500/30 hover:to-blue-500/30 transition-all cursor-pointer inline-flex items-center gap-2 shadow-inner w-full sm:w-auto justify-center"
                 >
                   <span>Consult NOVA AI Workspace</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -638,21 +703,21 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
       </section>
 
       {/* AI Assistant section */}
-      <section className="relative z-20 max-w-6xl mx-auto px-6 py-20 border-t border-white/5" id="section-ai">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+      <section className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-20 border-t border-white/5 w-full overflow-hidden" id="section-ai">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center w-full max-w-full">
           
           {/* Stateful Interactive AI Chat */}
-          <div id="homepage-interactive-ai-chat">
+          <div id="homepage-interactive-ai-chat" className="w-full max-w-full overflow-hidden">
             <HomepageAIChat />
           </div>
 
           {/* AI Info details */}
-          <div className="text-left space-y-6">
+          <div className="text-left space-y-5 sm:space-y-6 w-full max-w-full overflow-hidden">
             <SectionEyebrow label="Live NOVA AI Analyst" tag="Advanced-AI-Engine" />
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]">
               Real-time Indian Market Intelligence.
             </h2>
-            <p className="text-white/60 text-base leading-[1.6]">
+            <p className="text-white/60 text-sm sm:text-base leading-[1.6]">
               Ask NOVA anything about Indian stock markets. Our system links advanced AI analyst pipelines server-side with live ticker databases to evaluate price action, RSI strengths, moving average overlaps, and news sentiment with institutional clarity.
             </p>
 
@@ -663,18 +728,18 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
                 "Dynamic support and resistance detection",
                 "Comparison of Indian assets with live matrix tables"
               ].map((point) => (
-                <li key={point} className="flex items-center gap-2.5 text-xs text-white/80">
-                  <div className="w-5 h-5 rounded-full bg-cyan-950 flex items-center justify-center text-cyan-400 flex-shrink-0">
+                <li key={point} className="flex items-start gap-2.5 text-xs text-white/80">
+                  <div className="w-5 h-5 rounded-full bg-cyan-950 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span>{point}</span>
+                  <span className="leading-tight">{point}</span>
                 </li>
               ))}
             </ul>
 
             <button 
               onClick={onLaunchTerminal}
-              className="px-6 py-3 rounded-full text-xs font-bold bg-[#3D81E3] text-white hover:bg-[#3D81E3]/80 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-md shadow-[#3D81E3]/20"
+              className="px-6 py-3 rounded-full text-xs font-bold bg-[#3D81E3] text-white hover:bg-[#3D81E3]/80 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-md shadow-[#3D81E3]/20 w-full sm:w-auto justify-center"
             >
               <span>Launch Market Terminal</span>
               <ChevronRight className="w-4 h-4" />

@@ -298,9 +298,10 @@ export const MarketRadar: React.FC<MarketRadarProps> = ({ mode, onNavigate }) =>
             {scoredStocks.map((s, index) => {
               const isUp = s.percentChange >= 0;
               return (
-                <div 
+                <motion.div 
                   key={s.symbol}
                   onClick={() => onNavigate(`/stock/${s.symbol.toLowerCase()}`)}
+                  whileTap={{ scale: 0.98 }}
                   className={`liquid-glass rounded-xl p-5 border border-white/5 bg-[#0e1014]/95 flex flex-col justify-between text-left space-y-4 transition-all duration-300 cursor-pointer ${themeBorderHover} group relative`}
                 >
                   {/* Score circle gauge floating top-right */}
@@ -397,7 +398,7 @@ export const MarketRadar: React.FC<MarketRadarProps> = ({ mode, onNavigate }) =>
                       Risk: {s.risk}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

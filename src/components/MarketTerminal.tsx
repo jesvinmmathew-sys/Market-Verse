@@ -676,7 +676,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
           
           {/* Internal Terminal Menu */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4" id="terminal-sub-navbar">
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg" id="terminal-nav-pills">
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg overflow-x-auto max-w-full whitespace-nowrap scrollbar-none shrink-0" id="terminal-nav-pills">
               {[
                 { label: "Dashboard", path: "/dashboard", icon: Layout },
                 { label: "Indian Market Hub", path: "/stocks", icon: BarChart2 },
@@ -688,7 +688,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   <button 
                     key={item.label}
                     onClick={() => onNavigate(item.path)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors shrink-0 ${
                       isActive ? "bg-white/10 text-white shadow-sm" : "text-white/55 hover:text-white hover:bg-white/[0.02]"
                     }`}
                     id={`subnav-btn-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
@@ -905,9 +905,10 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                         {stocks.filter(s => watchlist.includes(s.symbol)).map((w) => {
                           const isUp = w.percentChange >= 0;
                           return (
-                            <div 
+                            <motion.div 
                               key={w.symbol}
                               onClick={() => onNavigate(`/stock/${w.symbol.toLowerCase()}`)}
+                              whileTap={{ scale: 0.98 }}
                               className="flex flex-col p-2.5 rounded bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer text-xs space-y-2 animate-none"
                             >
                               <div className="flex items-center justify-between">
@@ -962,7 +963,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                                   SELL
                                 </button>
                               </div>
-                            </div>
+                            </motion.div>
                           );
                         })}
                       </div>
@@ -1271,8 +1272,9 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                     const isUp = stk.percentChange >= 0;
                     const isWatching = watchlist.includes(stk.symbol);
                     return (
-                      <div 
+                      <motion.div 
                         key={stk.symbol} 
+                        whileTap={{ scale: 0.98 }}
                         className="liquid-glass border border-white/5 hover:border-[#3D81E3]/20 rounded-xl p-4 flex flex-col justify-between space-y-4 hover:bg-white/[0.01] transition-all group relative overflow-hidden"
                         id={`card-stock-${stk.symbol.toLowerCase()}`}
                       >
@@ -1375,7 +1377,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                             Trade
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -1552,8 +1554,9 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               {/* Lessons Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="lessons-grid-scroller">
                 {LESSONS.map((lsn) => (
-                  <div 
+                  <motion.div 
                     key={lsn.id}
+                    whileTap={{ scale: 0.98 }}
                     className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0e1014]/90 text-left flex flex-col justify-between h-56"
                     id={`lesson-card-${lsn.id}`}
                   >
@@ -1586,7 +1589,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>

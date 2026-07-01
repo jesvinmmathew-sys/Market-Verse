@@ -618,10 +618,14 @@ Try asking me:
     });
   };
 
+  if (currentRoute === "/ai") {
+    return null;
+  }
+
   return (
     <>
       {/* Fixed bottom-right trigger system */}
-      <div className="fixed bottom-6 right-6 z-[999] flex flex-col items-end gap-3 pointer-events-none">
+      <div className="fixed bottom-4 right-2 sm:bottom-6 sm:right-6 z-[999] flex flex-col items-end gap-3 pointer-events-none">
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -800,7 +804,7 @@ Try asking me:
         {/* Ambient trigger button with glow */}
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="pointer-events-auto w-14 h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
+          className="pointer-events-auto w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
           style={{
             boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)"
           }}
@@ -814,9 +818,9 @@ Try asking me:
           )}
 
           {isOpen ? (
-            <X className="w-6 h-6 text-neutral-800 relative z-10" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-800 relative z-10" />
           ) : (
-            <div className="relative z-10 flex items-center justify-center w-11 h-11">
+            <div className="relative z-10 flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11">
               <NovaLogo variant="balloon" className="w-full h-full group-hover:rotate-6 transition-transform duration-300" />
             </div>
           )}

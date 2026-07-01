@@ -19,10 +19,13 @@ export interface StockQuoteRaw {
 }
 
 export function getYahooSymbol(symbol: string, exchange: string = "NSE"): string {
-  const clean = symbol.toUpperCase().trim();
+  let clean = symbol.toUpperCase().trim();
   if (clean === "NIFTY50") return "^NSEI";
   if (clean === "BANKNIFTY") return "^NSEBANK";
   if (clean === "SENSEX") return "^BSESN";
+  if (clean === "L&T") {
+    clean = "LT";
+  }
 
   if (exchange === "BSE") {
     return `${clean}.BO`;
@@ -35,6 +38,8 @@ export function reverseYahooSymbol(yahooSymbol: string): string {
   if (clean === "^NSEI") return "NIFTY50";
   if (clean === "^NSEBANK") return "BANKNIFTY";
   if (clean === "^BSESN") return "SENSEX";
+  if (clean === "LT.NS") return "LT";
+  if (clean === "LT.BO") return "LT";
 
   return clean.replace(".NS", "").replace(".BO", "");
 }

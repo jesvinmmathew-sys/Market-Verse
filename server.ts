@@ -1841,7 +1841,7 @@ app.get("/api/market/all_quotes", async (req, res) => {
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
     "SBIN", "ITC", "BHARTIARTL", "TATAMOTORS", "ADANIENT",
     "AXISBANK", "WIPRO", "M&M", "MARUTI", "SUNPHARMA",
-    "CIPLA", "ONGC", "HINDUNILVR", "BAJFINANCE", "L&T",
+    "CIPLA", "ONGC", "HINDUNILVR", "BAJFINANCE", "LT",
     "TATASTEEL", "JSWSTEEL",
     "NIFTY50", "BANKNIFTY", "SENSEX"
   ];

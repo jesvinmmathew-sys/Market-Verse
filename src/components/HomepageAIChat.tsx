@@ -116,9 +116,9 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
         const cols = line.split("|").map(c => c.trim()).filter((_, i, a) => i > 0 && i < a.length - 1);
         const isHeader = idx > 0 && lines[idx - 1].trim().includes("| :---");
         return (
-          <div key={idx} className="grid grid-cols-3 gap-2 py-1.5 px-3 border-b border-white/5 bg-white/[0.01] text-[11px] font-mono">
+          <div key={idx} className="grid grid-cols-3 gap-1 sm:gap-2 py-1 px-1.5 sm:px-3 border-b border-white/5 bg-white/[0.01] text-[9px] sm:text-[11px] font-mono break-words">
             {cols.map((col, cIdx) => (
-              <span key={cIdx} className={cIdx === 0 ? "font-bold text-cyan-300" : "text-white/80 text-right"}>
+              <span key={cIdx} className={cIdx === 0 ? "font-bold text-cyan-300 break-words" : "text-white/80 text-right break-words"}>
                 {col.replace(/\*\*/g, "")}
               </span>
             ))}
@@ -222,7 +222,7 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div 
-                className={`max-w-[85%] rounded-xl p-4 text-xs shadow-inner relative overflow-hidden ${
+                className={`max-w-[92%] sm:max-w-[85%] rounded-xl p-3 sm:p-4 text-xs shadow-inner relative overflow-hidden ${
                   msg.role === "user"
                     ? "bg-[#3D81E3]/25 border border-[#3D81E3]/35 text-white"
                     : "bg-[#151922] border border-white/5 text-white/90"
@@ -231,7 +231,7 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
                 {msg.role === "model" && (
                   <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.01] blur-2xl pointer-events-none" />
                 )}
-                <div className="prose prose-invert prose-xs font-sans max-w-none">
+                <div className="prose prose-invert prose-xs font-sans max-w-none break-words">
                   {formatText(msg.text)}
                 </div>
               </div>

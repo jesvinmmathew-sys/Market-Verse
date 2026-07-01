@@ -1,5 +1,6 @@
 import { REAL_NSE_STOCKS } from "../src/services/nseFallbackList.js";
 import { StockQuoteRaw, indianMarketProvider } from "./indianMarketProvider.js";
+import { generateDynamicUniverseStock } from "../src/services/indianStocksDb.js";
 
 const BASE_URL = "https://indian-stock-market-api2.onrender.com";
 
@@ -114,7 +115,8 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
     } catch (renderErr: any) {
       console.error(`[Indian Stock API Error] All primary quote methods failed for ${cleanSym}:`, renderErr.message);
       // Return a basic placeholder using fallback list instead of crashing
-      const fallbackPrice = 150.0;
+      const fallbackMeta = generateDynamicUniverseStock(cleanSym);
+      const fallbackPrice = fallbackMeta?.price || 150.0;
       return {
         symbol: cleanSym,
         name: fallback?.name || `${cleanSym} India Limited`,
