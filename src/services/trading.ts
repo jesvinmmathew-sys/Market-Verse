@@ -46,6 +46,12 @@ export const TradingService = {
     this.notifyChange();
   },
 
+  resetAccount() {
+    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(INITIAL_PORTFOLIO));
+    localStorage.setItem(CASH_KEY, INITIAL_CASH.toString());
+    this.notifyChange();
+  },
+
   notifyChange() {
     window.dispatchEvent(new CustomEvent("aura_portfolio_updated"));
   },

@@ -25,7 +25,7 @@ export async function searchIndianStock(query: string): Promise<any[]> {
     const data = await response.json();
     return Array.isArray(data) ? data : (data?.results || []);
   } catch (err: any) {
-    console.error("[Indian Stock API] Search error:", err.message);
+    console.warn("[Indian Stock API] Search error:", err.message);
     // Return simple local match fallback
     return REAL_NSE_STOCKS.filter(s => 
       s.symbol.toUpperCase().includes(query.toUpperCase()) || 
@@ -62,16 +62,32 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
         "Cache-Control": "no-cache"
       };
 
-      const response = await fetch(url, { headers });
-      if (!response.ok) {
-        throw new Error(`Stock API responded with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (!data || Object.keys(data).length === 0 || data.error) {
-        throw new Error(`Invalid stock data returned for ${cleanSym}: ${data?.error || "Empty response"}`);
+      let response = await fetch(url, { headers });
+      let data: any;
+
+      if (response.ok) {
+        try {
+          data = await response.json();
+        } catch (jsonErr) {
+          // Keep data undefined to trigger fallback
+        }
       }
 
+      if (!response.ok || !data || Object.keys(data).length === 0 || data.error) {
+        const suffixedSym = exchange === "BSE" ? `${cleanSym}.BO` : `${cleanSym}.NS`;
+        const fallbackUrl = `${BASE_URL}/stock?symbol=${encodeURIComponent(suffixedSym)}&res=num`;
+        console.log(`[Indian Stock API Fallback] Fetching suffixed quote for ${suffixedSym} from ${fallbackUrl}`);
+        
+        response = await fetch(fallbackUrl, { headers });
+        if (!response.ok) {
+          throw new Error(`Stock API responded with status ${response.status} for both clean and suffixed symbols`);
+        }
+        data = await response.json();
+        if (!data || Object.keys(data).length === 0 || data.error) {
+          throw new Error(`Invalid stock data returned for both ${cleanSym} and ${suffixedSym}: ${data?.error || "Empty response"}`);
+        }
+      }
+      
       // Handle various property mappings returned by different versions of the API
       const price = parseFloat(data.price || data.currentPrice || data.regularMarketPrice || data.lastPrice || "0");
       const change = parseFloat(data.change || data.priceChange || data.regularMarketChange || "0");
@@ -113,7 +129,7 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
         rawResponse: data
       };
     } catch (renderErr: any) {
-      console.error(`[Indian Stock API Error] All primary quote methods failed for ${cleanSym}:`, renderErr.message);
+      console.warn(`[Indian Stock API Error] All primary quote methods failed for ${cleanSym}:`, renderErr.message);
       // Return a basic placeholder using fallback list instead of crashing
       const fallbackMeta = generateDynamicUniverseStock(cleanSym);
       const fallbackPrice = fallbackMeta?.price || 150.0;
@@ -185,7 +201,7 @@ export async function getMultipleStocks(symbols: string[]): Promise<Record<strin
         console.warn(`[Indian Stock API] Batch list endpoint returned status ${response.status}`);
       }
     } catch (renderErr: any) {
-      console.error(`[Indian Stock API] Batch list endpoint failed: ${renderErr.message}`);
+      console.warn(`[Indian Stock API] Batch list endpoint failed: ${renderErr.message}`);
     }
   }
 

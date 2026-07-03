@@ -80,67 +80,122 @@ async function fetchYahoo(url: string): Promise<any> {
   }
 }
 
+// Fetch quote using simpler v7 endpoint as a fallback for chart-based quote
+async function fetchQuoteFromV7(symbol: string, exchange: string = "NSE"): Promise<StockQuoteRaw> {
+  const yahooSym = getYahooSymbol(symbol, exchange);
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(yahooSym)}`;
+  console.log(`[Yahoo Finance Quote v7] Fetching v7 quote fallback for ${symbol} as ${yahooSym}`);
+  
+  const json = await fetchYahoo(url);
+  const result = json?.quoteResponse?.result?.[0];
+  
+  if (!result) {
+    throw new Error(`No quote data returned from Yahoo v7 for ${symbol} (${yahooSym})`);
+  }
+
+  const price = parseFloat(result.regularMarketPrice || "0");
+  const previousClose = parseFloat(result.regularMarketPreviousClose || String(price));
+  const change = parseFloat(result.regularMarketChange || "0") || parseFloat((price - previousClose).toFixed(2));
+  const percentChange = parseFloat(result.regularMarketChangePercent || "0") || (previousClose !== 0 ? parseFloat(((change / previousClose) * 100).toFixed(2)) : 0);
+
+  const open = parseFloat(result.regularMarketOpen || String(price - change));
+  const high = parseFloat(result.regularMarketDayHigh || String(price));
+  const low = parseFloat(result.regularMarketDayLow || String(price));
+  const volumeVal = result.regularMarketVolume || 0;
+  const volume = volumeVal ? (volumeVal > 1000000 ? `${(volumeVal / 1000000).toFixed(1)}M` : `${(volumeVal / 1000).toFixed(1)}K`) : "N/A";
+
+  const timestamp = result.regularMarketTime ? new Date(result.regularMarketTime * 1000).toISOString() : new Date().toISOString();
+  const name = result.longName || result.shortName || REAL_NSE_STOCKS.find(s => s.symbol === symbol)?.name || `${symbol} India Limited`;
+
+  return {
+    symbol,
+    name,
+    price,
+    change,
+    percentChange,
+    volume,
+    open,
+    high,
+    low,
+    previousClose,
+    timestamp,
+    exchange: exchange as "NSE" | "BSE",
+    dataStatus: "DELAYED",
+    provider: "Yahoo Finance v7 Quote Provider",
+    rawResponse: result
+  };
+}
+
 export const indianMarketProvider = {
   name: "Yahoo Finance Indian Market Provider",
 
   async fetchQuote(symbol: string, exchange: string = "NSE"): Promise<StockQuoteRaw> {
     const yahooSym = getYahooSymbol(symbol, exchange);
-    // Fetch 2 days range to ensure we have previous close and current data
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?range=2d&interval=1d`;
+    // Fetch 5 days range to ensure we have previous close and current data
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?range=5d&interval=1d`;
     
     console.log(`[Yahoo Finance Chart Quote] Fetching chart-based quote for ${symbol} as ${yahooSym}`);
     
-    const json = await fetchYahoo(url);
-    const result = json?.chart?.result?.[0];
-    
-    if (!result) {
-      throw new Error(`No chart data returned for ${symbol} (${yahooSym})`);
+    try {
+      const json = await fetchYahoo(url);
+      const result = json?.chart?.result?.[0];
+      
+      if (!result) {
+        throw new Error(`No chart data returned for ${symbol} (${yahooSym})`);
+      }
+
+      const meta = result.meta || {};
+      const price = parseFloat(meta.regularMarketPrice || meta.chartPreviousClose || "0");
+      const previousClose = parseFloat(meta.previousClose || meta.chartPreviousClose || String(price));
+      const change = parseFloat((price - previousClose).toFixed(2));
+      const percentChange = previousClose !== 0 ? parseFloat(((change / previousClose) * 100).toFixed(2)) : 0;
+
+      const indicators = result.indicators?.quote?.[0] || {};
+      const opens = indicators.open || [];
+      const highs = indicators.high || [];
+      const lows = indicators.low || [];
+      const volumes = indicators.volume || [];
+
+      // Get the latest valid data point index
+      let lastIdx = opens.length - 1;
+      while (lastIdx >= 0 && (opens[lastIdx] === null || opens[lastIdx] === undefined)) {
+        lastIdx--;
+      }
+
+      const open = lastIdx >= 0 ? parseFloat(opens[lastIdx]?.toFixed(2)) : price;
+      const high = lastIdx >= 0 ? parseFloat(highs[lastIdx]?.toFixed(2)) : price;
+      const low = lastIdx >= 0 ? parseFloat(lows[lastIdx]?.toFixed(2)) : price;
+      const volumeVal = lastIdx >= 0 ? volumes[lastIdx] : 0;
+      const volume = volumeVal ? (volumeVal > 1000000 ? `${(volumeVal / 1000000).toFixed(1)}M` : `${(volumeVal / 1000).toFixed(1)}K`) : "N/A";
+
+      const timestamp = meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : new Date().toISOString();
+      const name = REAL_NSE_STOCKS.find(s => s.symbol === symbol)?.name || `${symbol} India Limited`;
+
+      return {
+        symbol,
+        name,
+        price,
+        change,
+        percentChange,
+        volume,
+        open,
+        high,
+        low,
+        previousClose,
+        timestamp,
+        exchange: exchange as "NSE" | "BSE",
+        dataStatus: "DELAYED",
+        provider: "Yahoo Finance Chart Quote Provider",
+        rawResponse: result
+      };
+    } catch (err: any) {
+      console.warn(`[Yahoo Finance Chart Quote] Failed to fetch v8 chart for ${symbol}: ${err.message}. Trying v7 quote fallback...`);
+      try {
+        return await fetchQuoteFromV7(symbol, exchange);
+      } catch (v7Err: any) {
+        throw new Error(`Yahoo v8 and v7 quote methods failed. v8: ${err.message}, v7: ${v7Err.message}`);
+      }
     }
-
-    const meta = result.meta || {};
-    const price = parseFloat(meta.regularMarketPrice || meta.chartPreviousClose || "0");
-    const previousClose = parseFloat(meta.previousClose || meta.chartPreviousClose || String(price));
-    const change = parseFloat((price - previousClose).toFixed(2));
-    const percentChange = previousClose !== 0 ? parseFloat(((change / previousClose) * 100).toFixed(2)) : 0;
-
-    const indicators = result.indicators?.quote?.[0] || {};
-    const opens = indicators.open || [];
-    const highs = indicators.high || [];
-    const lows = indicators.low || [];
-    const volumes = indicators.volume || [];
-
-    // Get the latest valid data point index
-    let lastIdx = opens.length - 1;
-    while (lastIdx >= 0 && (opens[lastIdx] === null || opens[lastIdx] === undefined)) {
-      lastIdx--;
-    }
-
-    const open = lastIdx >= 0 ? parseFloat(opens[lastIdx]?.toFixed(2)) : price;
-    const high = lastIdx >= 0 ? parseFloat(highs[lastIdx]?.toFixed(2)) : price;
-    const low = lastIdx >= 0 ? parseFloat(lows[lastIdx]?.toFixed(2)) : price;
-    const volumeVal = lastIdx >= 0 ? volumes[lastIdx] : 0;
-    const volume = volumeVal ? (volumeVal > 1000000 ? `${(volumeVal / 1000000).toFixed(1)}M` : `${(volumeVal / 1000).toFixed(1)}K`) : "N/A";
-
-    const timestamp = meta.regularMarketTime ? new Date(meta.regularMarketTime * 1000).toISOString() : new Date().toISOString();
-    const name = REAL_NSE_STOCKS.find(s => s.symbol === symbol)?.name || `${symbol} India Limited`;
-
-    return {
-      symbol,
-      name,
-      price,
-      change,
-      percentChange,
-      volume,
-      open,
-      high,
-      low,
-      previousClose,
-      timestamp,
-      exchange: exchange as "NSE" | "BSE",
-      dataStatus: "DELAYED",
-      provider: "Yahoo Finance Chart Quote Provider",
-      rawResponse: result
-    };
   },
 
   async fetchBatchQuotes(symbols: string[]): Promise<Record<string, StockQuoteRaw>> {
@@ -154,7 +209,7 @@ export const indianMarketProvider = {
         const quote = await this.fetchQuote(symbol, ex);
         mappedResults[symbol] = quote;
       } catch (err: any) {
-        console.error(`[Yahoo Finance Batch Item Failed] ${symbol}:`, err.message);
+        console.warn(`[Yahoo Finance Batch Item Failed] ${symbol}:`, err.message);
       }
     });
 

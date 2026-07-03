@@ -22,7 +22,8 @@ import {
   Sliders,
   BarChart2,
   Lock,
-  Bookmark
+  Bookmark,
+  Briefcase
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Stock, NewsItem, Lesson, PortfolioItem, WatchlistItem } from "../types";
@@ -680,6 +681,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               {[
                 { label: "Dashboard", path: "/dashboard", icon: Layout },
                 { label: "Indian Market Hub", path: "/stocks", icon: BarChart2 },
+                { label: "Portfolio Analyzer", path: "/portfolio", icon: Briefcase },
                 { label: "AI News Feed", path: "/news", icon: Newspaper },
                 { label: "Quant Academy", path: "/learn", icon: BookOpen }
               ].map((item) => {

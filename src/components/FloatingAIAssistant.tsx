@@ -433,6 +433,26 @@ Try asking me:
 
       // Let the backend know what stock is currently open as implicit context if no stock detected
       let contextualQuestion = textToSend.trim();
+      
+      // Check if user has a custom portfolio loaded to inject real-time portfolio context
+      try {
+        const stored = localStorage.getItem("marketverse_custom_portfolio");
+        if (stored) {
+          const portfolio = JSON.parse(stored);
+          if (Array.isArray(portfolio) && portfolio.length > 0) {
+            const isPortfolioTerm = /portfolio|diversif|risk|profit|holding|allocat|balance|wealth|invest|asset/i.test(textToSend);
+            const isPortfolioPage = currentRoute === "/portfolio";
+            
+            if (isPortfolioTerm || isPortfolioPage) {
+              const portfolioStr = portfolio.map(p => `- ${p.symbol}: ${p.shares} shares @ ₹${p.avgBuyPrice}`).join("\n");
+              contextualQuestion += `\n\n[PORTFOLIO MODE ACTIVE - User's current investment portfolio context:\n${portfolioStr}\n\nAnalyze and answer the user's question leveraging this exact portfolio context directly, and talk as NOVA, the portfolio intelligence engine. Offer brief, sharp, luxury-grade quantitative answers.]`;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to inject portfolio context", e);
+      }
+
       if (activeStock && !stockDetected && !contextualQuestion.toUpperCase().includes(activeStock)) {
         if (
           contextualQuestion.toLowerCase().includes("sentiment") ||
@@ -624,8 +644,8 @@ Try asking me:
 
   return (
     <>
-      {/* Fixed bottom-right trigger system */}
-      <div className="fixed bottom-4 right-2 sm:bottom-6 sm:right-6 z-[999] flex flex-col items-end gap-3 pointer-events-none">
+      {/* Fixed bottom-right trigger system - adjusted mobile spacing to avoid offscreen cutoffs */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[999] flex flex-col items-end gap-3 pointer-events-none">
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -801,30 +821,26 @@ Try asking me:
           )}
         </AnimatePresence>
 
-        {/* Ambient trigger button with glow */}
-        <motion.button
-          onClick={() => setIsOpen(!isOpen)}
-          className="pointer-events-auto w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
-          style={{
-            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)"
-          }}
-          id="global-floating-ai-trigger"
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-        >
-          {/* Outer wave rings - clean non-blurred circular waves */}
-          {!isOpen && (
+        {/* Ambient trigger button with glow - hidden when chat panel is open */}
+        {!isOpen && (
+          <motion.button
+            onClick={() => setIsOpen(!isOpen)}
+            className="pointer-events-auto w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
+            style={{
+              boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)"
+            }}
+            id="global-floating-ai-trigger"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+          >
+            {/* Outer wave rings - clean non-blurred circular waves */}
             <span className="absolute -inset-1 rounded-full border border-cyan-400/40 animate-ping pointer-events-none" style={{ animationDuration: '2.5s' }} />
-          )}
 
-          {isOpen ? (
-            <X className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-800 relative z-10" />
-          ) : (
             <div className="relative z-10 flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11">
               <NovaLogo variant="balloon" className="w-full h-full group-hover:rotate-6 transition-transform duration-300" />
             </div>
-          )}
-        </motion.button>
+          </motion.button>
+        )}
       </div>
     </>
   );

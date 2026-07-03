@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, 
   Search, 
   ChevronRight, 
+  ChevronDown,
   Menu, 
   X, 
   TrendingUp, 
@@ -18,7 +19,8 @@ import {
   DollarSign,
   ArrowRight,
   Shield,
-  Zap
+  Zap,
+  Cpu
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -205,9 +207,28 @@ const AnimatedHeroGraph: React.FC = () => {
   );
 };
 
-export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavigate: (path: string) => void }> = ({ onLaunchTerminal, onNavigate }) => {
+export const MarketVerseLanding: React.FC<{ 
+  onLaunchTerminal: () => void; 
+  onNavigate: (path: string) => void;
+  onOpenAbout?: () => void;
+}> = ({ onLaunchTerminal, onNavigate, onOpenAbout }) => {
   const [activeFeatureTab, setActiveFeatureTab] = useState<number>(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
+  const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState<boolean>(false);
+  const moreDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreDropdownRef.current && !moreDropdownRef.current.contains(event.target as Node)) {
+        setIsMoreDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const activeTabClass = "bg-white/10 text-white";
   const inactiveTabClass = "text-white/60 hover:bg-white/5";
@@ -308,13 +329,12 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
           </div>
 
           {/* Center Links - Desktop Only */}
-          <div className="hidden md:flex items-center gap-6" id="nav-links-container">
+          <div className="hidden md:flex items-center gap-4 lg:gap-6" id="nav-links-container">
             {[
               { name: 'Dashboard', path: '/dashboard' },
-              { name: 'Indian Market', path: '/stocks' },
-              { name: 'NOVA AI', path: '/ai' },
-              { name: 'News', path: '/news' },
-              { name: 'Learn', path: '/learn' }
+              { name: 'Markets', path: '/stocks' },
+              { name: 'Portfolio', path: '/portfolio' },
+              { name: 'NOVA AI', path: '/ai' }
             ].map((item, i) => (
               <motion.button 
                 initial={{ opacity: 0, y: -10 }}
@@ -322,12 +342,67 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
                 transition={{ delay: 0.1 + i * 0.05, duration: 0.4 }}
                 key={item.name}
                 onClick={() => onNavigate(item.path)}
-                className="text-white/70 text-sm font-medium hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none"
+                className="text-white/70 text-xs font-semibold uppercase tracking-wider hover:text-[#22d3ee] transition-colors cursor-pointer bg-transparent border-none outline-none"
                 id={`nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 {item.name}
               </motion.button>
             ))}
+
+            {/* "More" Dropdown Menu */}
+            <div className="relative" ref={moreDropdownRef} id="nav-dropdown-more">
+              <button
+                onClick={() => setIsMoreDropdownOpen(!isMoreDropdownOpen)}
+                onMouseEnter={() => setIsMoreDropdownOpen(true)}
+                className={`text-white/70 text-xs font-semibold uppercase tracking-wider hover:text-[#22d3ee] transition-all cursor-pointer bg-transparent border-none outline-none flex items-center gap-1 ${
+                  isMoreDropdownOpen ? "text-[#22d3ee]" : ""
+                }`}
+                id="nav-link-more"
+              >
+                <span>More</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMoreDropdownOpen ? 'rotate-180 text-[#22d3ee]' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isMoreDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-3 w-40 rounded-xl border border-white/10 bg-[#0c0e12]/95 backdrop-blur-xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 text-left flex flex-col gap-0.5"
+                    onMouseLeave={() => setIsMoreDropdownOpen(false)}
+                    id="more-dropdown-menu"
+                  >
+                    {[
+                      { name: 'News', path: '/news' },
+                      { name: 'Learn', path: '/learn' },
+                      { name: 'About', path: '/about' }
+                    ].map((subItem) => (
+                      <button
+                        key={subItem.name}
+                        onClick={() => {
+                          setIsMoreDropdownOpen(false);
+                          if (subItem.path === '/about') {
+                            if (onOpenAbout) {
+                              onOpenAbout();
+                            } else {
+                              setIsAboutOpen(true);
+                            }
+                          } else {
+                            onNavigate(subItem.path);
+                          }
+                        }}
+                        className="w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all cursor-pointer border-none outline-none bg-transparent"
+                        id={`dropdown-item-${subItem.name.toLowerCase()}`}
+                      >
+                        {subItem.name}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Right Action: Launch Terminal / Mobile Hamburger */}
@@ -335,9 +410,9 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
             <button 
               onClick={onLaunchTerminal}
               id="btn-nav-launch-terminal"
-              className="hidden md:flex px-5 py-2.5 rounded-full text-xs font-semibold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all cursor-pointer items-center gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.15)] animate-pulse"
+              className="hidden md:flex px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all cursor-pointer items-center gap-1 shadow-[0_0_12px_rgba(34,211,238,0.12)] animate-pulse"
             >
-              <TrendingUp className="w-3.5 h-3.5" />
+              <TrendingUp className="w-3 h-3" />
               <span>LAUNCH TERMINAL</span>
             </button>
 
@@ -368,21 +443,31 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
               className="md:hidden border-t border-white/5 bg-[#090b0e]/95 backdrop-blur-xl overflow-hidden relative z-30"
               id="mobile-nav-drawer"
             >
-              <div className="px-6 py-5 flex flex-col gap-4 text-left">
+              <div className="px-6 py-5 flex flex-col gap-3.5 text-left">
                 {[
                   { name: 'Dashboard', path: '/dashboard' },
-                  { name: 'Indian Market Hub', path: '/stocks' },
-                  { name: 'NOVA AI Workspace', path: '/ai' },
+                  { name: 'Markets Hub', path: '/stocks' },
+                  { name: 'Portfolio Analyzer', path: '/portfolio' },
                   { name: 'News Intelligence', path: '/news' },
-                  { name: 'Quant Academy', path: '/learn' }
+                  { name: 'Quant Academy', path: '/learn' },
+                  { name: 'NOVA AI Workspace', path: '/ai' },
+                  { name: 'About Platform', path: '/about' }
                 ].map((item, i) => (
                   <button
                     key={item.name}
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      onNavigate(item.path);
+                      if (item.path === '/about') {
+                        if (onOpenAbout) {
+                          onOpenAbout();
+                        } else {
+                          setIsAboutOpen(true);
+                        }
+                      } else {
+                        onNavigate(item.path);
+                      }
                     }}
-                    className="text-white/80 hover:text-white text-sm font-semibold py-2.5 border-b border-white/[0.03] transition-colors bg-transparent border-none outline-none text-left w-full cursor-pointer flex items-center justify-between"
+                    className="text-white/80 hover:text-white text-xs font-bold uppercase tracking-wider py-3 border-b border-white/[0.03] transition-colors bg-transparent border-none outline-none text-left w-full cursor-pointer flex items-center justify-between"
                     id={`mobile-nav-link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <span>{item.name}</span>
@@ -859,6 +944,70 @@ export const MarketVerseLanding: React.FC<{ onLaunchTerminal: () => void; onNavi
       <footer className="relative z-20 border-t border-white/5 py-8 text-center text-xs text-white/30 font-mono">
         <p>© 2026 MarketVerse India Intelligence Inc. All rights reserved.</p>
       </footer>
+
+      {/* PREMIUM GLASS ABOUT OVERLAY MODAL */}
+      <AnimatePresence>
+        {isAboutOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" id="about-modal-overlay">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="liquid-glass border border-white/10 bg-[#080a0f]/95 rounded-2xl p-6 max-w-lg w-full text-left space-y-5 relative overflow-hidden"
+              id="about-modal-box"
+            >
+              {/* Decorative glows */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-violet-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <LogoMark className="w-6 h-6 text-[#22d3ee] fill-[#22d3ee]/10" />
+                  <div>
+                    <h3 className="text-sm font-black text-white font-sans uppercase tracking-wider">MarketVerse India</h3>
+                    <p className="text-[10px] text-[#22d3ee] font-mono uppercase tracking-widest font-bold">Quantum Core v2.4</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsAboutOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer border border-white/5 transition-all"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs leading-relaxed text-white/70">
+                <p className="font-sans">
+                  MarketVerse is a premium institutional-grade simulation and analytics platform. Built for sophisticated quantitative analysis, the system links server-side AI analyst pipelines with a real-time market data feed.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-cyan-400 font-bold border-b border-white/5 pb-1">Architecture Specifications</h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[10px] text-white/60">
+                    <div className="bg-white/[0.01] border border-white/5 rounded-lg p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
+                        <Cpu className="w-3.5 h-3.5" />
+                        <span>NOVA AI PIPELINE</span>
+                      </div>
+                      <p className="text-[9px] text-white/45 font-sans">Multi-layered technical scoring, SWOT metrics, and rebalancing recommendations.</p>
+                    </div>
+
+                    <div className="bg-white/[0.01] border border-white/5 rounded-lg p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <Activity className="w-3.5 h-3.5" />
+                        <span>LIVE QUANT INDEX</span>
+                      </div>
+                      <p className="text-[9px] text-white/45 font-sans">Simulated market price ticking at 2000ms, incorporating volatility indices.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

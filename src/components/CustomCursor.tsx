@@ -142,7 +142,7 @@ export const CustomCursor: React.FC = () => {
               damping: 24,
               mass: 0.1
             }}
-            className="fixed top-0 left-0 rounded-full border pointer-events-none z-[9999] mix-blend-screen backdrop-blur-[0.5px] shadow-[0_0_12px_rgba(34,211,238,0.12)]"
+            className="fixed top-0 left-0 rounded-full border pointer-events-none z-[100000] mix-blend-screen backdrop-blur-[0.5px] shadow-[0_0_12px_rgba(34,211,238,0.12)]"
           />
 
           {/* Inner Snappy Indicator Dot */}
@@ -166,7 +166,7 @@ export const CustomCursor: React.FC = () => {
               stiffness: 750,
               damping: 20,
             }}
-            className="fixed top-0 left-0 w-1.5 h-1.5 rounded-full pointer-events-none z-[9999]"
+            className="fixed top-0 left-0 w-1.5 h-1.5 rounded-full pointer-events-none z-[100000]"
           />
         </>
       )}
