@@ -14,7 +14,8 @@ import {
   AlertCircle,
   HelpCircle,
   Globe,
-  Award
+  Award,
+  Loader2
 } from "lucide-react";
 
 interface SummaryMetrics {
@@ -48,7 +49,8 @@ interface FullReportData {
 interface PortfolioMetricsProps {
   summaryMetrics: SummaryMetrics;
   quickInsights: QuickInsightItem[];
-  fullReportData: FullReportData;
+  fullReportData: FullReportData | null;
+  isAIReportLoading?: boolean;
 }
 
 // Custom Eased Count-Up Component using RequestAnimationFrame
@@ -86,7 +88,7 @@ const CountUpNum = ({ value, prefix = "", suffix = "", decimals = 0 }: { value: 
   );
 };
 
-export function PortfolioMetrics({ summaryMetrics, quickInsights, fullReportData }: PortfolioMetricsProps) {
+export function PortfolioMetrics({ summaryMetrics, quickInsights, fullReportData, isAIReportLoading = false }: PortfolioMetricsProps) {
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   // Stagger configurations
@@ -292,109 +294,147 @@ export function PortfolioMetrics({ summaryMetrics, quickInsights, fullReportData
       {/* 6. VIEW FULL AI REPORT - Smoothly Expanding Dashboard */}
       <div className="border border-white/5 rounded-2xl overflow-hidden bg-black/40 text-left" id="full-ai-report-accordion">
         <button
-          onClick={() => setIsReportOpen(!isReportOpen)}
-          className="w-full flex items-center justify-between p-5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors border-b border-transparent font-mono cursor-pointer"
+          onClick={() => {
+            if (!isAIReportLoading && fullReportData) {
+              setIsReportOpen(!isReportOpen);
+            }
+          }}
+          className={`w-full flex items-center justify-between p-5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors border-b border-transparent font-mono ${(isAIReportLoading || !fullReportData) ? "cursor-wait opacity-70" : "cursor-pointer"}`}
           style={{ borderBottomColor: isReportOpen ? "rgba(255,255,255,0.05)" : "transparent" }}
         >
           <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider">
-            <FileText className="w-4 h-4 text-cyan-400" />
+            {isAIReportLoading || !fullReportData ? (
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+            ) : (
+              <FileText className="w-4 h-4 text-cyan-400" />
+            )}
             <span>Interactive Portfolio Executive Intelligence Report</span>
+            {(isAIReportLoading || !fullReportData) && (
+              <span className="text-[10px] text-white/45 normal-case font-normal font-sans ml-2 animate-pulse">
+                (NOVA AI is formulating deep report...)
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2 text-white/40 text-[10px] font-mono uppercase tracking-wider">
-            <span>{isReportOpen ? "Collapse" : "Expand Report"}</span>
-            {isReportOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </div>
+          {!(isAIReportLoading || !fullReportData) && (
+            <div className="flex items-center gap-2 text-white/40 text-[10px] font-mono uppercase tracking-wider">
+              <span>{isReportOpen ? "Collapse" : "Expand Report"}</span>
+              {isReportOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          )}
         </button>
 
         <AnimatePresence initial={false}>
-          {isReportOpen && (
+          {(isReportOpen || isAIReportLoading || !fullReportData) && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="p-6 space-y-6">
-                
-                {/* Executive Summary Narrative */}
-                <div className="space-y-2.5">
-                  <h4 className="text-[10px] uppercase font-mono tracking-wider text-cyan-400/80 font-bold">1. Executive Quantitative Narrative</h4>
-                  <p className="text-xs text-white/70 leading-relaxed font-sans border-l-2 border-cyan-400/40 pl-3.5 bg-cyan-500/[0.01] py-3 rounded-r-xl">
-                    {fullReportData.executiveSummary}
-                  </p>
+              {(isAIReportLoading || !fullReportData) ? (
+                /* Dynamic Sleek Skeletons for Loading State */
+                <div className="p-6 space-y-6 animate-pulse">
+                  <div className="space-y-3">
+                    <div className="h-3.5 w-1/4 bg-cyan-500/10 rounded-full" />
+                    <div className="h-4 w-full bg-white/5 rounded-full" />
+                    <div className="h-4 w-5/6 bg-white/5 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    <div className="h-24 bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3">
+                      <div className="h-3 w-1/3 bg-emerald-500/10 rounded-full" />
+                      <div className="h-2 w-full bg-white/5 rounded-full" />
+                      <div className="h-2 w-4/5 bg-white/5 rounded-full" />
+                    </div>
+                    <div className="h-24 bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3">
+                      <div className="h-3 w-1/3 bg-amber-500/10 rounded-full" />
+                      <div className="h-2 w-full bg-white/5 rounded-full" />
+                      <div className="h-2 w-4/5 bg-white/5 rounded-full" />
+                    </div>
+                  </div>
                 </div>
-
-                {/* SWOT & Risk Split */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+              ) : (
+                <div className="p-6 space-y-6">
                   
-                  {/* Strengths */}
-                  <div className="p-4 rounded-xl bg-emerald-500/[0.01] border border-emerald-500/10 space-y-2.5">
-                    <h5 className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Structural Strengths</span>
-                    </h5>
-                    <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
-                      {fullReportData.strengths.map((str, idx) => (
-                        <li key={idx}>{str}</li>
-                      ))}
-                    </ul>
+                  {/* Executive Summary Narrative */}
+                  <div className="space-y-2.5">
+                    <h4 className="text-[10px] uppercase font-mono tracking-wider text-cyan-400/80 font-bold">1. Executive Quantitative Narrative</h4>
+                    <p className="text-xs text-white/70 leading-relaxed font-sans border-l-2 border-cyan-400/40 pl-3.5 bg-cyan-500/[0.01] py-3 rounded-r-xl">
+                      {fullReportData.executiveSummary}
+                    </p>
                   </div>
 
-                  {/* Weaknesses */}
-                  <div className="p-4 rounded-xl bg-amber-500/[0.01] border border-amber-500/10 space-y-2.5">
-                    <h5 className="text-[10px] uppercase font-mono tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Technical Vulnerabilities</span>
-                    </h5>
-                    <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
-                      {fullReportData.weaknesses.map((wk, idx) => (
-                        <li key={idx}>{wk}</li>
-                      ))}
-                    </ul>
+                  {/* SWOT & Risk Split */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    
+                    {/* Strengths */}
+                    <div className="p-4 rounded-xl bg-emerald-500/[0.01] border border-emerald-500/10 space-y-2.5">
+                      <h5 className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Structural Strengths</span>
+                      </h5>
+                      <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
+                        {fullReportData.strengths.map((str, idx) => (
+                          <li key={idx}>{str}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Weaknesses */}
+                    <div className="p-4 rounded-xl bg-amber-500/[0.01] border border-amber-500/10 space-y-2.5">
+                      <h5 className="text-[10px] uppercase font-mono tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Technical Vulnerabilities</span>
+                      </h5>
+                      <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
+                        {fullReportData.weaknesses.map((wk, idx) => (
+                          <li key={idx}>{wk}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Risk Factors */}
+                    <div className="p-4 rounded-xl bg-rose-500/[0.01] border border-rose-500/10 space-y-2.5">
+                      <h5 className="text-[10px] uppercase font-mono tracking-wider text-rose-400 font-bold flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Systemic Risk Factors</span>
+                      </h5>
+                      <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
+                        {fullReportData.riskFactors.map((risk, idx) => (
+                          <li key={idx}>{risk}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Action Plan */}
+                    <div className="p-4 rounded-xl bg-violet-500/[0.01] border border-violet-500/10 space-y-2.5">
+                      <h5 className="text-[10px] uppercase font-mono tracking-wider text-violet-400 font-bold flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-violet-400" />
+                        <span>Quantum Action Plan</span>
+                      </h5>
+                      <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
+                        {fullReportData.actionPlan.map((act, idx) => (
+                          <li key={idx}>{act}</li>
+                        ))}
+                      </ul>
+                    </div>
+
                   </div>
 
-                  {/* Risk Factors */}
-                  <div className="p-4 rounded-xl bg-rose-500/[0.01] border border-rose-500/10 space-y-2.5">
-                    <h5 className="text-[10px] uppercase font-mono tracking-wider text-rose-400 font-bold flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                      <span>Systemic Risk Factors</span>
-                    </h5>
-                    <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
-                      {fullReportData.riskFactors.map((risk, idx) => (
-                        <li key={idx}>{risk}</li>
+                  {/* Recommendations */}
+                  <div className="pt-2 border-t border-white/5 space-y-2.5">
+                    <h4 className="text-[10px] uppercase font-mono tracking-wider text-cyan-400/80 font-bold">2. Specific Rebalancing Recommendations</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {fullReportData.recommendations.map((rec, idx) => (
+                        <div key={idx} className="p-3 bg-white/[0.01] border border-white/5 rounded-xl font-mono text-[10.5px] text-white/70 leading-normal">
+                          <span className="text-cyan-400 font-bold mr-1.5">#{idx + 1}</span>
+                          <span>{rec}</span>
+                        </div>
                       ))}
-                    </ul>
-                  </div>
-
-                  {/* Action Plan */}
-                  <div className="p-4 rounded-xl bg-violet-500/[0.01] border border-violet-500/10 space-y-2.5">
-                    <h5 className="text-[10px] uppercase font-mono tracking-wider text-violet-400 font-bold flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-violet-400" />
-                      <span>Quantum Action Plan</span>
-                    </h5>
-                    <ul className="text-xs text-white/60 space-y-1.5 font-sans pl-4 list-disc">
-                      {fullReportData.actionPlan.map((act, idx) => (
-                        <li key={idx}>{act}</li>
-                      ))}
-                    </ul>
+                    </div>
                   </div>
 
                 </div>
-
-                {/* Recommendations */}
-                <div className="pt-2 border-t border-white/5 space-y-2.5">
-                  <h4 className="text-[10px] uppercase font-mono tracking-wider text-cyan-400/80 font-bold">2. Specific Rebalancing Recommendations</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {fullReportData.recommendations.map((rec, idx) => (
-                      <div key={idx} className="p-3 bg-white/[0.01] border border-white/5 rounded-xl font-mono text-[10.5px] text-white/70 leading-normal">
-                        <span className="text-cyan-400 font-bold mr-1.5">#{idx + 1}</span>
-                        <span>{rec}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

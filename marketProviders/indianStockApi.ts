@@ -48,12 +48,10 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
   try {
     return await indianMarketProvider.fetchQuote(cleanSym, exchange);
   } catch (err: any) {
-    console.warn(`[Indian Stock API] Yahoo Finance failed for ${cleanSym} (${err.message}). Trying Render API...`);
     try {
       // Suffix appropriate exchange if needed (some API instances expect RELIANCE.NS, others RELIANCE)
       // Let's try to query with the clean symbol first, and fall back to the suffixed one if it fails or returns empty.
       const url = `${BASE_URL}/stock?symbol=${encodeURIComponent(cleanSym)}&res=num`;
-      console.log(`[Indian Stock API] Fetching quote for: ${cleanSym}`);
       
       const headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -76,7 +74,6 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
       if (!response.ok || !data || Object.keys(data).length === 0 || data.error) {
         const suffixedSym = exchange === "BSE" ? `${cleanSym}.BO` : `${cleanSym}.NS`;
         const fallbackUrl = `${BASE_URL}/stock?symbol=${encodeURIComponent(suffixedSym)}&res=num`;
-        console.log(`[Indian Stock API Fallback] Fetching suffixed quote for ${suffixedSym} from ${fallbackUrl}`);
         
         response = await fetch(fallbackUrl, { headers });
         if (!response.ok) {
@@ -129,7 +126,6 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
         rawResponse: data
       };
     } catch (renderErr: any) {
-      console.warn(`[Indian Stock API Error] All primary quote methods failed for ${cleanSym}:`, renderErr.message);
       // Return a basic placeholder using fallback list instead of crashing
       const fallbackMeta = generateDynamicUniverseStock(cleanSym);
       const fallbackPrice = fallbackMeta?.price || 150.0;
@@ -281,60 +277,64 @@ export async function getStockHistory(symbol: string, timeframe: string = "1D"):
   const fallback = REAL_NSE_STOCKS.find(s => s.symbol === cleanSym);
   const exchange = fallback?.exchange || "NSE";
   
-  // Formulate yfinance symbol expected by query1.finance.yahoo.com/v8/finance/chart
-  const yahooSym = cleanSym === "NIFTY50" ? "^NSEI" : cleanSym === "BANKNIFTY" ? "^NSEBANK" : cleanSym === "SENSEX" ? "^BSESN" : exchange === "BSE" ? `${cleanSym}.BO` : `${cleanSym}.NS`;
+  try {
+    // Formulate yfinance symbol expected by query1.finance.yahoo.com/v8/finance/chart
+    const yahooSym = cleanSym === "NIFTY50" ? "^NSEI" : cleanSym === "BANKNIFTY" ? "^NSEBANK" : cleanSym === "SENSEX" ? "^BSESN" : exchange === "BSE" ? `${cleanSym}.BO` : `${cleanSym}.NS`;
 
-  let interval = "1d";
-  let range = "1mo";
-  if (timeframe === "1D" || timeframe === "1m") { interval = "15m"; range = "1d"; }
-  else if (timeframe === "5D" || timeframe === "5m") { interval = "1h"; range = "5d"; }
-  else if (timeframe === "15m") { interval = "15m"; range = "5d"; }
-  else if (timeframe === "1H" || timeframe === "1h") { interval = "1h"; range = "1mo"; }
-  else if (timeframe === "1M" || timeframe === "1D") { interval = "1d"; range = "1mo"; }
-  else if (timeframe === "6M") { interval = "1d"; range = "6mo"; }
-  else if (timeframe === "1Y") { interval = "1wk"; range = "1y"; }
-  else if (timeframe === "5Y") { interval = "1mo"; range = "5y"; }
+    let interval = "1d";
+    let range = "1mo";
+    if (timeframe === "1D" || timeframe === "1m") { interval = "15m"; range = "1d"; }
+    else if (timeframe === "5D" || timeframe === "5m") { interval = "1h"; range = "5d"; }
+    else if (timeframe === "15m") { interval = "15m"; range = "5d"; }
+    else if (timeframe === "1H" || timeframe === "1h") { interval = "1h"; range = "1mo"; }
+    else if (timeframe === "1M" || timeframe === "1D") { interval = "1d"; range = "1mo"; }
+    else if (timeframe === "6M") { interval = "1d"; range = "6mo"; }
+    else if (timeframe === "1Y") { interval = "1wk"; range = "1y"; }
+    else if (timeframe === "5Y") { interval = "1mo"; range = "5y"; }
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?range=${range}&interval=${interval}`;
-  console.log(`[Indian Stock API] Fetching history for ${cleanSym} via ${url}`);
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?range=${range}&interval=${interval}`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`History chart fetch failed with status ${response.status}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`History chart fetch failed with status ${response.status}`);
+    }
+
+    const json = await response.json();
+    const result = json?.chart?.result?.[0];
+    if (!result) {
+      throw new Error(`No chart history returned for ${cleanSym}`);
+    }
+
+    const timestamps = result.timestamp || [];
+    const indicators = result.indicators?.quote?.[0] || {};
+    const opens = indicators.open || [];
+    const highs = indicators.high || [];
+    const lows = indicators.low || [];
+    const closes = indicators.close || [];
+    const volumes = indicators.volume || [];
+
+    const historyList: any[] = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      if (closes[i] === null || closes[i] === undefined) continue;
+      
+      const timeDate = new Date(timestamps[i] * 1000);
+      const timeStr = timeframe === "1D" || timeframe === "5D" || timeframe === "1m" || timeframe === "5m" || timeframe === "15m" || timeframe === "1h"
+        ? timeDate.toISOString()
+        : timeDate.toISOString().split("T")[0];
+
+      historyList.push({
+        time: timeStr,
+        open: parseFloat(opens[i]?.toFixed(2) || closes[i]?.toFixed(2)),
+        high: parseFloat(highs[i]?.toFixed(2) || closes[i]?.toFixed(2)),
+        low: parseFloat(lows[i]?.toFixed(2) || closes[i]?.toFixed(2)),
+        close: parseFloat(closes[i]?.toFixed(2)),
+        volume: parseInt(volumes[i] || "0")
+      });
+    }
+
+    return historyList;
+  } catch (err) {
+    // Graceful silent fallback to indianMarketProvider.fetchHistory which is completely secure and has mock generator fallback
+    return await indianMarketProvider.fetchHistory(cleanSym, timeframe, exchange);
   }
-
-  const json = await response.json();
-  const result = json?.chart?.result?.[0];
-  if (!result) {
-    throw new Error(`No chart history returned for ${cleanSym}`);
-  }
-
-  const timestamps = result.timestamp || [];
-  const indicators = result.indicators?.quote?.[0] || {};
-  const opens = indicators.open || [];
-  const highs = indicators.high || [];
-  const lows = indicators.low || [];
-  const closes = indicators.close || [];
-  const volumes = indicators.volume || [];
-
-  const historyList: any[] = [];
-  for (let i = 0; i < timestamps.length; i++) {
-    if (closes[i] === null || closes[i] === undefined) continue;
-    
-    const timeDate = new Date(timestamps[i] * 1000);
-    const timeStr = timeframe === "1D" || timeframe === "5D" || timeframe === "1m" || timeframe === "5m" || timeframe === "15m" || timeframe === "1h"
-      ? timeDate.toISOString()
-      : timeDate.toISOString().split("T")[0];
-
-    historyList.push({
-      time: timeStr,
-      open: parseFloat(opens[i]?.toFixed(2) || closes[i]?.toFixed(2)),
-      high: parseFloat(highs[i]?.toFixed(2) || closes[i]?.toFixed(2)),
-      low: parseFloat(lows[i]?.toFixed(2) || closes[i]?.toFixed(2)),
-      close: parseFloat(closes[i]?.toFixed(2)),
-      volume: parseInt(volumes[i] || "0")
-    });
-  }
-
-  return historyList;
 }

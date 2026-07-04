@@ -37,6 +37,18 @@ export function PortfolioScanning({ isAnalyzing, holdingsCount, onComplete }: Po
   const [scanningMsg, setScanningMsg] = useState("");
   const [showRevealScreen, setShowRevealScreen] = useState(false);
 
+  // Use refs to stabilize callbacks and variables to prevent effect re-runs when parent ticks/re-renders
+  const onCompleteRef = React.useRef(onComplete);
+  const holdingsCountRef = React.useRef(holdingsCount);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    holdingsCountRef.current = holdingsCount;
+  }, [holdingsCount]);
+
   useEffect(() => {
     if (!isAnalyzing) return;
 
@@ -52,11 +64,12 @@ export function PortfolioScanning({ isAnalyzing, holdingsCount, onComplete }: Po
       } else {
         clearInterval(stepInterval);
         clearInterval(msgInterval);
+        clearTimeout(safetyTimeout);
         setShowRevealScreen(true);
         
         // Let the reveal screen display for 1.8s, then trigger final completion
         const timer = setTimeout(() => {
-          onComplete();
+          onCompleteRef.current();
         }, 1800);
         return () => clearTimeout(timer);
       }
@@ -64,17 +77,26 @@ export function PortfolioScanning({ isAnalyzing, holdingsCount, onComplete }: Po
 
     // Rotate intelligence messages
     let msgIdx = 0;
-    setScanningMsg(ROTATING_MESSAGES[0].replace("{count}", String(holdingsCount || 10)));
+    setScanningMsg(ROTATING_MESSAGES[0].replace("{count}", String(holdingsCountRef.current || 10)));
     const msgInterval = setInterval(() => {
       msgIdx = (msgIdx + 1) % ROTATING_MESSAGES.length;
-      setScanningMsg(ROTATING_MESSAGES[msgIdx].replace("{count}", String(holdingsCount || 10)));
+      setScanningMsg(ROTATING_MESSAGES[msgIdx].replace("{count}", String(holdingsCountRef.current || 10)));
     }, 650);
+
+    // Maximum safety lifetime of 8 seconds to guarantee loading animation finishes and transitions to dashboard
+    const safetyTimeout = setTimeout(() => {
+      console.warn("PortfolioScanning: Absolute safety limit of 8 seconds reached. Forcing completion.");
+      clearInterval(stepInterval);
+      clearInterval(msgInterval);
+      onCompleteRef.current();
+    }, 8000);
 
     return () => {
       clearInterval(stepInterval);
       clearInterval(msgInterval);
+      clearTimeout(safetyTimeout);
     };
-  }, [isAnalyzing, holdingsCount, onComplete]);
+  }, [isAnalyzing]);
 
   if (!isAnalyzing) return null;
 

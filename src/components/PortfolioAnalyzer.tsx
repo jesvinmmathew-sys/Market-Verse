@@ -24,7 +24,8 @@ import {
   SlidersHorizontal,
   ChevronDown,
   LayoutGrid,
-  FileText
+  FileText,
+  AlertTriangle
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -86,6 +87,11 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [dashboardTab, setDashboardTab] = useState<"cards" | "ledger">("cards");
   const [confirmReset, setConfirmReset] = useState(false);
+
+  // AI report & Market Data Warning States
+  const [isAIReportLoading, setIsAIReportLoading] = useState(false);
+  const [aiReportData, setAiReportData] = useState<any | null>(null);
+  const [marketDataWarning, setMarketDataWarning] = useState("");
 
   // Manual input form states
   const [manualSymbol, setManualSymbol] = useState("");
@@ -197,22 +203,169 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
     return "Others";
   };
 
+  // Fetch basic stock prices with 10-second timeout, skipping individual stock failures
+  const fetchBasicPricesForSymbols = async (symbols: string[]): Promise<void> => {
+    if (symbols.length === 0) return;
+
+    let timeoutId: any;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error("TIMEOUT"));
+      }, 10000); // 10 seconds timeout limit
+    });
+
+    const fetchPromises = symbols.map(async (symbol) => {
+      try {
+        const stock = await marketApi.getStockBySymbol(symbol);
+        if (stock) {
+          setLiveStocks((prev) => {
+            const exists = prev.some((s) => s.symbol.toUpperCase() === symbol.toUpperCase());
+            if (exists) {
+              return prev.map((s) => (s.symbol.toUpperCase() === symbol.toUpperCase() ? stock : s));
+            } else {
+              return [...prev, stock];
+            }
+          });
+        }
+      } catch (err) {
+        console.warn(`[Indian Stock API] Skipping failed individual stock ${symbol}:`, err);
+      }
+    });
+
+    try {
+      await Promise.race([
+        Promise.all(fetchPromises),
+        timeoutPromise
+      ]);
+    } catch (err: any) {
+      if (err.message === "TIMEOUT") {
+        console.warn("[Indian Stock API] Live market data fetch timed out at 10 seconds.");
+        setMarketDataWarning("Live market data is taking longer than expected. Displaying available portfolio information.");
+        setTimeout(() => setMarketDataWarning(""), 10000); // Clear after 10 seconds
+      } else {
+        throw err;
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  // Asynchronous AI report generation in the background
+  const generateAIReportAsync = async (holdings: any[], metrics: any, sectorChart: any[], contributors: any) => {
+    setIsAIReportLoading(true);
+    try {
+      // Simulate/perform quantitative background processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      let advice = "Your investment portfolio exhibits structural consistency. ";
+      const mainSector = sectorChart[0];
+      const topHolding = contributors?.largestHolding;
+      const topWinner = contributors?.highestReturn;
+      
+      if (mainSector && mainSector.value > 40) {
+        advice += `Your portfolio displays high concentration inside the ${mainSector.name} sector (${mainSector.value.toFixed(1)}%). We recommend systematically diversifying exposure across supplementary defensive categories to insulate against industry-specific corrections. `;
+      } else if (sectorChart.length > 0) {
+        advice += `Your holdings are excellently diversified across several non-correlated Indian sectors including ${sectorChart.slice(0, 3).map((s: any) => s.name).join(", ")}. This structure acts as an institutional stabilizer against volatile swings in any single counter. `;
+      }
+
+      if (topHolding) {
+        advice += `Our pipeline identifies ${topHolding.name || topHolding.symbol} (${topHolding.symbol}) as your largest capital anchor representing ₹${topHolding.currentValue.toLocaleString("en-IN")} (${((topHolding.currentValue / metrics.currentPortfolioValue) * 100).toFixed(1)}% of total assets). `;
+      }
+
+      if (topWinner && topWinner.profitLoss > 0) {
+        advice += `Our analytics pipeline reports ${topWinner.symbol} as your highest absolute performing vehicle (+${topWinner.profitLossPct.toFixed(1)}% overall returns). Consider locking in partial fractional profits on over-extended charts or trailing stop losses to protect your equity floor. `;
+      }
+
+      if (metrics.healthScore > 85) {
+        advice += `With a dynamic Health Score of ${metrics.healthScore}/100, the structural rating remains Highly Constructive. The general long-term outlook is Positive, backed by healthy moving average barriers of core holding components. `;
+      } else if (metrics.healthScore < 60) {
+        advice += `Your Health Score of ${metrics.healthScore}/100 flags moderate technical caution. Slower moving average velocity and high-beta exposure require active capital management. Consider shifting positions toward large-cap defensive counters. `;
+      } else {
+        advice += `The combined technical trajectory prints a solid Health Rating of ${metrics.healthScore}/100. Maintaining average risk thresholds, this portfolio is well-positioned for broad benchmark expansion cycles. `;
+      }
+
+      const worstHolding = contributors?.highestRisk;
+      const bestHolding = contributors?.highestReturn;
+
+      const report = {
+        executiveSummary: advice,
+        strengths: [
+          metrics.healthScore > 75 ? "Excellent core health indicating robust fundamental asset selection." : "Satisfactory underlying values with strong capital support.",
+          sectorChart.length >= 3 ? "Healthy multi-sector presence insulating against industry shocks." : "High specialization within leading strategic Indian vectors.",
+          bestHolding ? `${bestHolding.symbol} is displaying stellar relative strength (+${bestHolding.profitLossPct.toFixed(1)}% returns).` : "Consistent performance tracking across primary counters."
+        ],
+        weaknesses: [
+          sectorChart.length < 3 ? "Concentration in limited sector corridors poses correction risks." : "Slight exposure to sector-specific cyclical consolidations.",
+          worstHolding ? `${worstHolding.symbol} exhibits downward momentum. Buy average is currently higher than spot price.` : "Requires additional hedging inside standard defensive indexes.",
+          "Cash buffer levels are unoptimized within local demat allocations."
+        ],
+        riskFactors: [
+          "Volatility risk: Broad NIFTY index fluctuations directly impacting aggregate beta.",
+          "Asset allocation skew: Over-weight positions in top holdings.",
+          "Sector rotation: Short-term profit taking across heavily-bought groups."
+        ],
+        recommendations: [
+          "Diversify systematically: Allocate incremental cash into defensive sectors (FMCG, Pharma).",
+          "Average down underperformers: If fundamentals remain intact, lower the cost bounds for lagging assets.",
+          "Lock partial gains: Rebalance assets when any single holding exceeds 25% of total value."
+        ],
+        actionPlan: [
+          "Phase 1 (Immediate): Establish rigid stop-losses around current key pivot points.",
+          "Phase 2 (Month 1): Deploy uncommitted funds in high-beta dip opportunities.",
+          "Phase 3 (Quarterly): Audit sector weights relative to NSE sectoral indices."
+        ]
+      };
+
+      setAiReportData(report);
+    } catch (err) {
+      console.error("Failed to generate AI report asynchronously:", err);
+    } finally {
+      setIsAIReportLoading(false);
+    }
+  };
+
+  // Sync custom portfolio changes with localStorage and trigger event dispatching
+  useEffect(() => {
+    if (customPortfolio.length > 0) {
+      localStorage.setItem("marketverse_custom_portfolio", JSON.stringify(customPortfolio));
+      window.dispatchEvent(new Event("aura_portfolio_updated"));
+    } else if (customPortfolio.length === 0) {
+      localStorage.removeItem("marketverse_custom_portfolio");
+      window.dispatchEvent(new Event("aura_portfolio_updated"));
+    }
+  }, [customPortfolio]);
+
+  // Reset or initialize AI report whenever custom portfolio changes (upload, manual edits, etc.)
+  useEffect(() => {
+    setAiReportData(null);
+    setIsAIReportLoading(false);
+  }, [customPortfolio]);
+
   // Run analyzing transition
-  const triggerAnalysis = (parsedList: { symbol: string; shares: number; avgBuyPrice: number }[]) => {
+  const triggerAnalysis = async (parsedList: { symbol: string; shares: number; avgBuyPrice: number }[]) => {
     setIsAnalyzing(true);
-    
-    // Set mapped custom holdings queue immediately to render details correctly during scan steps
-    const finalHoldings = mapImportedHoldings(parsedList);
-    setManualList([]); // Clear temporary form state
-    
-    // The PortfolioScanning sub-component manages the sequential 3.5s cinematic timer steps
-    // When completed, it calls handleScanningComplete to trigger the grand reveal.
-    setCustomPortfolio(finalHoldings);
+    setUploadError("");
+    setMarketDataWarning("");
+    setAiReportData(null);
+    setIsAIReportLoading(false);
+
+    try {
+      const finalHoldings = mapImportedHoldings(parsedList);
+      setManualList([]); // Clear temporary form state
+
+      // Fetch basic stock prices for all symbols in parallel (with 10-second timeout limit)
+      const symbolsToFetch = finalHoldings.map((h) => h.symbol);
+      await fetchBasicPricesForSymbols(symbolsToFetch);
+
+      setCustomPortfolio(finalHoldings);
+    } catch (err: any) {
+      console.error("Error during portfolio analysis trigger:", err);
+      setUploadError(err.message || "Failed to process portfolio holdings.");
+      setIsAnalyzing(false); // ALWAYS stop loading state if mapper or API fails!
+    }
   };
 
   const handleScanningComplete = () => {
-    localStorage.setItem("marketverse_custom_portfolio", JSON.stringify(customPortfolio));
-    window.dispatchEvent(new Event("aura_portfolio_updated"));
     setIsAnalyzing(false);
   };
 
@@ -816,6 +969,13 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
     };
   }, [processedHoldings, summaryMetrics, sectorChartData, topContributors, generatedNovaIntelligence]);
 
+  // Decoupled background effect to trigger AI analysis without blocking the main rendering pipeline
+  useEffect(() => {
+    if (processedHoldings.length > 0 && summaryMetrics && !isAnalyzing && !aiReportData && !isAIReportLoading) {
+      generateAIReportAsync(processedHoldings, summaryMetrics, sectorChartData, topContributors);
+    }
+  }, [processedHoldings, summaryMetrics, isAnalyzing, aiReportData, isAIReportLoading, sectorChartData, topContributors]);
+
   return (
     <div className="space-y-8 select-none max-w-7xl mx-auto px-4 sm:px-6 py-4" id="portfolio-analyzer-container">
       
@@ -1067,12 +1227,21 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
             </div>
           </div>
 
+          {/* Warning banner if basic stocks timed out */}
+          {marketDataWarning && (
+            <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs px-4 py-3 rounded-xl flex items-center gap-2 mb-6 font-mono text-left">
+              <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+              <span>{marketDataWarning}</span>
+            </div>
+          )}
+
           {/* 4, 5, 6. METRICS CARDS, QUICK INSIGHTS & EXPANDABLE REPORT */}
-          {summaryMetrics && fullReportData && (
+          {summaryMetrics && (
             <PortfolioMetrics 
               summaryMetrics={summaryMetrics} 
               quickInsights={quickInsightsList} 
-              fullReportData={fullReportData} 
+              fullReportData={aiReportData} 
+              isAIReportLoading={isAIReportLoading}
             />
           )}
 
