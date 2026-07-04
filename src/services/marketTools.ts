@@ -1,4 +1,5 @@
 // Market Tools Layer - Functions for Real-Time Technical and Quote Analysis
+import { robustFetchJson } from "../utils/apiUtils";
 
 export interface TechnicalIndicators {
   rsi: number;
@@ -26,11 +27,15 @@ export interface StockQuote {
  */
 export async function fetchCurrentStockData(symbol: string): Promise<StockQuote> {
   const symbolUpper = symbol.toUpperCase().trim();
-  const res = await fetch(`/api/market/quote?symbol=${encodeURIComponent(symbolUpper)}`);
-  if (!res.ok) {
+  const data = await robustFetchJson<any>(`/api/market/quote?symbol=${encodeURIComponent(symbolUpper)}`, {
+    timeoutMs: 5000,
+    retries: 1
+  });
+
+  if (!data) {
     throw new Error(`Failed to fetch current stock data for ${symbolUpper}`);
   }
-  const data = await res.json();
+
   const price = data.price || 100;
   const change = data.change || 0;
   const percentChange = data.percentChange || 0;
@@ -59,11 +64,16 @@ export async function fetchCurrentStockData(symbol: string): Promise<StockQuote>
  */
 export async function fetchStockCandles(symbol: string): Promise<any[]> {
   const symbolUpper = symbol.toUpperCase().trim();
-  const res = await fetch(`/api/market/history?symbol=${encodeURIComponent(symbolUpper)}&timeframe=1M`);
-  if (!res.ok) {
+  const data = await robustFetchJson<any[]>(`/api/market/history?symbol=${encodeURIComponent(symbolUpper)}&timeframe=1M`, {
+    timeoutMs: 5000,
+    retries: 1
+  });
+
+  if (!data) {
     throw new Error(`Failed to fetch candles for ${symbolUpper}`);
   }
-  return res.json();
+
+  return data;
 }
 
 /**

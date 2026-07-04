@@ -44,6 +44,7 @@ import { marketApi } from "../services/marketApi";
 import { TradingService } from "../services/trading";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
 import { Stock } from "../types";
+import { robustFetchJson } from "../utils/apiUtils";
 
 // Import custom sub-components
 import { PortfolioScanning } from "./portfolio/PortfolioScanning";
@@ -203,19 +204,13 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
     return "Others";
   };
 
-  // Fetch basic stock prices with 10-second timeout, skipping individual stock failures
+  // Fetch basic stock prices with skipping individual stock failures
   const fetchBasicPricesForSymbols = async (symbols: string[]): Promise<void> => {
     if (symbols.length === 0) return;
 
-    let timeoutId: any;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(new Error("TIMEOUT"));
-      }, 10000); // 10 seconds timeout limit
-    });
-
     const fetchPromises = symbols.map(async (symbol) => {
       try {
+        // marketApi.getStockBySymbol now uses robustFetch with timeout built-in
         const stock = await marketApi.getStockBySymbol(symbol);
         if (stock) {
           setLiveStocks((prev) => {
@@ -233,20 +228,9 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
     });
 
     try {
-      await Promise.race([
-        Promise.all(fetchPromises),
-        timeoutPromise
-      ]);
+      await Promise.all(fetchPromises);
     } catch (err: any) {
-      if (err.message === "TIMEOUT") {
-        console.warn("[Indian Stock API] Live market data fetch timed out at 10 seconds.");
-        setMarketDataWarning("Live market data is taking longer than expected. Displaying available portfolio information.");
-        setTimeout(() => setMarketDataWarning(""), 10000); // Clear after 10 seconds
-      } else {
-        throw err;
-      }
-    } finally {
-      clearTimeout(timeoutId);
+      console.error("Live stock fetching error:", err);
     }
   };
 

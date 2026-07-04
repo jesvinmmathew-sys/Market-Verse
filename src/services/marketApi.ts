@@ -1,5 +1,6 @@
 import { Stock, StockHistoryItem } from "../types";
 import { INDIAN_STOCK_UNIVERSE, generateDynamicUniverseStock } from "./indianStocksDb";
+import { robustFetchJson } from "../utils/apiUtils";
 
 // Helper to generate elegant historical candlestick data
 export function generateHistory(basePrice: number, points: number = 50, volatility: number = 0.015): StockHistoryItem[] {
@@ -327,9 +328,11 @@ export const marketApi = {
   async getAllStocks(): Promise<Stock[]> {
     initMarketData();
     try {
-      const res = await fetch("/api/market/all_quotes");
-      if (res.ok) {
-        const liveQuotes = await res.json() as Record<string, any>;
+      const liveQuotes = await robustFetchJson<Record<string, any>>("/api/market/all_quotes", {
+        timeoutMs: 5000,
+        retries: 1
+      });
+      if (liveQuotes) {
         activeStocks = activeStocks.map(stock => {
           const live = liveQuotes[stock.symbol.toUpperCase()];
           if (live) {
@@ -378,9 +381,11 @@ export const marketApi = {
     }
 
     try {
-      const res = await fetch(`/api/market/quote?symbol=${cleanSym}`);
-      if (res.ok) {
-        const liveQuote = await res.json();
+      const liveQuote = await robustFetchJson<any>(`/api/market/quote?symbol=${cleanSym}`, {
+        timeoutMs: 5000,
+        retries: 1
+      });
+      if (liveQuote) {
         activeStocks[idx] = {
           ...activeStocks[idx],
           price: liveQuote.price,
@@ -412,13 +417,13 @@ export const marketApi = {
     }
 
     try {
-      const res = await fetch(`/api/market/history?symbol=${cleanSym}&timeframe=${timeframe}`);
-      if (res.ok) {
-        const liveHistory = await res.json();
-        if (Array.isArray(liveHistory) && liveHistory.length > 0) {
-          calculateTechnicalIndicators(liveHistory);
-          return liveHistory;
-        }
+      const liveHistory = await robustFetchJson<any[]>(`/api/market/history?symbol=${cleanSym}&timeframe=${timeframe}`, {
+        timeoutMs: 5000,
+        retries: 1
+      });
+      if (Array.isArray(liveHistory) && liveHistory.length > 0) {
+        calculateTechnicalIndicators(liveHistory);
+        return liveHistory;
       }
     } catch (err) {
       console.log("Using high-fidelity simulation history:", err);

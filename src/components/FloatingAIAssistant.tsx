@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { marketVerseAI } from "../services/marketVerseAI";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
 import { NovaLogo } from "./NovaLogo";
+import { robustFetchJson } from "../utils/apiUtils";
 
 interface Message {
   id: string;
@@ -82,19 +83,21 @@ const detectStockInText = (text: string) => {
 // 2. Fetch both quote and AI technical analysis in parallel
 const fetchFullStockAnalysis = async (symbol: string): Promise<StockAnalysisCardData | null> => {
   try {
-    const [quoteRes, aiRes] = await Promise.all([
-      fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}`),
-      fetch("/api/ai/analyze-stock", {
+    const [quoteData, aiData] = await Promise.all([
+      robustFetchJson<any>(`/api/market/quote?symbol=${encodeURIComponent(symbol)}`, {
+        timeoutMs: 15000,
+        retries: 1
+      }).catch(() => null),
+      robustFetchJson<any>("/api/ai/analyze-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol })
-      })
+        body: JSON.stringify({ symbol }),
+        timeoutMs: 15000,
+        retries: 1
+      }).catch(() => null)
     ]);
 
-    if (!quoteRes.ok || !aiRes.ok) return null;
-
-    const quoteData = await quoteRes.json();
-    const aiData = await aiRes.json();
+    if (!quoteData || !aiData) return null;
 
     const price = quoteData.price || 100;
     const change = quoteData.change !== undefined ? quoteData.change : 0;

@@ -1,3 +1,5 @@
+import { robustFetchJson } from "../utils/apiUtils";
+
 export interface AIAnalysisResult {
   sentiment: "Bullish" | "Bearish" | "Neutral";
   confidence: number;
@@ -27,28 +29,27 @@ export const aiApi = {
 
   async analyzeStock(symbol: string, price: number, history: any[]): Promise<AIAnalysisResult> {
     try {
-      const response = await fetch("/api/ai/analyze-stock", {
+      const data = await robustFetchJson<any>("/api/ai/analyze-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol, price })
+        body: JSON.stringify({ symbol, price }),
+        timeoutMs: 15000,
+        retries: 1
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          sentiment: data.sentiment || "Neutral",
-          confidence: data.confidence || 75,
-          risk: data.risk || "Medium",
-          riskPercentage: data.riskPercentage || 45,
-          safetyScore: data.safetyScore || 65,
-          briefNote: data.briefNote || `${symbol} is in structured technical balance.`,
-          strategyExplanation: data.strategyExplanation,
-          reasons: data.reasons,
-          possibleScenarios: data.possibleScenarios,
-          keyIndicators: data.keyIndicators,
-          isDemo: false
-        };
-      }
+      return {
+        sentiment: data.sentiment || "Neutral",
+        confidence: data.confidence || 75,
+        risk: data.risk || "Medium",
+        riskPercentage: data.riskPercentage || 45,
+        safetyScore: data.safetyScore || 65,
+        briefNote: data.briefNote || `${symbol} is in structured technical balance.`,
+        strategyExplanation: data.strategyExplanation,
+        reasons: data.reasons,
+        possibleScenarios: data.possibleScenarios,
+        keyIndicators: data.keyIndicators,
+        isDemo: false
+      };
     } catch (e) {
       // Proceed to fallback
     }

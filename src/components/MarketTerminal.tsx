@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Stock, NewsItem, Lesson, PortfolioItem, WatchlistItem } from "../types";
+import { robustFetchJson } from "../utils/apiUtils";
 import { marketApi, getOrCreateDynamicStock } from "../services/marketApi";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
 import { newsApi } from "../services/newsApi";
@@ -375,15 +376,17 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
     async function loadSummary() {
       setLoadingSummary(true);
       try {
-        const response = await fetch("/api/ai/summary");
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.summaryText) {
-            setAiMarketSummary(data.summaryText);
-          }
+        const data = await robustFetchJson<any>("/api/ai/summary", {
+          timeoutMs: 15000,
+          retries: 1,
+          cacheTtlMs: 30000
+        });
+        if (data && data.summaryText) {
+          setAiMarketSummary(data.summaryText);
         }
       } catch (err) {
         console.error("Failed to load AI summary:", err);
+        setAiMarketSummary("Failed to load AI market summary. Please try again later.");
       } finally {
         setLoadingSummary(false);
       }
@@ -486,23 +489,23 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
       // 2. Scalable dynamic backend registry search (thousands of companies)
       const fetchDelay = setTimeout(async () => {
         try {
-          const res = await fetch(`/api/market/search?query=${encodeURIComponent(query)}`);
-          if (res.ok) {
-            const serverMatches = await res.json();
-            if (Array.isArray(serverMatches)) {
-              let serverChanged = false;
-              serverMatches.forEach(item => {
-                const exists = stocks.some(s => s.symbol.toUpperCase() === item.symbol.toUpperCase());
-                if (!exists) {
-                  getOrCreateDynamicStock(item.symbol, item);
-                  serverChanged = true;
-                }
-              });
-
-              if (serverChanged) {
-                const all = await marketApi.getAllStocks();
-                setStocks(all);
+          const serverMatches = await robustFetchJson<any[]>(`/api/market/search?query=${encodeURIComponent(query)}`, {
+            timeoutMs: 5000,
+            retries: 1
+          });
+          if (Array.isArray(serverMatches)) {
+            let serverChanged = false;
+            serverMatches.forEach(item => {
+              const exists = stocks.some(s => s.symbol.toUpperCase() === item.symbol.toUpperCase());
+              if (!exists) {
+                getOrCreateDynamicStock(item.symbol, item);
+                serverChanged = true;
               }
+            });
+
+            if (serverChanged) {
+              const all = await marketApi.getAllStocks();
+              setStocks(all);
             }
           }
         } catch (err) {

@@ -1,4 +1,5 @@
 import { NewsItem } from "../types";
+import { robustFetchJson } from "../utils/apiUtils";
 
 const SIMULATED_NEWS: NewsItem[] = [
   {
@@ -87,12 +88,13 @@ export const newsApi = {
 
   async getLatestNews(): Promise<NewsItem[]> {
     try {
-      const res = await fetch("/api/market/news");
-      if (res.ok) {
-        const liveNews = await res.json();
-        if (Array.isArray(liveNews) && liveNews.length > 0) {
-          return liveNews;
-        }
+      const liveNews = await robustFetchJson<any>("/api/market/news", {
+        timeoutMs: 10000,
+        retries: 1,
+        cacheTtlMs: 60000 // cache news for 60 seconds
+      });
+      if (Array.isArray(liveNews) && liveNews.length > 0) {
+        return liveNews;
       }
     } catch (err) {
       console.log("Using simulation fallback for financial news feed:", err);
@@ -108,14 +110,13 @@ export const newsApi = {
 
   async analyzeNewsSentiment(title: string, preview: string): Promise<{ sentiment: string; impact: string; confidence: number; explanation: string }> {
     try {
-      const res = await fetch("/api/ai/news-sentiment", {
+      return await robustFetchJson<any>("/api/ai/news-sentiment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, text: preview })
+        body: JSON.stringify({ title, text: preview }),
+        timeoutMs: 10000,
+        retries: 1
       });
-      if (res.ok) {
-        return await res.json();
-      }
     } catch (err) {
       console.log("AI News analysis failed:", err);
     }
