@@ -16,6 +16,14 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Custom JSON parsing error handler to return JSON instead of HTML on malformed payloads
+app.use((err: any, req: any, res: any, next: any) => {
+  if (err instanceof SyntaxError && 'status' in err && err.status === 400) {
+    return res.status(400).json({ error: "Invalid JSON payload" });
+  }
+  next();
+});
+
 // Mount authentication routes
 app.use("/api/auth", authRoutes);
 
