@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { INDIAN_STOCK_UNIVERSE, generateDynamicUniverseStock } from "./src/services/indianStocksDb.js";
 import { indianMarketProvider } from "./marketProviders/indianMarketProvider.js";
@@ -2323,7 +2322,9 @@ app.get("/api/health", (req, res) => {
 
 async function start() {
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
+    const viteModuleName = "vite";
+    const { createServer } = await import(viteModuleName);
+    const vite = await createServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
