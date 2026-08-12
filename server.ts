@@ -7,6 +7,7 @@ import { INDIAN_STOCK_UNIVERSE, generateDynamicUniverseStock } from "./src/servi
 import { indianMarketProvider } from "./marketProviders/indianMarketProvider.js";
 import { twelveDataProvider } from "./marketProviders/twelveData.js";
 import { getIndianStockQuote, getMultipleStocks, getStockHistory, searchIndianStock, cleanSymbolForApi } from "./marketProviders/indianStockApi.js";
+import authRoutes from "./server/routes/authRoutes.js";
 
 // Load environment secrets
 dotenv.config();
@@ -15,6 +16,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+
+// Mount authentication routes
+app.use("/api/auth", authRoutes);
 
 // Global state to track Gemini rate limit cooldowns dynamically
 let geminiCooldownUntil = 0;

@@ -8,6 +8,7 @@ import { FullScreenAIWorkspace } from "./components/FullScreenAIWorkspace";
 import { MarketRadar } from "./components/MarketRadar";
 import { CustomCursor } from "./components/CustomCursor";
 import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
+import { AuthModal } from "./components/AuthModal";
 import { 
   Menu, 
   X, 
@@ -19,13 +20,30 @@ import {
   ShieldCheck, 
   BookOpen, 
   TrendingUp, 
-  Activity 
+  Activity,
+  LogOut
 } from "lucide-react";
 
 export default function App() {
   const [route, setRoute] = useState<string>(() => {
     return window.location.pathname || "/";
   });
+
+  const [user, setUser] = useState<any>(() => {
+    try {
+      const stored = localStorage.getItem("supabase_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("supabase_session");
+    localStorage.removeItem("supabase_user");
+    setUser(null);
+  };
 
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
@@ -227,7 +245,7 @@ export default function App() {
             </div>
 
             {/* Desktop-only status indicator */}
-            <div className="hidden md:flex items-center gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-2.5 shrink-0">
               {(() => {
                 const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
                 return (
@@ -245,6 +263,24 @@ export default function App() {
                   </div>
                 );
               })()}
+
+              {/* Authentication Trigger */}
+              {user ? (
+                <button
+                  onClick={handleSignOut}
+                  className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white/80 hover:text-white"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500/10 to-blue-500/20 hover:from-cyan-500/20 hover:to-blue-500/30 border border-cyan-500/20 hover:border-cyan-500/40 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200"
+                >
+                  <span>Sign In</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -284,7 +320,7 @@ export default function App() {
                       setIsMobileMenuOpen(false);
                       setIsAboutOpen(true);
                     }}
-                    className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-transparent text-white/60 hover:text-white flex items-center justify-between transition-all"
+                    className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-transparent text-white/60 hover:text-white flex items-center justify-between transition-all mb-1"
                   >
                     <span className="flex items-center gap-1.5">
                       <Info className="w-4 h-4 text-cyan-400" />
@@ -292,6 +328,33 @@ export default function App() {
                     </span>
                     <ChevronRight className="w-4 h-4 text-white/20" />
                   </button>
+
+                  {user ? (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-white/5 bg-white/5 text-white/80 hover:text-white flex items-center justify-between transition-all"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <LogOut className="w-4 h-4 text-cyan-400" />
+                        <span>Sign Out</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-white/20" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 text-cyan-300 hover:text-cyan-200 flex items-center justify-between transition-all"
+                    >
+                      <span>Sign In</span>
+                      <ChevronRight className="w-4 h-4 text-white/20" />
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -347,6 +410,11 @@ export default function App() {
       </div>
       {route !== "/ai" && <FloatingAIAssistant currentRoute={route} />}
       <CustomCursor />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={setUser}
+      />
 
       {/* ========================================================= */}
       {/* PREMIUM GLASS ABOUT OVERLAY MODAL */}
