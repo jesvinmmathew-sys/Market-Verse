@@ -201,7 +201,6 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
                     id="fullname-input"
                     type="text"
                     required
-                    placeholder="John Doe"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
@@ -223,7 +222,6 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
                   id="email-input"
                   type="email"
                   required
-                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
@@ -244,7 +242,6 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
                   id="password-input"
                   type="password"
                   required
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
