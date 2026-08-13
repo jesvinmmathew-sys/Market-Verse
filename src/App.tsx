@@ -8,7 +8,7 @@ import { FullScreenAIWorkspace } from "./components/FullScreenAIWorkspace";
 import { MarketRadar } from "./components/MarketRadar";
 import { CustomCursor } from "./components/CustomCursor";
 import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
-import { AuthModal } from "./components/AuthModal";
+import { AuthPage } from "./components/AuthPage";
 import { 
   Menu, 
   X, 
@@ -37,7 +37,7 @@ export default function App() {
       return null;
     }
   });
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Removed isAuthModalOpen modal state in favor of dedicated /auth page
 
   const handleSignOut = () => {
     localStorage.removeItem("supabase_session");
@@ -104,6 +104,7 @@ export default function App() {
 
   // Determine active view from current pathname
   const isAuraRoute = route === "/" || route === "/aura";
+  const isAuthRoute = route === "/auth";
   const isAIRoute = route === "/ai";
   const isPortfolioRoute = route === "/portfolio";
   const isBullishRoute = route === "/market/bullish";
@@ -124,7 +125,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#060608] text-white flex flex-col">
-      {!isAuraRoute && (
+      {!isAuraRoute && !isAuthRoute && (
         <header className="border-b border-white/5 bg-black/45 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 min-h-16 flex flex-wrap items-center justify-between gap-3 md:gap-4">
             {/* Top row elements (Branding + Mobile Indicator/Toggle) grouped for optimal spacing */}
@@ -275,7 +276,7 @@ export default function App() {
                 </button>
               ) : (
                 <button
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => navigate("/auth")}
                   className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500/10 to-blue-500/20 hover:from-cyan-500/20 hover:to-blue-500/30 border border-cyan-500/20 hover:border-cyan-500/40 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200"
                 >
                   <span>Sign In</span>
@@ -347,7 +348,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        setIsAuthModalOpen(true);
+                        navigate("/auth");
                       }}
                       className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 text-cyan-300 hover:text-cyan-200 flex items-center justify-between transition-all"
                     >
@@ -378,6 +379,8 @@ export default function App() {
                 onNavigate={navigate} 
                 onOpenAbout={() => setIsAboutOpen(true)}
               />
+            ) : isAuthRoute ? (
+              <AuthPage onNavigate={navigate} onAuthSuccess={setUser} />
             ) : isAIRoute ? (
               <FullScreenAIWorkspace onNavigate={navigate} />
             ) : isPortfolioRoute ? (
@@ -408,13 +411,8 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </div>
-      {route !== "/ai" && <FloatingAIAssistant currentRoute={route} />}
+      {route !== "/ai" && route !== "/auth" && <FloatingAIAssistant currentRoute={route} />}
       <CustomCursor />
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={setUser}
-      />
 
       {/* ========================================================= */}
       {/* PREMIUM GLASS ABOUT OVERLAY MODAL */}
