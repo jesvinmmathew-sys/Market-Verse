@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
-import { Mail, Lock, Loader2, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Loader2, AlertTriangle, CheckCircle, ArrowLeft, User } from "lucide-react";
 
 interface AuthPageProps {
   onNavigate: (path: string) => void;
@@ -10,6 +10,7 @@ interface AuthPageProps {
 
 export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(isSignUp ? { email, password, fullName } : { email, password }),
       });
 
       const data = await response.json();
@@ -43,6 +44,7 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
           setIsSignUp(false);
           setSuccessMsg(null);
           setPassword("");
+          setFullName("");
         }, 3000);
       } else {
         if (data.session) {
@@ -185,6 +187,29 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
               )}
             </AnimatePresence>
 
+            {/* Full Name input field (Signup only) */}
+            {isSignUp && (
+              <div className="space-y-1.5 animate-fadeIn">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="fullname-input">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="fullname-input"
+                    type="text"
+                    required
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Email input field */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="email-input">
@@ -252,6 +277,7 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
+                setFullName("");
                 setError(null);
                 setSuccessMsg(null);
               }}

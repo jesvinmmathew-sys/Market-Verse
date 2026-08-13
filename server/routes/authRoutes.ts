@@ -5,7 +5,7 @@ const router = Router();
 
 // POST /signup
 router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fullName } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
@@ -14,6 +14,11 @@ router.post("/signup", async (req, res) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: fullName ? {
+        data: {
+          full_name: fullName
+        }
+      } : undefined
     });
 
     if (error) {
