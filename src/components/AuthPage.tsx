@@ -64,8 +64,8 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#060608] relative" id="auth-page-container">
-      {/* LEFT COLUMN: Cinematic background video */}
-      <div className="w-full md:w-1/2 h-[40vh] md:h-screen relative flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10" id="auth-left-cinematic">
+      {/* LEFT COLUMN: Cinematic background video (60% width on desktop) */}
+      <div className="w-full md:w-[60%] h-[45vh] md:h-screen relative flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10" id="auth-left-cinematic">
         {/* Background Loop Video */}
         <div className="absolute inset-0 w-full h-full z-0 opacity-40">
           <video
@@ -86,41 +86,62 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="flex items-center gap-3.5 mb-3"
+            className="flex items-center gap-3.5 mb-2"
           >
-            <LogoMark className="w-12 h-12 text-cyan-400" />
-            <span className="text-3xl font-black tracking-widest text-white uppercase font-sans">MarketVerse</span>
+            <LogoMark className="w-14 h-14 text-cyan-400" />
+            <span className="text-4xl font-black tracking-widest text-white uppercase font-sans">MarketVerse</span>
           </motion.div>
+          
           <motion.p 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-xs text-white tracking-wider uppercase font-mono"
+            animate={{ opacity: 0.5 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="text-[10px] text-white/80 tracking-widest uppercase font-mono mb-8"
           >
             Quantum Trading Terminal
           </motion.p>
+
+          {/* Premium Taglines */}
+          <div className="space-y-4 border-t border-white/10 pt-6 w-full text-center">
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 0.8 }}
+              transition={{ delay: 0.25, duration: 0.5 }}
+              className="text-sm sm:text-base text-cyan-100 font-sans tracking-wide font-medium leading-normal"
+            >
+              "Understand markets. Predict movement. Invest smart."
+            </motion.p>
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 0.6 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="text-xs text-white/70 font-sans tracking-widest uppercase font-semibold"
+            >
+              "Rule the chart. Rule the portfolio."
+            </motion.p>
+          </div>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Light & Minimalist Form UI */}
-      <div className="w-full md:w-1/2 h-[60vh] md:h-screen bg-slate-50 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-20 relative text-left" id="auth-right-minimal">
+      {/* RIGHT COLUMN: Light & Minimalist Glassmorphism (40% width on desktop) */}
+      <div className="w-full md:w-[40%] h-[55vh] md:h-screen bg-white/70 backdrop-blur-md border-l border-white/25 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-16 relative text-left" id="auth-right-minimal">
         {/* Back navigation button */}
         <button
           onClick={() => onNavigate("/")}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors py-2 px-3 rounded-lg hover:bg-slate-100 cursor-pointer"
+          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors py-2 px-3 rounded-lg hover:bg-slate-150/40 cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Landing</span>
+          <ArrowLeft className="w-4 h-4 text-slate-500" />
+          <span className="text-slate-600">Back to Landing</span>
         </button>
 
-        {/* Inner centered form container */}
-        <div className="w-full max-w-md flex flex-col justify-center py-6">
+        {/* Inner centered form container with explicit dark text default */}
+        <div className="w-full max-w-sm flex flex-col justify-center py-6 text-slate-900">
           <div className="mb-8">
             <motion.h2 
               key={isSignUp ? "signup-title" : "login-title"}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-extrabold text-slate-850 tracking-tight font-sans"
+              className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans"
             >
               {isSignUp ? "Enter the MarketVerse." : "Welcome back."}
             </motion.h2>
