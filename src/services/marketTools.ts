@@ -1,4 +1,5 @@
 // Market Tools Layer - Functions for Real-Time Technical and Quote Analysis
+// Telemetry initialization hook - active
 
 export interface TechnicalIndicators {
   rsi: number;
