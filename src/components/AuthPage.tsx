@@ -16,6 +16,35 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  const handleResendEmail = async () => {
+    if (!verificationEmail) return;
+    setError(null);
+    setSuccessMsg(null);
+    setResendLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: verificationEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resend verification email");
+      }
+
+      setSuccessMsg(data.message || "Verification email resent successfully.");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,13 +68,8 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
       }
 
       if (isSignUp) {
-        setSuccessMsg(data.message || "Registration successful! You can now log in.");
-        setTimeout(() => {
-          setIsSignUp(false);
-          setSuccessMsg(null);
-          setPassword("");
-          setFullName("");
-        }, 3000);
+        setSuccessMsg("Registration successful! A verification link has been sent to your email.");
+        setVerificationEmail(email);
       } else {
         if (data.session) {
           localStorage.setItem("supabase_session", JSON.stringify(data.session));
@@ -58,7 +82,11 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
         onNavigate("/dashboard");
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
+      const errMsg = err.message || "An unexpected error occurred";
+      setError(errMsg);
+      if (errMsg.toLowerCase().includes("confirm") || errMsg.toLowerCase().includes("verify") || errMsg.toLowerCase().includes("active")) {
+        setVerificationEmail(email);
+      }
     } finally {
       setLoading(false);
     }
@@ -138,152 +166,227 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
 
         {/* Inner centered form container with explicit dark text default */}
         <div className="w-full max-w-sm flex flex-col justify-center py-6 text-slate-900">
-          <div className="mb-8">
-            <motion.h2 
-              key={isSignUp ? "signup-title" : "login-title"}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans"
-            >
-              {isSignUp ? "Enter the MarketVerse." : "Welcome back."}
-            </motion.h2>
-            <motion.p 
-              key={isSignUp ? "signup-sub" : "login-sub"}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.65 }}
-              className="text-sm text-slate-600 mt-2 font-medium leading-relaxed"
-            >
-              {isSignUp 
-                ? "Command your capital with next-generation analytics. Your journey starts here."
-                : "The markets are moving. Your portfolio is ready."}
-            </motion.p>
-          </div>
+          {verificationEmail ? (
+            /* Verification Screen */
+            <div>
+              <div className="mb-6 text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-cyan-50 flex items-center justify-center mb-4 border border-cyan-200">
+                  <Mail className="w-6 h-6 text-cyan-600 animate-pulse" />
+                </div>
+                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight font-sans">
+                  Verify your email
+                </h2>
+                <p className="text-sm text-slate-605 mt-3 font-medium leading-relaxed">
+                  We sent a verification link to <span className="font-bold text-slate-800">{verificationEmail}</span>. Please verify your account to access your portfolio.
+                </p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Status alerts inside the card */}
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div
+              {/* Status alerts inside the verification view */}
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200/50 text-rose-700 text-xs font-medium mb-4"
+                  >
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+
+                {successMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-xs font-medium mb-4"
+                  >
+                    <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{successMsg}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="space-y-4">
+                <button
+                  onClick={handleResendEmail}
+                  disabled={resendLoading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-[#22d3ee] border border-cyan-500/30 hover:border-cyan-500 text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-[0_0_12px_rgba(34,211,238,0.1)] cursor-pointer disabled:opacity-50"
+                >
+                  {resendLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#22d3ee]" />
+                      <span>Resending...</span>
+                    </>
+                  ) : (
+                    <span>Resend Verification Email</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setVerificationEmail(null);
+                    setIsSignUp(false);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="w-full py-2.5 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Login/Signup Form */
+            <>
+              <div className="mb-8">
+                <motion.h2 
+                  key={isSignUp ? "signup-title" : "login-title"}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200/50 text-rose-700 text-xs font-medium"
+                  className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans"
                 >
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </motion.div>
-              )}
-
-              {successMsg && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-xs font-medium"
+                  {isSignUp ? "Enter the MarketVerse." : "Welcome back."}
+                </motion.h2>
+                <motion.p 
+                  key={isSignUp ? "signup-sub" : "login-sub"}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.65 }}
+                  className="text-sm text-slate-600 mt-2 font-medium leading-relaxed"
                 >
-                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{successMsg}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {isSignUp 
+                    ? "Command your capital with next-generation analytics. Your journey starts here."
+                    : "The markets are moving. Your portfolio is ready."}
+                </motion.p>
+              </div>
 
-            {/* Full Name input field (Signup only) */}
-            {isSignUp && (
-              <div className="space-y-1.5 animate-fadeIn">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="fullname-input">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-4 h-4" />
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Status alerts inside the card */}
+                <AnimatePresence mode="wait">
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 border border-rose-200/50 text-rose-700 text-xs font-medium"
+                    >
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{error}</span>
+                    </motion.div>
+                  )}
+
+                  {successMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-50 border border-emerald-200/50 text-emerald-700 text-xs font-medium"
+                    >
+                      <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{successMsg}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Full Name input field (Signup only) */}
+                {isSignUp && (
+                  <div className="space-y-1.5 animate-fadeIn">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="fullname-input">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <input
+                        id="fullname-input"
+                        type="text"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                      />
+                    </div>
                   </div>
-                  <input
-                    id="fullname-input"
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
-                  />
+                )}
+
+                {/* Email input field */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="email-input">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="email-input"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Email input field */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="email-input">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
+                {/* Password input field */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="password-input">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="password-input"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                    />
+                  </div>
                 </div>
-                <input
-                  id="email-input"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
-                />
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 cursor-pointer disabled:opacity-50 hover:shadow-md"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <span>{isSignUp ? "Register" : "Sign In"}</span>
+                  )}
+                </button>
+              </form>
+
+              {/* Toggle Login/Signup Trigger */}
+              <div className="mt-8 text-center text-xs">
+                <span className="text-slate-500 font-medium">
+                  {isSignUp ? "Already have an account?" : "New to MarketVerse?"}
+                </span>{" "}
+                <button
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setFullName("");
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="font-bold text-[#3D81E3] hover:text-[#336ec4] transition-colors cursor-pointer ml-1"
+                >
+                  {isSignUp ? "Sign In" : "Create Account"}
+                </button>
               </div>
-            </div>
-
-            {/* Password input field */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="password-input">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  id="password-input"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 cursor-pointer disabled:opacity-50 hover:shadow-md"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <span>{isSignUp ? "Register" : "Sign In"}</span>
-              )}
-            </button>
-          </form>
-
-          {/* Toggle Login/Signup Trigger */}
-          <div className="mt-8 text-center text-xs">
-            <span className="text-slate-500 font-medium">
-              {isSignUp ? "Already have an account?" : "New to MarketVerse?"}
-            </span>{" "}
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setFullName("");
-                setError(null);
-                setSuccessMsg(null);
-              }}
-              className="font-bold text-[#3D81E3] hover:text-[#336ec4] transition-colors cursor-pointer ml-1"
-            >
-              {isSignUp ? "Sign In" : "Create Account"}
-            </button>
-          </div>
-        </div>
+            </>
+          )}
       </div>
     </div>
   );

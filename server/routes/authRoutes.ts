@@ -62,4 +62,29 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// POST /resend-verification
+router.post("/resend-verification", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({
+      message: "Verification email resent successfully.",
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "Internal server error" });
+  }
+});
+
 export default router;
