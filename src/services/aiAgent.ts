@@ -70,32 +70,40 @@ export const aiAgent = {
     } catch (error) {
       console.error("AI API Error (compareStocks for " + symbolA + " vs " + symbolB + "):", error);
       
-      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (clientApiKey) {
-        console.log("Using direct client-side Gemini fallback for comparing " + symbolA + " and " + symbolB + "...");
-        try {
-          const systemPrompt = "You are a premium institutional stock market analyst. Compare " + symbolA + " and " + symbolB + " technically, and return a JSON object ONLY matching this schema:\n" +
-            "{\n" +
-            "  \"comparisonTable\": [\n" +
-            "    { \"metric\": \"RSI (14)\", \"symbolA_value\": \"e.g. 55\", \"symbolB_value\": \"e.g. 45\" },\n" +
-            "    { \"metric\": \"Price Action\", \"symbolA_value\": \"e.g. Bullish\", \"symbolB_value\": \"e.g. Consolidating\" }\n" +
-            "  ],\n" +
-            "  \"analysisText\": \"detailed comparative analysis paragraph\",\n" +
-            "  \"winner\": \"" + symbolA + "\" | \"" + symbolB + "\" | \"Neutral\"\n" +
-            "}\n" +
-            "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
+      const apiKey = 
+        import.meta.env.VITE_GEMINI_API_KEY || 
+        import.meta.env.GEMINI_API_KEY || 
+        import.meta.env.VITE_AI_API_KEY ||
+        "";
 
-          const prompt = "Compare technical parameters, trend, and outlook for " + symbolA + " vs " + symbolB + ".";
-          const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
-          
-          const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
-          return JSON.parse(cleanedJsonStr);
-        } catch (directErr) {
-          console.error("Direct Gemini API Client-Side Fallback Error (compareStocks):", directErr);
-          throw directErr;
-        }
+      if (!apiKey) {
+        throw new Error(
+          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
+        );
       }
-      throw error;
+
+      console.log("Using direct client-side Gemini fallback for comparing " + symbolA + " and " + symbolB + "...");
+      try {
+        const systemPrompt = "You are a premium institutional stock market analyst. Compare " + symbolA + " and " + symbolB + " technically, and return a JSON object ONLY matching this schema:\n" +
+          "{\n" +
+          "  \"comparisonTable\": [\n" +
+          "    { \"metric\": \"RSI (14)\", \"symbolA_value\": \"e.g. 55\", \"symbolB_value\": \"e.g. 45\" },\n" +
+          "    { \"metric\": \"Price Action\", \"symbolA_value\": \"e.g. Bullish\", \"symbolB_value\": \"e.g. Consolidating\" }\n" +
+          "  ],\n" +
+          "  \"analysisText\": \"detailed comparative analysis paragraph\",\n" +
+          "  \"winner\": \"" + symbolA + "\" | \"" + symbolB + "\" | \"Neutral\"\n" +
+          "}\n" +
+          "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
+
+        const prompt = "Compare technical parameters, trend, and outlook for " + symbolA + " vs " + symbolB + ".";
+        const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
+        
+        const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(cleanedJsonStr);
+      } catch (directErr) {
+        console.error("Direct Gemini API Client-Side Fallback Error (compareStocks):", directErr);
+        throw directErr;
+      }
     }
   },
 
@@ -112,29 +120,37 @@ export const aiAgent = {
     } catch (error) {
       console.error("AI API Error (getMarketSummary):", error);
       
-      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (clientApiKey) {
-        console.log("Using direct client-side Gemini fallback for market summary...");
-        try {
-          const systemPrompt = "You are a premium institutional stock market analyst. Return a JSON object ONLY matching this schema:\n" +
-            "{\n" +
-            "  \"summaryText\": \"detailed market outlook summary\",\n" +
-            "  \"sentiment\": \"Positive\" | \"Negative\" | \"Consolidating\",\n" +
-            "  \"keyDrivers\": [\"driver 1\", \"driver 2\"]\n" +
-            "}\n" +
-            "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
+      const apiKey = 
+        import.meta.env.VITE_GEMINI_API_KEY || 
+        import.meta.env.GEMINI_API_KEY || 
+        import.meta.env.VITE_AI_API_KEY ||
+        "";
 
-          const prompt = "Provide a summary of the current Indian stock market indices, Nifty 50 trend, and news drivers.";
-          const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
-          
-          const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
-          return JSON.parse(cleanedJsonStr);
-        } catch (directErr) {
-          console.error("Direct Gemini API Client-Side Fallback Error (getMarketSummary):", directErr);
-          throw directErr;
-        }
+      if (!apiKey) {
+        throw new Error(
+          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
+        );
       }
-      throw error;
+
+      console.log("Using direct client-side Gemini fallback for market summary...");
+      try {
+        const systemPrompt = "You are a premium institutional stock market analyst. Return a JSON object ONLY matching this schema:\n" +
+          "{\n" +
+          "  \"summaryText\": \"detailed market outlook summary\",\n" +
+          "  \"sentiment\": \"Positive\" | \"Negative\" | \"Consolidating\",\n" +
+          "  \"keyDrivers\": [\"driver 1\", \"driver 2\"]\n" +
+          "}\n" +
+          "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
+
+        const prompt = "Provide a summary of the current Indian stock market indices, Nifty 50 trend, and news drivers.";
+        const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
+        
+        const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(cleanedJsonStr);
+      } catch (directErr) {
+        console.error("Direct Gemini API Client-Side Fallback Error (getMarketSummary):", directErr);
+        throw directErr;
+      }
     }
   }
 };

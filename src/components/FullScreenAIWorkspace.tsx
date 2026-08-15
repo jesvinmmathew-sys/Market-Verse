@@ -694,11 +694,17 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
 
       saveSessions(sessions.map(s => s.id === currentSession.id ? finalSession : s));
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       
-      let fallbackText = `### Heuristic AI Pipeline Response
-I couldn't complete the high-performance AI API call because the rate limits are busy, but my local heuristic engine has compiled standard parameters.`;
+      const errMsg = err?.message || "";
+      let fallbackText = "";
+      if (errMsg.includes("Gemini API Key Missing") || errMsg.includes("Gemini API Error") || errMsg.includes("Gemini Connection Failed") || errMsg.includes("Direct Gemini API failed")) {
+        fallbackText = errMsg;
+      } else {
+        fallbackText = ### Heuristic AI Pipeline Response
+I couldn't complete the high-performance AI API call because the rate limits are busy, but my local heuristic engine has compiled standard parameters.;
+      }
       
       let stockCardData: StockAnalysisCardData | undefined = undefined;
 

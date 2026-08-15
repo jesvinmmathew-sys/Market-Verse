@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, ArrowRight, RefreshCw, Database } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { marketVerseAI } from "../services/marketVerseAI";
@@ -71,14 +71,19 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
       
       setMessages(prev => [...prev, aiMsg]);
     } catch (error: any) {
-      const errorMsg: Message = {
-        id: `msg-${Date.now()}-error`,
-        role: "model",
-        text: `⚠️ **System Interruption**: I encountered an error connecting to my server-side AI pipelines. 
+      const errMsg = error?.message || "";
+      const text = errMsg.includes("Gemini API Key Missing") || errMsg.includes("Gemini API Error") || errMsg.includes("Gemini Connection Failed") || errMsg.includes("Direct Gemini API failed")
+        ? errMsg
+        : `âš ï¸ **System Interruption**: I encountered an error connecting to my server-side AI pipelines. 
 
 Please verify that your API key is active in settings. 
 
-*Heuristic fallbacks are available if the rate limits persist.*`
+*Heuristic fallbacks are available if the rate limits persist.*`;
+
+      const errorMsg: Message = {
+        id: `msg-${Date.now()}-error`,
+        role: "model",
+        text
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {

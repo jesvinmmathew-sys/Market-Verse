@@ -29,9 +29,16 @@ export const callGeminiDirectly = async (
   systemInstruction?: string,
   model: string = "gemini-1.5-flash"
 ): Promise<string> => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = 
+    import.meta.env.VITE_GEMINI_API_KEY || 
+    import.meta.env.GEMINI_API_KEY || 
+    import.meta.env.VITE_AI_API_KEY ||
+    "";
+
   if (!apiKey) {
-    throw new Error("Client-side VITE_GEMINI_API_KEY is not configured.");
+    throw new Error(
+      "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
+    );
   }
 
   const url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
@@ -45,22 +52,41 @@ export const callGeminiDirectly = async (
     parts: [{ text: prompt }]
   });
 
-  const requestBody: any = { contents };
+  const requestBody: any = {
+    contents,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
+  };
   if (systemInstruction) {
     requestBody.systemInstruction = {
       parts: [{ text: systemInstruction }]
     };
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody)
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody)
+    });
+  } catch (netErr: any) {
+    throw new Error("Gemini Connection Failed: " + netErr.message);
+  }
 
   if (!response.ok) {
-    const errText = await response.text();
-    throw new Error("Direct Gemini API failed: " + response.status + " - " + errText);
+    let errData;
+    try {
+      errData = await response.json();
+    } catch (parseErr) {
+      try {
+        errData = await response.text();
+      } catch (textErr) {
+        errData = "Unknown Error Response";
+      }
+    }
+    console.error("Gemini Error:", errData);
+    const detail = typeof errData === "object" ? JSON.stringify(errData) : errData;
+    throw new Error("Gemini API Error (" + response.status + "): " + detail);
   }
 
   const data = await response.json();
@@ -91,37 +117,44 @@ export const marketVerseAI = {
       console.error("AI API Error (chatWithMarketAI):", error);
       
       // Attempt direct client-side fallback
-      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (clientApiKey) {
-        console.log("Using direct client-side Gemini fallback for chat...");
-        try {
-          // Fetch live market summary context if possible
-          let marketContext = "";
-          try {
-            const newsRes = await fetch("/api/market/news");
-            if (newsRes.ok) {
-              const newsData = await newsRes.json();
-              if (newsData && newsData.length > 0) {
-                marketContext = "Current active Indian stock market news:\n" + 
-                  newsData.slice(0, 3).map((n: any) => "- " + n.title + ": " + (n.description || "")).join("\n");
-              }
-            }
-          } catch (ctxErr) {
-            // Ignore context fetch error
-          }
+      const apiKey = 
+        import.meta.env.VITE_GEMINI_API_KEY || 
+        import.meta.env.GEMINI_API_KEY || 
+        import.meta.env.VITE_AI_API_KEY ||
+        "";
 
-          const systemPrompt = "You are Nova AI (v2.5), a premium institutional Indian Stock Market Intelligence assistant. " +
-            "You specialize in technical analysis, F&O setups, block deals, and macro trends in NIFTY 50 and Indian equities. " +
-            "Answer the user's queries concisely and professionally." + 
-            (marketContext ? "\n" + marketContext : "");
-
-          return await callGeminiDirectly(question, history, systemPrompt);
-        } catch (directErr) {
-          console.error("Direct Gemini API Client-Side Fallback Error (chatWithMarketAI):", directErr);
-          throw directErr;
-        }
+      if (!apiKey) {
+        throw new Error(
+          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
+        );
       }
-      throw error;
+
+      console.log("Using direct client-side Gemini fallback for chat...");
+      try {
+        let marketContext = "";
+        try {
+          const newsRes = await fetch("/api/market/news");
+          if (newsRes.ok) {
+            const newsData = await newsRes.json();
+            if (newsData && newsData.length > 0) {
+              marketContext = "Current active Indian stock market news:\n" + 
+                newsData.slice(0, 3).map((n: any) => "- " + n.title + ": " + (n.description || "")).join("\n");
+            }
+          }
+        } catch (ctxErr) {
+          // ignore
+        }
+
+        const systemPrompt = "You are Nova AI (v2.5), a premium institutional Indian Stock Market Intelligence assistant. " +
+          "You specialize in technical analysis, F&O setups, block deals, and macro trends in NIFTY 50 and Indian equities. " +
+          "Answer the user's queries concisely and professionally." + 
+          (marketContext ? "\n" + marketContext : "");
+
+        return await callGeminiDirectly(question, history, systemPrompt);
+      } catch (directErr: any) {
+        console.error("Direct Gemini API Client-Side Fallback Error (chatWithMarketAI):", directErr);
+        throw directErr;
+      }
     }
   },
 
@@ -143,59 +176,66 @@ export const marketVerseAI = {
       console.error("AI API Error (analyzeStock for " + symbol + "):", error);
 
       // Attempt direct client-side fallback
-      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (clientApiKey) {
-        console.log("Using direct client-side Gemini fallback for analyzing " + symbol + "...");
-        try {
-          // Fetch live quote and history context from proxy endpoints
-          let quoteText = "";
-          try {
-            const quoteRes = await fetch("/api/market/quote?symbol=" + encodeURIComponent(symbol));
-            if (quoteRes.ok) {
-              const q = await quoteRes.json();
-              quoteText = "Live stock data for " + symbol + ": Price: ₹" + q.price + ", Change: " + q.change + " (" + q.percentChange + "%), High: ₹" + q.high + ", Low: ₹" + q.low + ", Vol: " + q.volume + ".";
-            }
-          } catch (ctxErr) {
-            const fallbackObj = INDIAN_STOCK_UNIVERSE.find(s => s.symbol === symbol.toUpperCase());
-            if (fallbackObj) {
-              quoteText = "Simulated stock data for " + symbol + ": Price: ₹" + (fallbackObj.price || 100) + ", Change: +1.2%, High: ₹" + ((fallbackObj.price || 100) * 1.01) + ", Low: ₹" + ((fallbackObj.price || 100) * 0.99) + ".";
-            }
-          }
+      const apiKey = 
+        import.meta.env.VITE_GEMINI_API_KEY || 
+        import.meta.env.GEMINI_API_KEY || 
+        import.meta.env.VITE_AI_API_KEY ||
+        "";
 
-          const systemPrompt = "You are a premium institutional stock market analyst. You must analyze the stock " + symbol + " and return a JSON object ONLY matching this schema:\n" +
-            "{\n" +
-            "  \"sentiment\": \"Bullish\" | \"Bearish\" | \"Neutral\",\n" +
-            "  \"confidence\": number (1-100),\n" +
-            "  \"risk\": \"Low\" | \"Medium\" | \"High\",\n" +
-            "  \"riskPercentage\": number (1-100),\n" +
-            "  \"safetyScore\": number (1-100),\n" +
-            "  \"briefNote\": \"brief analysis summary\",\n" +
-            "  \"strategyExplanation\": \"detailed strategy and analysis\",\n" +
-            "  \"reasons\": [\"reason 1\", \"reason 2\"],\n" +
-            "  \"possibleScenarios\": {\n" +
-            "    \"shortTerm\": \"short term view\",\n" +
-            "    \"mediumTerm\": \"medium term view\"\n" +
-            "  },\n" +
-            "  \"keyIndicators\": {\n" +
-            "    \"rsi\": number,\n" +
-            "    \"macd\": \"MACD description\",\n" +
-            "    \"movingAverages\": \"MA description\",\n" +
-            "    \"trend\": \"Bullish\" | \"Bearish\" | \"Neutral\"\n" +
-            "  }\n" +
-            "}\n" +
-            "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
-
-          const prompt = quoteText + "\nAnalyze the technicals, risk, and price targets for " + symbol + ".";
-          const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
-          
-          const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
-          return JSON.parse(cleanedJsonStr);
-        } catch (directErr) {
-          console.error("Direct Gemini API Client-Side Fallback Error (analyzeStock for " + symbol + "):", directErr);
-          throw directErr;
-        }
+      if (!apiKey) {
+        throw new Error(
+          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
+        );
       }
-      throw error;
+
+      console.log("Using direct client-side Gemini fallback for analyzing " + symbol + "...");
+      try {
+        let quoteText = "";
+        try {
+          const quoteRes = await fetch("/api/market/quote?symbol=" + encodeURIComponent(symbol));
+          if (quoteRes.ok) {
+            const q = await quoteRes.json();
+            quoteText = "Live stock data for " + symbol + ": Price: ₹" + q.price + ", Change: " + q.change + " (" + q.percentChange + "%), High: ₹" + q.high + ", Low: ₹" + q.low + ", Vol: " + q.volume + ".";
+          }
+        } catch (ctxErr) {
+          const fallbackObj = INDIAN_STOCK_UNIVERSE.find(s => s.symbol === symbol.toUpperCase());
+          if (fallbackObj) {
+            quoteText = "Simulated stock data for " + symbol + ": Price: ₹" + (fallbackObj.price || 100) + ", Change: +1.2%, High: ₹" + ((fallbackObj.price || 100) * 1.01) + ", Low: ₹" + ((fallbackObj.price || 100) * 0.99) + ".";
+          }
+        }
+
+        const systemPrompt = "You are a premium institutional stock market analyst. You must analyze the stock " + symbol + " and return a JSON object ONLY matching this schema:\n" +
+          "{\n" +
+          "  \"sentiment\": \"Bullish\" | \"Bearish\" | \"Neutral\",\n" +
+          "  \"confidence\": number (1-100),\n" +
+          "  \"risk\": \"Low\" | \"Medium\" | \"High\",\n" +
+          "  \"riskPercentage\": number (1-100),\n" +
+          "  \"safetyScore\": number (1-100),\n" +
+          "  \"briefNote\": \"brief analysis summary\",\n" +
+          "  \"strategyExplanation\": \"detailed strategy and analysis\",\n" +
+          "  \"reasons\": [\"reason 1\", \"reason 2\"],\n" +
+          "  \"possibleScenarios\": {\n" +
+          "    \"shortTerm\": \"short term view\",\n" +
+          "    \"mediumTerm\": \"medium term view\"\n" +
+          "  },\n" +
+          "  \"keyIndicators\": {\n" +
+          "    \"rsi\": number,\n" +
+          "    \"macd\": \"MACD description\",\n" +
+          "    \"movingAverages\": \"MA description\",\n" +
+          "    \"trend\": \"Bullish\" | \"Bearish\" | \"Neutral\"\n" +
+          "  }\n" +
+          "}\n" +
+          "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
+
+        const prompt = quoteText + "\nAnalyze the technicals, risk, and price targets for " + symbol + ".";
+        const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
+        
+        const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(cleanedJsonStr);
+      } catch (directErr: any) {
+        console.error("Direct Gemini API Client-Side Fallback Error (analyzeStock for " + symbol + "):", directErr);
+        throw directErr;
+      }
     }
   },
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, X, RefreshCw, MessageSquare, Bot, Database, TrendingUp, TrendingDown, Activity, ChevronRight, BarChart2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { marketVerseAI } from "../services/marketVerseAI";
@@ -347,8 +347,23 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ curren
               stockCard: stockCardData || undefined
             }
           ]);
-        } catch (err) {
+        } catch (err: any) {
           console.error("Autoload stock details AI failed:", err);
+          const errMsg = err?.message || "";
+          setMessages([
+            {
+              id: "auto-msg-user",
+              role: "user",
+              text: Analyze \
+            },
+            {
+              id: "auto-msg-model",
+              role: "model",
+              text: errMsg.includes("Gemini API Key Missing") || errMsg.includes("Gemini API Error") || errMsg.includes("Gemini Connection Failed") || errMsg.includes("Direct Gemini API failed")
+                ? errMsg 
+                : "âš ï¸ **AI analysis temporarily unavailable. Please try again later.**"
+            }
+          ]);
         } finally {
           setIsLoading(false);
         }
