@@ -104,9 +104,9 @@ export async function queryNovaAI(
   prompt: string, 
   history: Array<{ role: string; text: string }> = []
 ): Promise<string> {
-  const apiKey = 
-    import.meta.env.VITE_GEMINI_API_KEY || 
-    import.meta.env.GEMINI_API_KEY || 
+  const apiKey =
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
     "";
 
   if (!apiKey) {
@@ -165,6 +165,16 @@ export async function queryNovaAI(
     return "⚠️ **Network Error:** Could not connect to Gemini API. Details: " + err.message;
   }
 }
+
+// Keep callGeminiDirectly for compatibility with aiApi and aiAgent
+export const callGeminiDirectly = async (
+  prompt: string,
+  history: { role: string; text: string }[] = [],
+  systemInstruction?: string,
+  model: string = "gemini-1.5-flash"
+): Promise<string> => {
+  return queryNovaAI(prompt, history);
+};
 
 export const marketVerseAI = {
   /**

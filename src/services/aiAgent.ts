@@ -70,10 +70,9 @@ export const aiAgent = {
     } catch (error) {
       console.error("AI API Error (compareStocks for " + symbolA + " vs " + symbolB + "):", error);
       
-      const apiKey = 
-        import.meta.env.VITE_GEMINI_API_KEY || 
-        import.meta.env.GEMINI_API_KEY || 
-        import.meta.env.VITE_AI_API_KEY ||
+      const apiKey =
+        import.meta.env.VITE_GEMINI_API_KEY ||
+        (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
         "";
 
       if (!apiKey) {
@@ -120,10 +119,9 @@ export const aiAgent = {
     } catch (error) {
       console.error("AI API Error (getMarketSummary):", error);
       
-      const apiKey = 
-        import.meta.env.VITE_GEMINI_API_KEY || 
-        import.meta.env.GEMINI_API_KEY || 
-        import.meta.env.VITE_AI_API_KEY ||
+      const apiKey =
+        import.meta.env.VITE_GEMINI_API_KEY ||
+        (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
         "";
 
       if (!apiKey) {
