@@ -662,12 +662,8 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
         <div className="col-span-12 lg:col-span-2 hidden lg:flex flex-col gap-6" id="market-forces-side-rail">
           {/* Bull Card */}
           <div 
-            onClick={() => setSelectedSentiment(selectedSentiment === "bullish" ? null : "bullish")}
-            className={`rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none ${
-              selectedSentiment === "bullish" 
-                ? "bg-emerald-500/10 border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.2)]" 
-                : "bg-white/[0.02] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.04]"
-            }`}
+            onClick={() => onNavigate("/market/bullish")}
+            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.02] hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
           >
             <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Market Strength</div>
             <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400 mb-3 border border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
@@ -679,12 +675,8 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
 
           {/* Bear Card */}
           <div 
-            onClick={() => setSelectedSentiment(selectedSentiment === "bearish" ? null : "bearish")}
-            className={`rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none ${
-              selectedSentiment === "bearish" 
-                ? "bg-rose-500/10 border-rose-500/60 shadow-[0_0_15px_rgba(244,63,94,0.2)]" 
-                : "bg-white/[0.02] border-white/5 hover:border-rose-500/30 hover:bg-white/[0.04]"
-            }`}
+            onClick={() => onNavigate("/market/bearish")}
+            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-rose-500/40 hover:bg-rose-500/[0.02] hover:shadow-[0_0_15px_rgba(244,63,94,0.1)]"
           >
             <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Hedging Caution</div>
             <div className="w-10 h-10 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-400 mb-3 border border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]">

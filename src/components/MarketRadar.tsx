@@ -203,6 +203,7 @@ export const MarketRadar: React.FC<MarketRadarProps> = ({ mode, onNavigate }) =>
   };
 
   const isBull = mode === "bullish";
+  const sessionInfo = React.useMemo(() => getLastTradingSessionLabel(isBull), [isBull]);
   const themeColor = isBull ? "text-emerald-400" : "text-rose-400";
   const themeBg = isBull ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20";
   const themeBorderHover = isBull ? "hover:border-emerald-500/30 hover:shadow-[0_0_25px_rgba(16,185,129,0.1)]" : "hover:border-rose-500/30 hover:shadow-[0_0_25px_rgba(244,63,94,0.1)]";
@@ -242,16 +243,31 @@ export const MarketRadar: React.FC<MarketRadarProps> = ({ mode, onNavigate }) =>
 
         {/* Hero Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
-          <div className="space-y-3 max-w-xl">
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold font-mono uppercase tracking-widest ${themeBg} ${themeColor}`}>
-              {isBull ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-              <span>{isBull ? "Bullish Breakout Radar" : "Bearish Breakdown Radar"}</span>
+          <div className="space-y-3 max-w-2xl text-left">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold font-mono uppercase tracking-widest ${themeBg} ${themeColor}`}>
+                {isBull ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                <span>{isBull ? "Bullish Breakout Radar" : "Bearish Breakdown Radar"}</span>
+              </div>
+              
+              {/* Market Status Badge */}
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono border ${
+                sessionInfo.isOpen 
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" 
+                  : "bg-amber-500/5 border-white/10 text-white/50"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  sessionInfo.isOpen ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`} />
+                <span>{sessionInfo.statusLabel}</span>
+              </div>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-none">
-              Today's <span className={themeColor}>{isBull ? "Bullish" : "Bearish"}</span> Stocks
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight font-sans">
+              {sessionInfo.title}
             </h1>
-            <p className="text-sm text-white/50 leading-relaxed">
-              {isBull 
+            <p className="text-sm text-white/50 leading-relaxed font-sans">
+              {sessionInfo.subtitle} — {isBull 
                 ? "Real-time algorithmic scanner sorting NSE equities on cumulative bullish indicators including RSI convergence, MACD crossovers, volume weightings, and moving average breakouts."
                 : "Continuous technical analysis scan filtering Indian equities on distribution metrics, trailing moving average breakdowns, MACD signal deterioration, and weak RSI limits."
               }
@@ -407,3 +423,65 @@ export const MarketRadar: React.FC<MarketRadarProps> = ({ mode, onNavigate }) =>
     </div>
   );
 };
+
+export function getLastTradingSessionLabel(isBull: boolean): { title: string; subtitle: string; isOpen: boolean; statusLabel: string } {
+  // Get current time in IST (UTC+5.5)
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const istDate = new Date(utc + 3600000 * 5.5);
+  
+  const day = istDate.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const hours = istDate.getHours();
+  const minutes = istDate.getMinutes();
+  
+  // Market is open Mon-Fri, 9:15 AM to 3:30 PM IST
+  const timeInMinutes = hours * 60 + minutes;
+  const isOpenTime = timeInMinutes >= (9 * 60 + 15) && timeInMinutes <= (15 * 60 + 30);
+  const isWeekday = day >= 1 && day <= 5;
+  const isOpen = isWeekday && isOpenTime;
+  
+  const labelPrefix = isBull ? "Bullish" : "Bearish";
+  
+  if (isOpen) {
+    return {
+      title: `Today's Most ${labelPrefix} Stocks`,
+      subtitle: `Live Scan — Active Indian Market Session`,
+      isOpen: true,
+      statusLabel: "Market Open"
+    };
+  }
+  
+  // Market is closed. Calculate the last trading session date
+  const lastSessionDate = new Date(istDate);
+  
+  if (day === 6) { // Saturday
+    lastSessionDate.setDate(istDate.getDate() - 1); // Friday
+  } else if (day === 0) { // Sunday
+    lastSessionDate.setDate(istDate.getDate() - 2); // Friday
+  } else { // Weekday Mon-Fri
+    if (timeInMinutes < (9 * 60 + 15)) {
+      // Before market open
+      if (day === 1) { // Monday before open -> Last session was Friday
+        lastSessionDate.setDate(istDate.getDate() - 3);
+      } else { // Tue-Fri before open -> Last session was yesterday
+        lastSessionDate.setDate(istDate.getDate() - 1);
+      }
+    }
+  }
+  
+  // Format lastSessionDate as "DayOfWeek, DD MMM YYYY" (e.g. "Friday, 14 Aug 2026")
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  };
+  const formattedDate = lastSessionDate.toLocaleDateString('en-GB', options);
+  
+  return {
+    title: `Most ${labelPrefix} Stocks — Last Session`,
+    subtitle: `Historical Analysis • Closed as of ${formattedDate}`,
+    isOpen: false,
+    statusLabel: `Market Closed • As of ${formattedDate}`
+  };
+}
