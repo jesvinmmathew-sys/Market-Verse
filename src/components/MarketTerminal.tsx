@@ -366,6 +366,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   const [showWatchlistWidget, setShowWatchlistWidget] = useState(true);
   const [showHeatmapWidget, setShowHeatmapWidget] = useState(true);
   const [showStatsWidget, setShowStatsWidget] = useState(true);
+  const [selectedSentiment, setSelectedSentiment] = useState<"bullish" | "bearish" | null>(null);
 
   // Dynamic AI Market Summary State
   const [aiMarketSummary, setAiMarketSummary] = useState<string>("");
@@ -659,16 +660,38 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
         
         {/* Left Guard: Bull/Bear Market Forces Panel */}
         <div className="col-span-12 lg:col-span-2 hidden lg:flex flex-col gap-6" id="market-forces-side-rail">
-          <div className="liquid-glass rounded-xl p-4 border border-white/5 text-center flex flex-col items-center">
-            <div className="text-[10px] font-mono text-white/40 uppercase mb-2">Market Strength</div>
-            <GlowingBullModel size={100} />
-            <div className="text-[10px] text-white/50 mt-3 font-mono leading-normal">Buyers defending critical moving averages.</div>
+          {/* Bull Card */}
+          <div 
+            onClick={() => setSelectedSentiment(selectedSentiment === "bullish" ? null : "bullish")}
+            className={`rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none ${
+              selectedSentiment === "bullish" 
+                ? "bg-emerald-500/10 border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.2)]" 
+                : "bg-white/[0.02] border-white/5 hover:border-emerald-500/30 hover:bg-white/[0.04]"
+            }`}
+          >
+            <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Market Strength</div>
+            <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400 mb-3 border border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+              <TrendingUp size={20} />
+            </div>
+            <div className="text-[10px] font-bold text-emerald-400 mb-1.5 font-mono">BULL FORCE</div>
+            <div className="text-[9px] text-white/50 font-mono leading-normal">Buyers defending critical moving averages.</div>
           </div>
 
-          <div className="liquid-glass rounded-xl p-4 border border-white/5 text-center flex flex-col items-center">
-            <div className="text-[10px] font-mono text-white/40 uppercase mb-2">Hedging Caution</div>
-            <GlowingBearModel size={100} />
-            <div className="text-[10px] text-white/50 mt-3 font-mono leading-normal">Sellers watching macroeconomic resistance targets.</div>
+          {/* Bear Card */}
+          <div 
+            onClick={() => setSelectedSentiment(selectedSentiment === "bearish" ? null : "bearish")}
+            className={`rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none ${
+              selectedSentiment === "bearish" 
+                ? "bg-rose-500/10 border-rose-500/60 shadow-[0_0_15px_rgba(244,63,94,0.2)]" 
+                : "bg-white/[0.02] border-white/5 hover:border-rose-500/30 hover:bg-white/[0.04]"
+            }`}
+          >
+            <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Hedging Caution</div>
+            <div className="w-10 h-10 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-400 mb-3 border border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
+              <TrendingDown size={20} />
+            </div>
+            <div className="text-[10px] font-bold text-rose-400 mb-1.5 font-mono">BEAR FORCE</div>
+            <div className="text-[9px] text-white/50 font-mono leading-normal">Sellers watching macroeconomic resistance targets.</div>
           </div>
         </div>
 
@@ -789,6 +812,81 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Dynamic Sentiment Stock Lists Section */}
+              <AnimatePresence>
+                {selectedSentiment && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                    className={`liquid-glass rounded-xl border p-5 text-left mb-6 relative overflow-hidden ${
+                      selectedSentiment === "bullish" 
+                        ? "border-emerald-500/30 bg-emerald-500/[0.02]" 
+                        : "border-rose-500/30 bg-rose-500/[0.02]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                          selectedSentiment === "bullish" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                        }`}>
+                          {selectedSentiment === "bullish" ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                            {selectedSentiment === "bullish" ? "Active Bullish Forces Scanned" : "Active Bearish Forces Scanned"}
+                          </h4>
+                          <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                            {selectedSentiment === "bullish" ? "Top 5 Stocks Exhibiting High Momentum and Positive Inflows" : "Top 5 Stocks Exhibiting Structural Breakdowns and Downward Volatility"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedSentiment(null)}
+                        className="text-white/40 hover:text-white text-xs font-mono border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded transition-colors cursor-pointer"
+                      >
+                        CLOSE RADAR
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                      {(selectedSentiment === "bullish" ? topBullish : topBearish).map(({ stock, score }) => {
+                        const isUp = stock.percentChange >= 0;
+                        return (
+                          <div 
+                            key={stock.symbol}
+                            onClick={() => onNavigate(`/stock/${stock.symbol.toLowerCase()}`)}
+                            className="bg-[#0c0e12]/80 border border-white/5 rounded-xl p-3.5 hover:border-white/20 hover:bg-[#0c0e12] transition-all cursor-pointer flex flex-col justify-between h-32 text-left group"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-white text-xs group-hover:text-cyan-300 transition-colors">{stock.symbol}</span>
+                                <span className={`text-[10px] font-bold font-mono px-1.5 py-0.2 rounded ${
+                                  selectedSentiment === "bullish" ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                                }`}>
+                                  {score}%
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-white/40 truncate block mt-0.5">{stock.name}</span>
+                              <span className="text-[9px] text-white/5 block font-mono mt-1">{stock.sector}</span>
+                            </div>
+
+                            <div className="flex items-end justify-between border-t border-white/5 pt-2.5">
+                              <span className="text-xs font-mono font-bold text-white">₹{stock.price.toFixed(1)}</span>
+                              <span className={`text-[10px] font-bold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                                {isUp ? "+" : ""}{stock.percentChange.toFixed(2)}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Grid 1: Customizable Widgets */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="dashboard-widgets-grid">
