@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabase } from "../config/supabaseClient.js";
+import { createClient } from "@supabase/supabase-js";
 
 const router = Router();
 
@@ -81,6 +82,53 @@ router.post("/resend-verification", async (req, res) => {
 
     return res.status(200).json({
       message: "Verification email resent successfully.",
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "Internal server error" });
+  }
+});
+
+// POST /update-profile
+router.post("/update-profile", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: "No authorization header provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  const { fullName, avatarUrl } = req.body;
+
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || "https://placeholder-project.supabase.co";
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "placeholder-anon-key";
+    
+    // Instantiate a request-specific Supabase client using user JWT
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+
+    const { data, error } = await userClient.auth.updateUser({
+      data: {
+        full_name: fullName,
+        avatar_url: avatarUrl
+      }
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully.",
+      user: data.user
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || "Internal server error" });

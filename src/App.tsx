@@ -9,6 +9,7 @@ import { MarketRadar } from "./components/MarketRadar";
 import { CustomCursor } from "./components/CustomCursor";
 import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
 import { AuthPage } from "./components/AuthPage";
+import ProfileSettings from "./components/ProfileSettings";
 import { 
   Menu, 
   X, 
@@ -21,7 +22,9 @@ import {
   BookOpen, 
   TrendingUp, 
   Activity,
-  LogOut
+  LogOut,
+  User,
+  UploadCloud
 } from "lucide-react";
 
 export default function App() {
@@ -38,12 +41,37 @@ export default function App() {
     }
   });
   // Removed isAuthModalOpen modal state in favor of dedicated /auth page
+  const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
+  const avatarDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = () => {
     localStorage.removeItem("supabase_session");
     localStorage.removeItem("supabase_user");
     setUser(null);
   };
+
+  // Sync profile metadata updates
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        const stored = localStorage.getItem("supabase_user");
+        if (stored) setUser(JSON.parse(stored));
+      } catch (err) {
+        console.error("Failed to parse user on update", err);
+      }
+    };
+    window.addEventListener("aura_profile_updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("aura_profile_updated", handleProfileUpdate);
+    };
+  }, []);
+
+  // Redirect logged-in users away from landing page
+  useEffect(() => {
+    if (user && (route === "/" || route === "/aura")) {
+      navigate("/dashboard");
+    }
+  }, [user, route]);
 
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
@@ -64,6 +92,9 @@ export default function App() {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsMoreOpen(false);
+      }
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
+        setIsAvatarDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -107,6 +138,7 @@ export default function App() {
   const isAuthRoute = route === "/auth";
   const isAIRoute = route === "/ai";
   const isPortfolioRoute = route === "/portfolio";
+  const isProfileRoute = route === "/profile";
   const isBullishRoute = route === "/market/bullish";
   const isBearishRoute = route === "/market/bearish";
   const isStockRoute = route.startsWith("/stock/");
@@ -267,19 +299,67 @@ export default function App() {
 
               {/* Authentication Trigger */}
               {user ? (
-                <button
-                  onClick={handleSignOut}
-                  className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white/80 hover:text-white"
-                >
-                  <LogOut className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Sign Out</span>
-                </button>
+                <div className="relative" ref={avatarDropdownRef}>
+                  <button
+                    onClick={() => setIsAvatarDropdownOpen(!isAvatarDropdownOpen)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md hover:scale-[1.05] transition-all border border-cyan-500/20 overflow-hidden"
+                    style={{
+                      background: user.user_metadata?.avatar_url && user.user_metadata.avatar_url.startsWith("linear-gradient") ? user.user_metadata.avatar_url : "transparent",
+                      backgroundColor: user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? "transparent" : "#1e293b"
+                    }}
+                  >
+                    {user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                      <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{user.user_metadata?.full_name ? user.user_metadata.full_name[0].toUpperCase() : user.email?.[0].toUpperCase()}</span>
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {isAvatarDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-[#0c0e12]/95 backdrop-blur-xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 text-left"
+                      >
+                        <div className="px-3 py-2 border-b border-white/5 mb-1 select-none">
+                          <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Signed in as</p>
+                          <p className="text-[11px] text-white/80 truncate font-mono mt-0.5">{user.email}</p>
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            setIsAvatarDropdownOpen(false);
+                            navigate("/profile");
+                          }}
+                          className="w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                        >
+                          <User className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Profile Settings</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsAvatarDropdownOpen(false);
+                            handleSignOut();
+                          }}
+                          className="w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all flex items-center gap-2"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Logout</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ) : (
                 <button
                   onClick={() => navigate("/auth")}
-                  className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500/10 to-blue-500/20 hover:from-cyan-500/20 hover:to-blue-500/30 border border-cyan-500/20 hover:border-cyan-500/40 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200"
+                  className="text-[9px] md:text-[10px] lg:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 border border-cyan-400/20 hover:border-cyan-400/40 px-4 py-1.5 rounded-lg flex items-center gap-1.5 text-white shadow-[0_0_12px_rgba(34,211,238,0.2)]"
                 >
-                  <span>Sign In</span>
+                  <span>Get Started</span>
                 </button>
               )}
             </div>
@@ -331,29 +411,44 @@ export default function App() {
                   </button>
 
                   {user ? (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleSignOut();
-                      }}
-                      className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-white/5 bg-white/5 text-white/80 hover:text-white flex items-center justify-between transition-all"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <LogOut className="w-4 h-4 text-cyan-400" />
-                        <span>Sign Out</span>
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-white/20" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          navigate("/profile");
+                        }}
+                        className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-white/5 bg-white/5 text-white/80 hover:text-white flex items-center justify-between transition-all mb-2"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-cyan-400" />
+                          <span>Profile Settings</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-white/20" />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-red-500/10 bg-red-500/5 text-red-400 hover:text-red-300 flex items-center justify-between transition-all"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-white/20" />
+                      </button>
+                    </>
                   ) : (
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         navigate("/auth");
                       }}
-                      className="w-full text-left text-xs font-bold uppercase tracking-wider py-2.5 px-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 text-cyan-300 hover:text-cyan-200 flex items-center justify-between transition-all"
+                      className="w-full py-3 px-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold uppercase tracking-wider text-center transition-all shadow-md shadow-cyan-500/20"
                     >
-                      <span>Sign In</span>
-                      <ChevronRight className="w-4 h-4 text-white/20" />
+                      <span>Get Started</span>
                     </button>
                   )}
                 </div>
@@ -381,6 +476,8 @@ export default function App() {
               />
             ) : isAuthRoute ? (
               <AuthPage onNavigate={navigate} onAuthSuccess={setUser} />
+            ) : isProfileRoute ? (
+              <ProfileSettings onNavigate={navigate} onAuthSuccess={setUser} onLogout={handleSignOut} />
             ) : isAIRoute ? (
               <FullScreenAIWorkspace onNavigate={navigate} />
             ) : isPortfolioRoute ? (

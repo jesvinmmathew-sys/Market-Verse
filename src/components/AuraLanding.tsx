@@ -405,15 +405,14 @@ export const MarketVerseLanding: React.FC<{
             </div>
           </div>
 
-          {/* Right Action: Launch Terminal / Mobile Hamburger */}
+          {/* Right Action: Get Started / Mobile Hamburger */}
           <div className="flex items-center gap-4" id="nav-actions-container">
             <button 
-              onClick={onLaunchTerminal}
-              id="btn-nav-launch-terminal"
-              className="hidden md:flex px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all cursor-pointer items-center gap-1 shadow-[0_0_12px_rgba(34,211,238,0.12)] animate-pulse"
+              onClick={() => onNavigate("/auth")}
+              id="btn-nav-get-started"
+              className="hidden md:flex px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 text-white border border-cyan-400/20 hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer items-center gap-1 shadow-[0_0_12px_rgba(34,211,238,0.2)]"
             >
-              <TrendingUp className="w-3 h-3" />
-              <span>LAUNCH TERMINAL</span>
+              <span>Get Started</span>
             </button>
 
             {/* Mobile Hamburger Trigger */}
@@ -478,13 +477,12 @@ export const MarketVerseLanding: React.FC<{
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    onLaunchTerminal();
+                    onNavigate("/auth");
                   }}
-                  id="btn-mobile-nav-launch-terminal"
-                  className="mt-2 w-full py-3.5 rounded-xl text-center text-xs font-bold uppercase bg-gradient-to-r from-cyan-500/25 to-blue-500/15 text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/30 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                  id="btn-mobile-nav-get-started"
+                  className="mt-2 w-full py-3.5 rounded-xl text-center text-xs font-bold uppercase bg-gradient-to-r from-cyan-500 to-blue-600 text-white border border-cyan-400/20 hover:from-cyan-400 hover:to-blue-500 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(34,211,238,0.2)] animate-pulse"
                 >
-                  <TrendingUp className="w-4 h-4 text-cyan-300" />
-                  <span>LAUNCH FULL TERMINAL</span>
+                  <span>GET STARTED</span>
                 </button>
               </div>
             </motion.div>
@@ -545,21 +543,21 @@ export const MarketVerseLanding: React.FC<{
           id="hero-ctas"
         >
           <button 
-            onClick={onLaunchTerminal}
-            id="btn-explore-markets"
-            className="group inline-flex items-center justify-center gap-2 rounded-full bg-white text-black font-semibold text-sm px-6 py-3.5 transition-all hover:bg-white/90 active:scale-[0.98] cursor-pointer shadow-lg w-full sm:w-auto"
+            onClick={() => onNavigate("/auth")}
+            id="btn-get-started"
+            className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-600 text-white font-bold text-sm px-8 py-4 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-lg shadow-cyan-500/20 w-full sm:w-auto"
           >
-            <span>Explore Markets</span>
-            <ChevronRight className="w-4 h-4 text-black transition-transform duration-300 group-hover:translate-x-0.5" />
+            <span>Get Started</span>
+            <ChevronRight className="w-4 h-4 text-white transition-transform duration-300 group-hover:translate-x-0.5" />
           </button>
           
           <button 
             onClick={onLaunchTerminal}
-            id="btn-open-dashboard"
-            className="group flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-semibold text-sm cursor-pointer transition-all shadow-[0_0_20px_rgba(34,211,238,0.1)] w-full sm:w-auto"
+            id="btn-explore-platform"
+            className="group flex items-center justify-center gap-2 px-8 py-4 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm cursor-pointer transition-all w-full sm:w-auto"
           >
-            <span>Open Dashboard</span>
-            <ArrowRight className="w-4 h-4 text-cyan-300 transition-transform duration-300 group-hover:translate-x-0.5" />
+            <span>Explore Platform</span>
+            <ArrowRight className="w-4 h-4 text-white/70 transition-transform duration-300 group-hover:translate-x-0.5" />
           </button>
         </motion.div>
 
