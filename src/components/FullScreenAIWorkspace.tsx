@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   Sparkles, 
   Send, 
@@ -702,8 +702,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       if (errMsg.includes("Gemini API Key Missing") || errMsg.includes("Gemini API Error") || errMsg.includes("Gemini Connection Failed") || errMsg.includes("Direct Gemini API failed")) {
         fallbackText = errMsg;
       } else {
-        fallbackText = ### Heuristic AI Pipeline Response
-I couldn't complete the high-performance AI API call because the rate limits are busy, but my local heuristic engine has compiled standard parameters.;
+        fallbackText = "### Heuristic AI Pipeline Response\nI couldn't complete the high-performance AI API call because the rate limits are busy, but my local heuristic engine has compiled standard parameters.";
       }
       
       let stockCardData: StockAnalysisCardData | undefined = undefined;
