@@ -100,104 +100,71 @@ export const generateGeneralMarketAnalysis = (): string => {
     "*Disclaimer: Compiled directly from the quantitative local market intelligence dataset. Educational analysis only, not financial advice.*";
 };
 
-// Detect stock triggers
-const detectStockInText = (text: string) => {
-  const upper = text.toUpperCase();
-  for (const stock of INDIAN_STOCK_UNIVERSE) {
-    const symbolPattern = new RegExp("\\b" + stock.symbol + "\\b");
-    if (symbolPattern.test(upper) || upper === stock.symbol) {
-      return stock;
-    }
-  }
-  for (const stock of INDIAN_STOCK_UNIVERSE) {
-    const nameUpper = stock.name.toUpperCase();
-    if (upper.includes(stock.symbol)) {
-      return stock;
-    }
-    const cleanedName = nameUpper.replace("LIMITED", "").replace("LTD", "").trim();
-    if (cleanedName.length > 4 && upper.includes(cleanedName)) {
-      return stock;
-    }
-    if (stock.symbol === "TATAMOTORS" && upper.includes("TATA MOTORS")) return stock;
-    if (stock.symbol === "HDFCBANK" && upper.includes("HDFC")) return stock;
-    if (stock.symbol === "ICICIBANK" && upper.includes("ICICI")) return stock;
-    if (stock.symbol === "SBIN" && (upper.includes("SBI") || upper.includes("STATE BANK"))) return stock;
-  }
-  return null;
-};
-
-// Client-side helper for direct Gemini REST call
-export const callGeminiDirectly = async (
-  prompt: string,
-  history: { role: string; text: string }[] = [],
-  systemInstruction?: string,
-  model: string = "gemini-1.5-flash"
-): Promise<string> => {
+export async function queryNovaAI(
+  prompt: string, 
+  history: Array<{ role: string; text: string }> = []
+): Promise<string> {
   const apiKey = 
     import.meta.env.VITE_GEMINI_API_KEY || 
     import.meta.env.GEMINI_API_KEY || 
-    import.meta.env.VITE_AI_API_KEY ||
     "";
 
   if (!apiKey) {
-    throw new Error("API_KEY_MISSING");
+    return "⚠️ **Configuration Required:** Gemini API key is missing. Please add `VITE_GEMINI_API_KEY=your_key` to your `.env` file and restart Vite (`npm run dev`).";
   }
 
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
-  
-  const contents = history.map(msg => ({
-    role: msg.role === "assistant" || msg.role === "model" ? "model" : "user",
-    parts: [{ text: msg.text }]
-  }));
-  contents.push({
-    role: "user",
-    parts: [{ text: prompt }]
-  });
-
-  const requestBody: any = {
-    contents,
-    generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
-  };
-  if (systemInstruction) {
-    requestBody.systemInstruction = {
-      parts: [{ text: systemInstruction }]
-    };
-  }
-
-  let response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody)
-    });
-  } catch (netErr: any) {
-    throw new Error("Gemini Connection Failed: " + netErr.message);
-  }
-
-  if (!response.ok) {
-    let errData;
-    try {
-      errData = await response.json();
-    } catch (parseErr) {
-      try {
-        errData = await response.text();
-      } catch (textErr) {
-        errData = "Unknown Error Response";
-      }
+  // Format multi-turn chat history for Gemini
+  const contents = [
+    ...history.map(msg => ({
+      role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
+      parts: [{ text: msg.text }]
+    })),
+    {
+      role: 'user',
+      parts: [{ text: prompt }]
     }
-    console.error("Gemini Error:", errData);
-    const detail = typeof errData === "object" ? JSON.stringify(errData) : errData;
-    throw new Error("Gemini API Error (" + response.status + "): " + detail);
-  }
+  ];
 
-  const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error("Empty response from direct Gemini API");
+  const systemInstruction = {
+    parts: [{
+      text: "You are NOVA, the flagship AI collaborator of MarketVerse India.\n" +
+        "- Conversational Fluidity: You speak naturally, warmly, intelligently, and with authentic wit, exactly like Google Gemini.\n" +
+        "- Casual Banter: When the user says \"hi\", \"how are you\", \"who are you\", tells a joke, or asks general questions, respond like an supportive peer. Keep it concise, friendly, and completely natural.\n" +
+        "- Financial & Market Depth: When asked about Indian equities (NSE/BSE), Nifty 50, Bank Nifty, derivatives (F&O, PCR), technical setups, or macro trends, provide structured, institutional-grade analysis with clean Markdown formatting (bullets, bold levels, price targets, support/resistance).\n" +
+        "- Never act like a rigid bot or repeat robotic boilerplate disclaimer setups."
+    }]
+  };
+
+  try {
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          systemInstruction,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1200
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Gemini API Error details:", data);
+      return "⚠️ **AI API Error (" + response.status + "):** " + (data.error?.message || "Check your API key and quota.");
+    }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I didn't receive a response. Please try again.";
+  } catch (err: any) {
+    console.error("Fetch failure in queryNovaAI:", err);
+    return "⚠️ **Network Error:** Could not connect to Gemini API. Details: " + err.message;
   }
-  return text;
-};
+}
 
 export const marketVerseAI = {
   /**
@@ -217,46 +184,7 @@ export const marketVerseAI = {
       throw new Error("Server /api/ai/chat returned status " + response.status);
     } catch (error) {
       console.error("AI API Error (chatWithMarketAI):", error);
-      
-      // Attempt direct client-side fallback
-      try {
-        let marketContext = "";
-        try {
-          const newsRes = await fetch("/api/market/news");
-          if (newsRes.ok) {
-            const newsData = await newsRes.json();
-            if (newsData && newsData.length > 0) {
-              marketContext = "Current active Indian stock market news:\n" + 
-                newsData.slice(0, 3).map((n: any) => "- " + n.title + ": " + (n.description || "")).join("\n");
-            }
-          }
-        } catch (ctxErr) {
-          // ignore
-        }
-
-        const systemPrompt = "You are NOVA, the flagship AI intelligence of MarketVerse India.\n" +
-          "- You possess the natural conversational fluidity, warmth, wit, and intelligence of Gemini.\n" +
-          "- For casual banter, greetings (\"hi\", \"who are you\", \"tell me a joke\", \"how are you\"), respond naturally, warmly, and concisely like a peer.\n" +
-          "- For market, stock, crypto, or economic queries, unleash institutional-grade analytical depth on Indian markets (NSE/BSE, Nifty, Bank Nifty, equities, F&O Greeks, technical setups, support/resistance).\n" +
-          "- Format market answers with clean markdown, bullet points, and bold levels, but avoid robotic filler." +
-          (marketContext ? "\n\n" + marketContext : "");
-
-        return await callGeminiDirectly(question, history, systemPrompt);
-      } catch (directErr: any) {
-        console.error("Direct Gemini API Client-Side Fallback Error (chatWithMarketAI):", directErr);
-        
-        // Return warm conversational fallback or structured quantitative analysis fallback
-        const isCasual = /^(hi|hello|hey|who are you|how are you|tell me a joke|good morning|good afternoon|good evening|thanks|thank you)\b/i.test(question.trim());
-        if (isCasual) {
-          return "Hello! I am NOVA, your intelligent market analyst. I'm running in local offline mode right now, but I can help explain stock charts, discuss market basics, or analyze symbols (e.g., 'Analyze Reliance' or 'Compare HDFC vs ICICI')!";
-        }
-        
-        const stock = detectStockInText(question);
-        if (stock) {
-          return generateLocalInstitutionalAnalysis(stock.symbol, stock.price || 500);
-        }
-        return generateGeneralMarketAnalysis();
-      }
+      return queryNovaAI(question, history);
     }
   },
 
@@ -320,7 +248,7 @@ export const marketVerseAI = {
           "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
 
         const prompt = quoteText + "\nAnalyze the technicals, risk, and price targets for " + symbol + ".";
-        const rawResult = await callGeminiDirectly(prompt, [], systemPrompt);
+        const rawResult = await queryNovaAI(prompt, []);
         
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedJsonStr);

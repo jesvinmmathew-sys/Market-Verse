@@ -24,7 +24,7 @@ import {
   TrendingUp as TrendingUpIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { marketVerseAI } from "../services/marketVerseAI";
+import { marketVerseAI, queryNovaAI } from "../services/marketVerseAI";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
 import { NovaLogo } from "./NovaLogo";
 
@@ -675,7 +675,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       }));
 
       // Direct service backend call
-      const chatPromise = marketVerseAI.chatWithMarketAI(textToSend.trim(), serverHistory);
+      const chatPromise = queryNovaAI(textToSend.trim(), serverHistory);
       const stockCardPromise = stockDetected ? fetchFullStockAnalysis(stockDetected.symbol) : Promise.resolve(null);
 
       const [chatReply, stockCardData] = await Promise.all([chatPromise, stockCardPromise]);
