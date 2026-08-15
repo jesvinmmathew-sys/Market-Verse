@@ -389,5 +389,6 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
           )}
       </div>
     </div>
+  </div>
   );
 }
