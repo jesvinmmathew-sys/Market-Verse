@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
+import { supabase } from "../config/supabaseClient";
 import { 
   ArrowLeft, 
   User, 
@@ -52,6 +53,39 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
     }
   }, [user]);
 
+  // Load session and subscribe to auth state changes using getSession and onAuthStateChange
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          localStorage.setItem("supabase_user", JSON.stringify(session.user));
+          localStorage.setItem("supabase_session", JSON.stringify(session));
+        }
+      } catch (err) {
+        console.error("Error retrieving active session", err);
+      }
+    };
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        localStorage.setItem("supabase_user", JSON.stringify(session.user));
+        localStorage.setItem("supabase_session", JSON.stringify(session));
+      } else {
+        setUser(null);
+        localStorage.removeItem("supabase_user");
+        localStorage.removeItem("supabase_session");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -77,33 +111,34 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
     setLoading(true);
 
     try {
-      const sessionStr = localStorage.getItem("supabase_session");
-      const session = sessionStr ? JSON.parse(sessionStr) : null;
-      const token = session?.access_token;
+      // Dynamically fetch current session and user
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user;
 
-      if (!token) {
-        throw new Error("No active session found. Please log in again.");
+      if (!currentUser) {
+        throw new Error("No active auth session found! Please log in again.");
       }
 
-      const response = await fetch("/api/auth/update-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ fullName, avatarUrl })
+      // Update user metadata directly via supabase auth
+      const { data, error: updateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: fullName,
+          avatar_url: avatarUrl
+        }
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update profile");
+      if (updateError) {
+        throw updateError;
       }
 
-      // Update local storage
-      localStorage.setItem("supabase_user", JSON.stringify(data.user));
-      setUser(data.user);
-      onAuthSuccess(data.user);
+      // Update local states & storage
+      const updatedUser = data.user;
+      if (updatedUser) {
+        localStorage.setItem("supabase_user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        onAuthSuccess(updatedUser);
+      }
+
       setSuccessMsg("Profile updated successfully!");
 
       // Dispatch event for UI updates
