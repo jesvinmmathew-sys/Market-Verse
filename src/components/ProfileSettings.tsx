@@ -22,11 +22,11 @@ interface ProfileSettingsProps {
 }
 
 const AVATAR_PRESETS = [
-  "linear-gradient(135deg, #155e75 0%, #0369a1 100%)", // Cyan/Sky
-  "linear-gradient(135deg, #6d28d9 0%, #4338ca 100%)", // Violet/Indigo
-  "linear-gradient(135deg, #be185d 0%, #6b21a8 100%)", // Pink/Purple
-  "linear-gradient(135deg, #0f766e 0%, #115e59 100%)", // Teal
-  "linear-gradient(135deg, #b91c1c 0%, #c2410c 100%)"  // Red/Orange
+  "https://api.dicebear.com/9.x/bottts/svg?seed=Market1",
+  "https://api.dicebear.com/9.x/lorelei/svg?seed=Alpha",
+  "https://api.dicebear.com/9.x/adventurer/svg?seed=Trader",
+  "https://api.dicebear.com/9.x/glass/svg?seed=Verse",
+  "https://api.dicebear.com/9.x/planets/svg?seed=Nova"
 ];
 
 export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }: ProfileSettingsProps) {
@@ -154,6 +154,11 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
 
       // Dispatch event for UI updates
       window.dispatchEvent(new Event("aura_profile_updated"));
+
+      // Auto-close / redirect back to Dashboard after 600ms
+      setTimeout(() => {
+        onNavigate("/dashboard");
+      }, 600);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
     } finally {
@@ -235,18 +240,22 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
             {/* Presets / Remove Avatar Actions */}
             <div className="space-y-4 w-full">
               <div>
-                <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2 text-center md:text-left">
-                  Preset Gradients
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2.5 text-center md:text-left">
+                  Preset 3D Avatars
                 </p>
-                <div className="flex items-center justify-center md:justify-start gap-2">
+                <div className="flex items-center justify-center md:justify-start gap-2.5">
                   {AVATAR_PRESETS.map((preset, i) => (
                     <button
                       key={i}
+                      type="button"
                       onClick={() => handlePresetSelect(preset)}
-                      className="w-6 h-6 rounded-full border border-white/10 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                      style={{ background: preset }}
-                      title="Select gradient avatar"
-                    />
+                      className={`w-9 h-9 rounded-full border transition-all cursor-pointer overflow-hidden bg-slate-900 ${
+                        avatarUrl === preset ? "border-cyan-400 scale-110 ring-2 ring-cyan-400/20" : "border-white/10 hover:border-white/40 hover:scale-105"
+                      }`}
+                      title={`Select preset avatar ${i + 1}`}
+                    >
+                      <img src={preset} alt={`Preset ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    </button>
                   ))}
                 </div>
               </div>

@@ -207,7 +207,13 @@ export default function App() {
             <div className="flex items-center justify-between w-full md:w-auto gap-4 shrink-0">
               <div 
                 className="flex items-center gap-2.5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] shrink-0" 
-                onClick={() => navigate("/")} 
+                onClick={() => {
+                  if (user) {
+                    navigate("/dashboard");
+                  } else {
+                    navigate("/");
+                  }
+                }} 
                 id="global-header-brand"
               >
                 <LogoMark className="w-5.5 h-5.5 text-[#22d3ee] hover:text-[#22d3ee]/80 transition-colors" />
