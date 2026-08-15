@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
 import { Mail, Lock, Loader2, AlertTriangle, CheckCircle, ArrowLeft, User } from "lucide-react";
+import { supabase } from "../supabaseClient";
 
 interface AuthPageProps {
   onNavigate: (path: string) => void;
@@ -26,19 +27,16 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
     setResendLoading(true);
 
     try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: verificationEmail }),
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: verificationEmail,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to resend verification email");
+      if (resendError) {
+        throw resendError;
       }
 
-      setSuccessMsg(data.message || "Verification email resent successfully.");
+      setSuccessMsg("Verification email resent successfully.");
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
     } finally {
@@ -52,25 +50,34 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
     setSuccessMsg(null);
     setLoading(true);
 
-    const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/login";
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isSignUp ? { email, password, fullName } : { email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed");
-      }
-
       if (isSignUp) {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName
+            }
+          }
+        });
+
+        if (signUpError) {
+          throw signUpError;
+        }
+
         setSuccessMsg("Registration successful! A verification link has been sent to your email.");
         setVerificationEmail(email);
       } else {
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (signInError) {
+          throw signInError;
+        }
+
         if (data.session) {
           localStorage.setItem("supabase_session", JSON.stringify(data.session));
         }

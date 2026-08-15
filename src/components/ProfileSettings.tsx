@@ -58,10 +58,17 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
     const initSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          localStorage.setItem("supabase_user", JSON.stringify(session.user));
-          localStorage.setItem("supabase_session", JSON.stringify(session));
+        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+        
+        const activeUser = authUser || session?.user;
+        if (activeUser) {
+          setUser(activeUser);
+          setFullName(activeUser.user_metadata?.full_name || "");
+          setAvatarUrl(activeUser.user_metadata?.avatar_url || "");
+          localStorage.setItem("supabase_user", JSON.stringify(activeUser));
+          if (session) {
+            localStorage.setItem("supabase_session", JSON.stringify(session));
+          }
         }
       } catch (err) {
         console.error("Error retrieving active session", err);
@@ -72,10 +79,14 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
+        setFullName(session.user.user_metadata?.full_name || "");
+        setAvatarUrl(session.user.user_metadata?.avatar_url || "");
         localStorage.setItem("supabase_user", JSON.stringify(session.user));
         localStorage.setItem("supabase_session", JSON.stringify(session));
       } else {
         setUser(null);
+        setFullName("");
+        setAvatarUrl("");
         localStorage.removeItem("supabase_user");
         localStorage.removeItem("supabase_session");
       }
@@ -111,12 +122,12 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
     setLoading(true);
 
     try {
-      // Dynamically fetch current session and user
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUser = session?.user;
+      // Dynamically fetch current user and check session health
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
 
-      if (!currentUser) {
-        throw new Error("No active auth session found! Please log in again.");
+      if (!currentUser || userError) {
+        setError("No active auth session found. Please re-login.");
+        return;
       }
 
       // Update user metadata directly via supabase auth

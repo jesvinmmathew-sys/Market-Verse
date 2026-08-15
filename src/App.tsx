@@ -10,6 +10,7 @@ import { CustomCursor } from "./components/CustomCursor";
 import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
 import { AuthPage } from "./components/AuthPage";
 import ProfileSettings from "./components/ProfileSettings";
+import { supabase } from "./supabaseClient";
 import { 
   Menu, 
   X, 
@@ -44,13 +45,55 @@ export default function App() {
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Supabase signOut error", err);
+    }
     localStorage.removeItem("supabase_session");
     localStorage.removeItem("supabase_user");
     setUser(null);
   };
 
-  // Sync profile metadata updates
+  // Load session and subscribe to auth state changes using getSession and onAuthStateChange
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          localStorage.setItem("supabase_user", JSON.stringify(session.user));
+          localStorage.setItem("supabase_session", JSON.stringify(session));
+        } else {
+          setUser(null);
+          localStorage.removeItem("supabase_user");
+          localStorage.removeItem("supabase_session");
+        }
+      } catch (err) {
+        console.error("Error retrieving active session", err);
+      }
+    };
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        localStorage.setItem("supabase_user", JSON.stringify(session.user));
+        localStorage.setItem("supabase_session", JSON.stringify(session));
+      } else {
+        setUser(null);
+        localStorage.removeItem("supabase_user");
+        localStorage.removeItem("supabase_session");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Sync profile metadata updates from custom events
   useEffect(() => {
     const handleProfileUpdate = () => {
       try {
