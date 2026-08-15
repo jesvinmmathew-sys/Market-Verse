@@ -284,8 +284,9 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(true);
+  const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const [userName, setUserName] = useState("Trader");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize browser speech recognition if supported
@@ -330,6 +331,23 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
     recognitionRef.current = rec;
     return rec;
   };
+
+  // Load username from local storage user profile on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("supabase_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.user_metadata?.full_name) {
+          setUserName(u.user_metadata.full_name.split(" ")[0]);
+        } else if (u.email) {
+          setUserName(u.email.split("@")[0]);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load user info", e);
+    }
+  }, []);
 
   // Fetch full conversation sessions from localStorage on load
   useEffect(() => {
@@ -377,9 +395,10 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
 
-  // Text to Speech voice assistant speaker
-  const speakVoice = (text: string) => {
-    if (!isTextToSpeechEnabled || typeof window === "undefined" || !window.speechSynthesis) return;
+  // Text to Speech voice assistant speaker (only plays automatically if enabled, or when forced by direct interaction)
+  const speakVoice = (text: string, force: boolean = false) => {
+    if (!force && !isTextToSpeechEnabled) return;
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
     
     // Stop any speaking first
     window.speechSynthesis.cancel();
@@ -396,7 +415,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
     
-    // Attempt to find a native English or pleasant female voice
+    // Attempt to find a native English or pleasant voice
     const voices = window.speechSynthesis.getVoices();
     const chosenVoice = voices.find(v => v.lang.includes("en-US") || v.lang.includes("en-IN"));
     if (chosenVoice) utterance.voice = chosenVoice;
@@ -465,9 +484,6 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       };
 
       saveSessions(sessions.map(s => s.id === currentSession.id ? finalSession : s));
-      
-      // Speak back the response
-      speakVoice(chatReply);
 
     } catch (err) {
       console.error(err);
@@ -525,8 +541,6 @@ I couldn't complete the high-performance AI API call because the rate limits are
         ...updatedSession,
         messages: [...updatedMessages, errorMsg]
       } : s));
-
-      speakVoice("Market analysis fallback is ready.");
     } finally {
       setIsLoading(false);
     }
@@ -806,21 +820,35 @@ I couldn't complete the high-performance AI API call because the rate limits are
         {/* Conversation flow container */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent text-left"
+          className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent ${
+            activeSession && activeSession.messages.length === 0 ? "flex flex-col justify-center" : "text-left"
+          }`}
           id="workspace-conversation-scroller"
         >
-          {activeSession && activeSession.messages.length > 1 ? (
+          {activeSession && activeSession.messages.length > 0 ? (
             activeSession.messages.map((msg) => (
-              <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+              <div key={msg.id} className={`flex flex-col group ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 <div 
                   className={`max-w-[85%] rounded-2xl px-5 py-4 text-xs shadow-2xl border relative overflow-hidden leading-relaxed ${
                     msg.role === "user"
                       ? "bg-gradient-to-br from-[#3D81E3]/15 to-cyan-500/10 border-[#3D81E3]/25 text-white rounded-tr-none"
-                      : "bg-white/[0.02] border-white/5 text-white/95 rounded-tl-none font-sans"
+                      : "bg-[#101217] border-white/5 text-white/95 rounded-tl-none font-sans"
                   }`}
                 >
                   {msg.role === "model" && (
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
+                    <>
+                      <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button
+                          type="button"
+                          onClick={() => speakVoice(msg.text, true)}
+                          className="p-1 rounded bg-white/5 border border-white/10 text-cyan-400 hover:text-cyan-300 hover:bg-white/10 transition-colors cursor-pointer"
+                          title="Speak response"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </>
                   )}
                   {formatText(msg.text)}
                 </div>
@@ -834,35 +862,82 @@ I couldn't complete the high-performance AI API call because the rate limits are
             ))
           ) : (
             /* Bespoke Welcome Anchor for empty/new session state */
-            <div className="flex flex-col items-center justify-center text-center py-16 max-w-2xl mx-auto space-y-8 flex-1" id="nova-ai-welcome-hero">
-              {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
-              <div className="relative w-44 h-44 flex items-center justify-center">
-                {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-2xl animate-spin" style={{ animationDuration: '10s' }} />
-                {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
-                <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[45px]" 
-                     style={{
-                       background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
-                     }} 
-                />
-                {/* Pulsing Outer Ring */}
-                <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
-                {/* Official Nova AI Emblem */}
-                <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-4 overflow-hidden">
-                  <NovaLogo className="w-full h-full" />
+            <div className="flex flex-col items-center justify-center text-center space-y-12 py-8 flex-1 max-w-4xl mx-auto w-full animate-fade-in" id="nova-ai-welcome-hero">
+              <div className="flex flex-col items-center space-y-6">
+                {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
+                <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in">
+                  {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-xl animate-spin" style={{ animationDuration: '10s' }} />
+                  {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
+                  <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[35px]" 
+                       style={{
+                         background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
+                       }} 
+                  />
+                  {/* Pulsing Outer Ring */}
+                  <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
+                  {/* Official Nova AI Emblem */}
+                  <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
+                    <NovaLogo className="w-full h-full" />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-[#ff5c77] font-sans">
+                    Hello, {userName}
+                  </h1>
+                  <p className="text-sm md:text-base text-white/50 font-medium tracking-tight font-sans">
+                    Where should we direct market intelligence today?
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h2 className="text-sm font-bold tracking-[0.25em] text-white/40 font-mono uppercase">
-                  NOVA QUANT INTELLIGENCE
-                </h2>
-                <h1 className="text-xl md:text-2xl font-black tracking-tight text-white font-sans">
-                  Nova Market Intelligence <span className="text-cyan-400 font-mono text-lg">v2.5</span>
-                </h1>
-                <p className="text-xs text-white/50 leading-relaxed font-sans max-w-md mx-auto">
-                  Nova Market Intelligence v2.5 — Ready to analyze equities, F&O, and macroeconomic trends.
-                </p>
+              {/* Compact Prompt Cards - Gemini-style horizontal deck */}
+              <div className="w-full" id="nova-suggestions-deck">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { 
+                      icon: "⚡",
+                      title: "NIFTY 50 Momentum", 
+                      desc: "Explain Nifty 50 index momentum",
+                      prompt: "Explain Nifty 50 momentum and index trends" 
+                    },
+                    { 
+                      icon: "📊",
+                      title: "Compare HDFC vs ICICI", 
+                      desc: "Compare technical indicators of bank stocks",
+                      prompt: "Compare technical indicators of HDFC Bank vs ICICI Bank" 
+                    },
+                    { 
+                      icon: "📈",
+                      title: "High-Volume Breakouts", 
+                      desc: "Scan bullish breakouts on today's feed",
+                      prompt: "Which stocks are exhibiting bullish breakouts today?" 
+                    },
+                    { 
+                      icon: "📰",
+                      title: "Last Session Summary", 
+                      desc: "Summarize indices, block deals, and news",
+                      prompt: "Provide a summary of the last trading session indices and news" 
+                    }
+                  ].map((item) => (
+                    <button
+                      key={item.title}
+                      onClick={() => handleSendMessage(item.prompt)}
+                      className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-28 group relative"
+                    >
+                      <div className="space-y-1">
+                        <span className="text-base block">{item.icon}</span>
+                        <span className="text-[11px] font-bold text-white group-hover:text-cyan-300 transition-colors block leading-tight">
+                          {item.title}
+                        </span>
+                        <span className="text-[9px] text-white/40 block font-sans leading-snug">
+                          {item.desc}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -898,26 +973,6 @@ I couldn't complete the high-performance AI API call because the rate limits are
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Quick-query trigger chips */}
-          <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-2 mb-3" id="input-trigger-chips">
-            <span className="text-[9px] font-mono text-white/35 uppercase tracking-widest mr-1">Quick Scans:</span>
-            {[
-              { label: "$NIFTY", prompt: "Explain Nifty 50 movement today" },
-              { label: "$BANKNIFTY", prompt: "Explain Bank Nifty movement today" },
-              { label: "/breakouts", prompt: "Which stocks are exhibiting bullish breakouts today?" },
-              { label: "$RELIANCE", prompt: "Analyze Reliance stock indicators" }
-            ].map((chip) => (
-              <button
-                key={chip.label}
-                type="button"
-                onClick={() => handleSendMessage(chip.prompt)}
-                className="px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] hover:bg-cyan-500/10 hover:border-cyan-500/30 text-[9px] font-mono text-white/50 hover:text-cyan-300 transition-all cursor-pointer select-none"
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
 
           <form
             onSubmit={(e) => {
