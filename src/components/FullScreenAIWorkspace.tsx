@@ -58,9 +58,8 @@ export const GeminiWaveCanvas: React.FC<GeminiWaveCanvasProps> = ({ isFocused, i
 
     const colors = [
       'rgba(34, 211, 238, ',  // cyan
+      'rgba(139, 92, 246, ',  // violet
       'rgba(99, 102, 241, ',  // indigo
-      'rgba(236, 72, 153, ',  // pink
-      'rgba(16, 185, 129, ',  // emerald
     ];
 
     const resizeCanvas = () => {
@@ -444,6 +443,14 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = (textareaRef.current.scrollHeight > 120 ? 120 : textareaRef.current.scrollHeight) + "px";
+    }
+  }, [inputValue]);
 
   // Initialize browser speech recognition if supported
   const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -984,7 +991,7 @@ I couldn't complete the high-performance AI API call because the rate limits are
       </div>
 
       {/* Right Content Panel: ChatGPT Workspace */}
-      <div className="flex-1 flex flex-col bg-black/10 relative z-10" id="ai-chat-workspace">
+      <div className="flex-1 flex flex-col bg-[#050608]/40 relative z-10" id="ai-chat-workspace">
         
         {/* Workspace Top Header Bar */}
         <div className="h-14 border-b border-white/5 px-6 flex items-center justify-between bg-black/25">
@@ -1020,254 +1027,259 @@ I couldn't complete the high-performance AI API call because the rate limits are
         {/* Custom CSS for Shimmer and visualizer */}
         <style dangerouslySetInnerHTML={{__html: "@keyframes shimmer-loader { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } } .animate-shimmer { background-size: 200% 100%; animation: shimmer-loader 1.5s infinite linear; }"}} />
 
-
-        {/* Conversation flow container */}
-        <div 
-          ref={scrollRef}
-          className={`flex-1 overflow-y-auto p-6 md:p-10 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent ${
-            activeSession && activeSession.messages.length === 0 ? "flex flex-col justify-center" : "text-left"
-          }`}
-          id="workspace-conversation-scroller"
-        >
-          {activeSession && activeSession.messages.length > 0 ? (
-            activeSession.messages.map((msg) => (
-              <div key={msg.id} className={`flex flex-col group ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-5 py-4 text-xs shadow-2xl border relative overflow-hidden leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-gradient-to-br from-[#3D81E3]/15 to-cyan-500/10 border-[#3D81E3]/25 text-white rounded-tr-none"
-                      : "bg-[#101217] border-white/5 text-white/95 rounded-tl-none font-sans"
-                  }`}
-                >
-                  {msg.role === "model" && (
-                    <>
-                      <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
-                      <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        {speakingMsgId === msg.id && (
-                          <div className="flex items-end gap-[2px] h-3.5 px-1.5 mr-1 select-none">
-                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '12px', animationDelay: '0.1s' }} />
-                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '14px', animationDelay: '0.2s' }} />
-                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '8px', animationDelay: '0.3s' }} />
-                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '11px', animationDelay: '0.4s' }} />
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSpeak(msg.id, msg.text)}
-                          className="p-1 rounded bg-white/5 border border-white/10 text-cyan-400 hover:text-cyan-300 hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center"
-                          title={speakingMsgId === msg.id ? "Stop Reading" : "Read Aloud"}
-                        >
-                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5" />}
-                        </button>
+        {/* Centered Main Workspace container */}
+        <div className="max-w-4xl mx-auto w-full h-[calc(100vh-7.5rem)] flex flex-col justify-between px-4 relative z-10">
+          
+          {/* Conversation flow container */}
+          <div 
+            ref={scrollRef}
+            className={"flex-1 overflow-y-auto py-6 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent " + (activeSession && activeSession.messages.length === 0 ? "flex flex-col items-center justify-center text-center" : "")}
+            id="workspace-conversation-scroller"
+          >
+            {activeSession && activeSession.messages.length > 0 ? (
+              <div className="max-w-3xl mx-auto w-full space-y-6">
+                {activeSession.messages.map((msg) => {
+                  const isUser = msg.role === "user";
+                  if (isUser) {
+                    return (
+                      <div key={msg.id} className="flex flex-col items-end w-full">
+                        <div className="max-w-[70%] rounded-2xl px-4 py-2.5 text-xs bg-blue-900/20 border border-blue-500/15 backdrop-blur-md text-white font-sans rounded-tr-none shadow-md">
+                          {formatText(msg.text)}
+                        </div>
                       </div>
-                    </>
-                  )}
-                  {formatText(msg.text)}
-                </div>
+                    );
+                  } else {
+                    return (
+                      <div key={msg.id} className="flex gap-4 items-start w-full group">
+                        {/* Small Nova Icon */}
+                        <div className="w-7 h-7 rounded-full bg-[#090b0e] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
+                          <NovaLogo className="w-full h-full" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0 space-y-2 text-left">
+                          {/* Clean response text without heavy border boxes */}
+                          <div className="text-xs text-white/95 leading-relaxed font-sans">
+                            {formatText(msg.text)}
+                          </div>
 
-                {msg.stockCard && (
-                  <div className="w-full max-w-2xl self-start mt-3 animate-fade-in">
-                    <StockIntelligenceCard card={msg.stockCard} />
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            /* Bespoke Welcome Anchor for empty/new session state */
-            <div className="flex flex-col items-center justify-center text-center space-y-12 py-8 flex-1 max-w-4xl mx-auto w-full animate-fade-in" id="nova-ai-welcome-hero">
-              <div className="flex flex-col items-center space-y-6">
-                {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
-                <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in">
-                  {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-xl animate-spin" style={{ animationDuration: '10s' }} />
-                  {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
-                  <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[35px]" 
-                       style={{
-                         background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
-                       }} 
-                  />
-                  {/* Pulsing Outer Ring */}
-                  <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
-                  {/* Official Nova AI Emblem */}
-                  <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
-                    <NovaLogo className="w-full h-full" />
-                  </div>
-                </div>
+                          {msg.stockCard && (
+                            <div className="w-full max-w-2xl mt-3 animate-fade-in">
+                              <StockIntelligenceCard card={msg.stockCard} />
+                            </div>
+                          )}
 
-                <div className="space-y-3">
-                  <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-[#ff5c77] font-sans">
-                    Hello, {userName}
-                  </h1>
-                  <p className="text-sm md:text-base text-white/50 font-medium tracking-tight font-sans">
-                    Where should we direct market intelligence today?
-                  </p>
-                </div>
-              </div>
+                          {/* Action Footer */}
+                          <div className="flex items-center gap-3 pt-2 text-[10px] text-white/40 font-mono">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSpeak(msg.id, msg.text)}
+                              className="flex items-center gap-1 hover:text-cyan-300 transition-colors cursor-pointer"
+                            >
+                              {speakingMsgId === msg.id ? (
+                                <>
+                                  <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                                  <span>Stop</span>
+                                  <div className="flex items-end gap-[1.5px] h-3 px-1 select-none">
+                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '9px', animationDelay: '0.1s' }} />
+                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '11px', animationDelay: '0.2s' }} />
+                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '0.3s' }} />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                  <span>Listen</span>
+                                </>
+                              )}
+                            </button>
 
-              {/* Compact Prompt Cards - Gemini-style horizontal deck with staggered animations */}
-              <motion.div 
-                className="w-full" 
-                id="nova-suggestions-deck"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  visible: {
-                    transition: {
-                      staggerChildren: 0.08
-                    }
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(msg.text);
+                                alert("Copied to clipboard!");
+                              }}
+                              className="hover:text-cyan-300 transition-colors cursor-pointer"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
                   }
-                }}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { 
-                      icon: "⚡",
-                      title: "NIFTY 50 Momentum", 
-                      desc: "Explain Nifty 50 index momentum",
-                      prompt: "Explain Nifty 50 momentum and index trends" 
-                    },
-                    { 
-                      icon: "📊",
-                      title: "Compare HDFC vs ICICI", 
-                      desc: "Compare technical indicators of bank stocks",
-                      prompt: "Compare technical indicators of HDFC Bank vs ICICI Bank" 
-                    },
-                    { 
-                      icon: "📈",
-                      title: "High-Volume Breakouts", 
-                      desc: "Scan bullish breakouts on today's feed",
-                      prompt: "Which stocks are exhibiting bullish breakouts today?" 
-                    },
-                    { 
-                      icon: "📰",
-                      title: "Last Session Summary", 
-                      desc: "Summarize indices, block deals, and news",
-                      prompt: "Provide a summary of the last trading session indices and news" 
-                    }
-                  ].map((item) => (
-                    <motion.button
-                      key={item.title}
-                      onClick={() => handleSendMessage(item.prompt)}
-                      variants={{
-                        hidden: { opacity: 0, y: 12 },
-                        visible: { opacity: 1, y: 0 }
-                      }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-28 group relative"
-                    >
-                      <div className="space-y-1">
-                        <span className="text-base block">{item.icon}</span>
-                        <span className="text-[11px] font-bold text-white group-hover:text-cyan-300 transition-colors block leading-tight">
+                })}
+              </div>
+            ) : (
+              /* STATE A: Gemini Landing Empty State Canvas */
+              <div className="flex flex-col items-center justify-center text-center space-y-12 py-8 flex-1 max-w-2xl mx-auto w-full animate-fade-in" id="nova-ai-welcome-hero">
+                <div className="flex flex-col items-center space-y-6">
+                  {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
+                  <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in">
+                    {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-xl animate-spin" style={{ animationDuration: '10s' }} />
+                    {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
+                    <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[35px]" 
+                         style={{
+                           background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
+                         }} 
+                    />
+                    {/* Pulsing Outer Ring */}
+                    <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
+                    {/* Official Nova AI Emblem */}
+                    <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
+                      <NovaLogo className="w-full h-full" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h1 className="text-3xl font-semibold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent font-sans">
+                      Ask away, {userName}!
+                    </h1>
+                    <p className="text-xs text-white/50 leading-relaxed font-sans max-w-md mx-auto">
+                      Live NSE technical analysis, F&O momentum, and institutional market intelligence.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 Compact Suggestion Cards (2x2 Grid) */}
+                <div className="w-full max-w-xl" id="nova-suggestions-deck">
+                  <div className="grid grid-cols-2 gap-4">
+                    {String.fromCharCode(55357, 56520) !== "" && [
+                      { 
+                        title: String.fromCharCode(55357, 56520) + " Nifty 50 Breakout Scan", 
+                        prompt: "Explain Nifty 50 breakout momentum scan" 
+                      },
+                      { 
+                        title: String.fromCharCode(9889) + " High Momentum Stocks", 
+                        prompt: "Which stocks are exhibiting high momentum breakouts today?" 
+                      },
+                      { 
+                        title: String.fromCharCode(55357, 56522) + " Reliance F&O Analysis", 
+                        prompt: "Analyze Reliance F&O and option dynamics" 
+                      },
+                      { 
+                        title: String.fromCharCode(55356, 57263) + " Option Chain & PCR Analysis", 
+                        prompt: "Provide Option Chain and PCR analysis for major indices" 
+                      }
+                    ].map((item) => (
+                      <button
+                        key={item.title}
+                        onClick={() => handleSendMessage(item.prompt)}
+                        className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-200 cursor-pointer flex flex-col justify-center h-20 group"
+                      >
+                        <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block leading-tight">
                           {item.title}
                         </span>
-                        <span className="text-[9px] text-white/40 block font-sans leading-snug">
-                          {item.desc}
-                        </span>
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="flex flex-col gap-3 max-w-2xl animate-pulse">
-              <div className="bg-[#101217]/60 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-xs shadow-2xl relative overflow-hidden flex items-start gap-4">
-                {/* Glowing Pulse Beacon */}
-                <div className="relative flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="absolute w-4 h-4 rounded-full bg-cyan-500/30 animate-ping" />
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee]" />
-                </div>
-                <div className="space-y-2.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-white tracking-widest text-[10px] uppercase">
-                      NOVA MARKET ANALYST
-                    </span>
-                    <span className="text-[9px] text-cyan-400 font-mono animate-pulse">
-                      • ANALYZING
-                    </span>
-                  </div>
-                  {/* Liquid-glass shimmer bars */}
-                  <div className="space-y-2">
-                    <div className="h-2.5 w-11/12 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s' }} />
-                    <div className="h-2.5 w-5/6 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
-                    <div className="h-2.5 w-2/3 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* GeminiWaveCanvas element */}
-        <GeminiWaveCanvas isFocused={isInputFocused} isTyping={!!inputValue} />
-
-        {/* Input Bottom Console */}
-        <div className="p-6 border-t border-white/5 bg-[#090b0e]/80 backdrop-blur-xl relative z-10">
-          <AnimatePresence>
-            {speechError && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="max-w-4xl mx-auto mb-3.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono flex items-center gap-2"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span>{speechError}</span>
-              </motion.div>
             )}
-          </AnimatePresence>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage(inputValue);
-            }}
-            className="max-w-4xl mx-auto flex items-center gap-3 relative"
-          >
-            {/* Dictate Speech Microphone button */}
-            <button
-              type="button"
-              onClick={handleToggleVoiceInput}
-              className={`p-3.5 rounded-xl border transition-all flex items-center justify-center flex-shrink-0 cursor-pointer ${
-                isListening 
-                  ? "bg-rose-500/25 border-rose-500/40 text-rose-400 animate-pulse" 
-                  : "bg-white/[0.01] border-white/10 text-white/55 hover:text-white hover:bg-white/[0.06]"
-              }`}
-              title={isListening ? "Listening... Speak now." : "Start Voice Input"}
-            >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            </button>
+            {isLoading && (
+              <div className="flex flex-col gap-3 max-w-2xl animate-pulse">
+                <div className="bg-[#101217]/60 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-xs shadow-2xl relative overflow-hidden flex items-start gap-4">
+                  {/* Glowing Pulse Beacon */}
+                  <div className="relative flex items-center justify-center flex-shrink-0 mt-1">
+                    <span className="absolute w-4 h-4 rounded-full bg-cyan-500/30 animate-ping" />
+                    <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee]" />
+                  </div>
+                  <div className="space-y-2.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-white tracking-widest text-[10px] uppercase">
+                        NOVA MARKET ANALYST
+                      </span>
+                      <span className="text-[9px] text-cyan-400 font-mono animate-pulse">
+                        â€¢ ANALYZING
+                      </span>
+                    </div>
+                    {/* Liquid-glass shimmer bars */}
+                    <div className="space-y-2">
+                      <div className="h-2.5 w-11/12 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s' }} />
+                      <div className="h-2.5 w-5/6 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                      <div className="h-2.5 w-2/3 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-            <div className="relative flex-1 flex items-center">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
-                className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] font-sans shadow-inner transition-all duration-200"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={!inputValue.trim() || isLoading}
-                className={`absolute right-2 p-2.5 rounded-lg transition-all flex items-center justify-center cursor-pointer ${
-                  inputValue.trim() && !isLoading
-                    ? "bg-[#3D81E3] hover:bg-[#3D81E3]/80 text-white shadow-lg shadow-[#3D81E3]/25"
-                    : "bg-white/5 text-white/20 cursor-not-allowed"
-                }`}
-              >
-                <Send className="w-4 h-4" />
-              </button>
+          {/* Input Area Wrapper */}
+          <div className="relative w-full z-10 pt-2 pb-6">
+            {/* GeminiWaveCanvas element */}
+            <div className="relative max-w-4xl mx-auto w-full">
+              <GeminiWaveCanvas isFocused={isInputFocused} isTyping={!!inputValue} />
             </div>
-          </form>
 
-          {/* Micro disclaimer footer */}
-          <div className="text-[9px] text-white/20 text-center font-mono mt-3">
-            Interactive voice assistance is subject to browser permissions and API availability. 
+            {/* Input Bottom Console */}
+            <div className="w-full">
+              <AnimatePresence>
+                {speechError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="mb-3.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono flex items-center gap-2"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span>{speechError}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage(inputValue);
+                }}
+                className="flex items-center gap-3 relative"
+              >
+                {/* Dictate Speech Microphone button */}
+                <button
+                  type="button"
+                  onClick={handleToggleVoiceInput}
+                  className={"p-3.5 rounded-2xl border transition-all flex items-center justify-center flex-shrink-0 cursor-pointer " + (isListening ? "bg-rose-500/25 border-rose-500/40 text-rose-400 animate-pulse" : "bg-white/[0.01] border-white/10 text-white/55 hover:text-white hover:bg-white/[0.06]")}
+                  title={isListening ? "Listening... Speak now." : "Start Voice Input"}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+
+                <div className="relative flex-1 flex items-center">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(inputValue);
+                      }
+                    }}
+                    placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
+                    className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-2xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] font-sans shadow-inner transition-all duration-200 resize-none overflow-y-auto max-h-[120px] scrollbar-none align-middle"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputValue.trim() || isLoading}
+                    className={"absolute right-2.5 p-2 rounded-full transition-all flex items-center justify-center cursor-pointer " + (inputValue.trim() && !isLoading ? "bg-[#3D81E3] hover:bg-[#3D81E3]/80 text-white shadow-lg shadow-[#3D81E3]/25" : "bg-white/5 text-white/20 cursor-not-allowed")}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+
+              {/* Micro disclaimer footer */}
+              <div className="text-[9px] text-white/20 text-center font-mono mt-3">
+                Interactive voice assistance is subject to browser permissions and API availability. 
+              </div>
+            </div>
           </div>
         </div>
       </div>
