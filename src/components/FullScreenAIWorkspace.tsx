@@ -350,24 +350,9 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
     // Seed default session if empty
     const defaultSession: ChatSession = {
       id: "session-default",
-      title: "Reliance Technical Breakout",
+      title: "New Intelligence Session",
       timestamp: Date.now(),
-      messages: [
-        {
-          id: "welcome-msg",
-          role: "model",
-          text: `### Welcome to NOVA AI Workspace
-I am **NOVA**, your intelligent **Indian Market Analyst**. Here, you can interact with me in a premium, full-screen environment.
-
-**How I can help:**
-1. **Analyze Indian Stocks**: Ask "Analyze RELIANCE" or "How is Tata Motors today?"
-2. **Technical Comparisons**: Ask "Compare SBI vs ICICI Bank" or "Compare TCS and Infosys".
-3. **Market Indexes**: Ask "Explain today's Nifty 50 movement".
-4. **General Q&As**: Speak naturally about risk profiling, portfolio allocation, or technical indicators.
-
-**Try out Voice Interaction!** Toggle the Microphone button to dictate your queries, and toggle the speaker button to hear me talk back.`
-        }
-      ]
+      messages: []
     };
     setSessions([defaultSession]);
     setActiveSessionId("session-default");
@@ -436,9 +421,12 @@ I am **NOVA**, your intelligent **Indian Market Analyst**. Here, you can interac
     // Update active session locally
     const updatedMessages = [...currentSession.messages, userMsg];
     let updatedTitle = currentSession.title;
-    if (currentSession.messages.length <= 1) {
-      // Auto-title from first user prompt
-      updatedTitle = textToSend.trim().slice(0, 24) + (textToSend.length > 24 ? "..." : "");
+    if (currentSession.messages.length === 0 || currentSession.title === "New Intelligence Session" || currentSession.title === "New Market Conversation" || currentSession.title === "Reliance Technical Breakout") {
+      if (stockDetected) {
+        updatedTitle = `${stockDetected.symbol} Analysis`;
+      } else {
+        updatedTitle = textToSend.trim().slice(0, 24) + (textToSend.length > 24 ? "..." : "");
+      }
     }
 
     const updatedSession: ChatSession = {
@@ -548,18 +536,9 @@ I couldn't complete the high-performance AI API call because the rate limits are
     const newId = `session-${Date.now()}`;
     const newSession: ChatSession = {
       id: newId,
-      title: "New Market Conversation",
+      title: "New Intelligence Session",
       timestamp: Date.now(),
-      messages: [
-        {
-          id: `welcome-${Date.now()}`,
-          role: "model",
-          text: `### Active Workspace Clean Session
-I have opened a new market conversation track for you.
-
-Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask generic macroeconomic queries to start.`
-        }
-      ]
+      messages: []
     };
     const updated = [newSession, ...sessions];
     saveSessions(updated);
@@ -572,15 +551,9 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
       // Just clear history messages
       const cleared: ChatSession = {
         id: "session-default",
-        title: "Reliance Technical Breakout",
+        title: "New Intelligence Session",
         timestamp: Date.now(),
-        messages: [
-          {
-            id: `wel-${Date.now()}`,
-            role: "model",
-            text: "Session cleared. Ask me anything to begin!"
-          }
-        ]
+        messages: []
       };
       saveSessions([cleared]);
       setActiveSessionId("session-default");
@@ -861,27 +834,33 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
             ))
           ) : (
             /* Bespoke Welcome Anchor for empty/new session state */
-            <div className="flex flex-col items-center justify-center text-center py-10 max-w-2xl mx-auto space-y-6" id="nova-ai-welcome-hero">
-              {/* Animated Liquid-Glass Nova AI Core orb */}
-              <div className="relative w-36 h-36 flex items-center justify-center">
-                {/* Rotational Aura */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-cyan-500/20 blur-xl animate-spin" style={{ animationDuration: '8s' }} />
+            <div className="flex flex-col items-center justify-center text-center py-16 max-w-2xl mx-auto space-y-8 flex-1" id="nova-ai-welcome-hero">
+              {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
+              <div className="relative w-44 h-44 flex items-center justify-center">
+                {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-2xl animate-spin" style={{ animationDuration: '10s' }} />
+                {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
+                <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[45px]" 
+                     style={{
+                       background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
+                     }} 
+                />
                 {/* Pulsing Outer Ring */}
-                <div className="absolute inset-2 rounded-full border border-cyan-500/30 animate-pulse bg-cyan-900/10 shadow-[0_0_30px_rgba(34,211,238,0.2)]" />
-                {/* Multi-layered Liquid-Glass Core */}
-                <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-cyan-400 p-0.5 shadow-2xl overflow-hidden group">
-                  <div className="w-full h-full rounded-full bg-[#050608]/90 backdrop-blur-md flex items-center justify-center overflow-hidden relative">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-transparent to-indigo-500/30 animate-pulse" />
-                    <Sparkles className="w-10 h-10 text-cyan-400 animate-pulse" />
-                  </div>
+                <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
+                {/* Official Nova AI Emblem */}
+                <div className="relative w-32 h-32 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-4 overflow-hidden">
+                  <NovaLogo className="w-full h-full" />
                 </div>
               </div>
 
-              <div className="space-y-2.5">
-                <h2 className="text-xl md:text-2xl font-black tracking-tight text-white font-sans">
-                  Nova Market Intelligence <span className="text-cyan-400 font-mono">v2.5</span>
+              <div className="space-y-3">
+                <h2 className="text-sm font-bold tracking-[0.25em] text-white/40 font-mono uppercase">
+                  NOVA QUANT INTELLIGENCE
                 </h2>
-                <p className="text-xs text-white/60 leading-relaxed font-sans max-w-lg mx-auto">
+                <h1 className="text-xl md:text-2xl font-black tracking-tight text-white font-sans">
+                  Nova Market Intelligence <span className="text-cyan-400 font-mono text-lg">v2.5</span>
+                </h1>
+                <p className="text-xs text-white/50 leading-relaxed font-sans max-w-md mx-auto">
                   Nova Market Intelligence v2.5 — Ready to analyze equities, F&O, and macroeconomic trends.
                 </p>
               </div>
@@ -904,59 +883,8 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
           )}
         </div>
 
-        {/* Suggestions Panel (Enhanced Suggested Intelligence Deck) */}
-        {activeSession && activeSession.messages.length <= 1 && (
-          <div className="max-w-4xl mx-auto w-full px-6 pb-6 text-left animate-fade-in" id="nova-suggestions-deck">
-            <span className="text-[10px] text-cyan-400/60 font-mono uppercase tracking-widest block mb-4">Suggested Intelligence Prompts:</span>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { 
-                  category: "MOMENTUM", 
-                  title: "Which stocks are bullish?", 
-                  desc: "Scan active indicators for positive breakouts.",
-                  prompt: "Which stocks are bullish today?" 
-                },
-                { 
-                  category: "DERIVATIVES", 
-                  title: "Analyze Reliance F&O", 
-                  desc: "Calculate derivative flows & support/resistance.",
-                  prompt: "Analyze RELIANCE" 
-                },
-                { 
-                  category: "MACRO", 
-                  title: "Platform Identity & Core", 
-                  desc: "Review NOVA's quantitative methodology.",
-                  prompt: "Who am I?" 
-                }
-              ].map((item) => (
-                <button
-                  key={item.title}
-                  onClick={() => handleSendMessage(item.prompt)}
-                  className="p-4 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-[#3D81E3]/5 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-36 group relative overflow-hidden"
-                >
-                  <div>
-                    <span className="inline-block text-[8px] font-black font-mono tracking-widest px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 mb-3">
-                      {item.category}
-                    </span>
-                    <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block leading-snug">
-                      {item.title}
-                    </span>
-                    <span className="text-[10px] text-white/40 mt-1 block font-sans leading-normal">
-                      {item.desc}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-cyan-400/60 group-hover:text-cyan-300 mt-2.5 transition-colors self-end">
-                    <span>Launch Analysis</span>
-                    <ChevronRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Input Bottom Console */}
-        <div className="p-6 border-t border-white/5 bg-black/25 relative">
+        <div className="p-6 border-t border-white/5 bg-[#090b0e]/80 backdrop-blur-xl relative">
           <AnimatePresence>
             {speechError && (
               <motion.div
@@ -972,19 +900,19 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
           </AnimatePresence>
 
           {/* Quick-query trigger chips */}
-          <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-2 mb-3.5" id="input-trigger-chips">
+          <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-2 mb-3" id="input-trigger-chips">
             <span className="text-[9px] font-mono text-white/35 uppercase tracking-widest mr-1">Quick Scans:</span>
             {[
               { label: "$NIFTY", prompt: "Explain Nifty 50 movement today" },
-              { label: "$RELIANCE", prompt: "Analyze Reliance stock indicators" },
-              { label: "/scan-bulls", prompt: "Which stocks are bullish today?" },
-              { label: "/scan-bears", prompt: "Which stocks are bearish today?" }
+              { label: "$BANKNIFTY", prompt: "Explain Bank Nifty movement today" },
+              { label: "/breakouts", prompt: "Which stocks are exhibiting bullish breakouts today?" },
+              { label: "$RELIANCE", prompt: "Analyze Reliance stock indicators" }
             ].map((chip) => (
               <button
                 key={chip.label}
                 type="button"
                 onClick={() => handleSendMessage(chip.prompt)}
-                className="px-2.5 py-1 rounded-md border border-white/5 bg-white/[0.02] hover:bg-cyan-500/10 hover:border-cyan-500/30 text-[9px] font-mono text-white/60 hover:text-cyan-300 transition-all cursor-pointer select-none"
+                className="px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] hover:bg-cyan-500/10 hover:border-cyan-500/30 text-[9px] font-mono text-white/50 hover:text-cyan-300 transition-all cursor-pointer select-none"
               >
                 {chip.label}
               </button>
