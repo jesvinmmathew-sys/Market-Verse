@@ -129,7 +129,7 @@ const detectStockInText = (text: string) => {
 // Client-side helper for direct Gemini REST call
 export const callGeminiDirectly = async (
   prompt: string,
-  history: { role: "user" | "model"; text: string }[] = [],
+  history: { role: string; text: string }[] = [],
   systemInstruction?: string,
   model: string = "gemini-1.5-flash"
 ): Promise<string> => {
@@ -145,9 +145,9 @@ export const callGeminiDirectly = async (
 
   const url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
   
-  const contents = history.map(h => ({
-    role: h.role === "user" ? "user" : "model",
-    parts: [{ text: h.text }]
+  const contents = history.map(msg => ({
+    role: msg.role === "assistant" || msg.role === "model" ? "model" : "user",
+    parts: [{ text: msg.text }]
   }));
   contents.push({
     role: "user",
@@ -203,7 +203,7 @@ export const marketVerseAI = {
   /**
    * Complete natural language chat with conversation memory support.
    */
-  async chatWithMarketAI(question: string, history: { role: "user" | "model"; text: string }[] = []): Promise<string> {
+  async chatWithMarketAI(question: string, history: { role: string; text: string }[] = []): Promise<string> {
     try {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
@@ -234,20 +234,23 @@ export const marketVerseAI = {
           // ignore
         }
 
-        const systemPrompt = "You are Nova AI (v2.5), a premium institutional Indian Stock Market Intelligence assistant. " +
-          "You specialize in technical analysis, F&O setups, block deals, and macro trends in NIFTY 50 and Indian equities. " +
-          "Answer the user's queries concisely and professionally. Always frame your analysis with the structured 4 sections:\n" +
-          "1. 📊 Market Trend & Key Price Action\n" +
-          "2. 🎯 Key Technical Levels\n" +
-          "3. ⚡ F&O / Derivatives Signals\n" +
-          "4. 🛡️ Risk Management & Strategy\n" +
-          (marketContext ? "\n" + marketContext : "");
+        const systemPrompt = "You are NOVA, the flagship AI intelligence of MarketVerse India.\n" +
+          "- You possess the natural conversational fluidity, warmth, wit, and intelligence of Gemini.\n" +
+          "- For casual banter, greetings (\"hi\", \"who are you\", \"tell me a joke\", \"how are you\"), respond naturally, warmly, and concisely like a peer.\n" +
+          "- For market, stock, crypto, or economic queries, unleash institutional-grade analytical depth on Indian markets (NSE/BSE, Nifty, Bank Nifty, equities, F&O Greeks, technical setups, support/resistance).\n" +
+          "- Format market answers with clean markdown, bullet points, and bold levels, but avoid robotic filler." +
+          (marketContext ? "\n\n" + marketContext : "");
 
         return await callGeminiDirectly(question, history, systemPrompt);
       } catch (directErr: any) {
         console.error("Direct Gemini API Client-Side Fallback Error (chatWithMarketAI):", directErr);
         
-        // Return beautiful structured local quantitative analysis fallback
+        // Return warm conversational fallback or structured quantitative analysis fallback
+        const isCasual = /^(hi|hello|hey|who are you|how are you|tell me a joke|good morning|good afternoon|good evening|thanks|thank you)\b/i.test(question.trim());
+        if (isCasual) {
+          return "Hello! I am NOVA, your intelligent market analyst. I'm running in local offline mode right now, but I can help explain stock charts, discuss market basics, or analyze symbols (e.g., 'Analyze Reliance' or 'Compare HDFC vs ICICI')!";
+        }
+        
         const stock = detectStockInText(question);
         if (stock) {
           return generateLocalInstitutionalAnalysis(stock.symbol, stock.price || 500);
