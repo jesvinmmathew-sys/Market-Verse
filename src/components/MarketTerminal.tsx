@@ -153,6 +153,7 @@ interface MarketTerminalProps {
   onNavigate: (path: string) => void;
   watchlist: string[];
   onToggleWatchlist: (symbol: string) => void;
+  user?: any;
 }
 
 const LESSONS: Lesson[] = [
@@ -330,7 +331,8 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   currentRoute, 
   onNavigate,
   watchlist,
-  onToggleWatchlist
+  onToggleWatchlist,
+  user
 }) => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);

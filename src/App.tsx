@@ -526,7 +526,7 @@ export default function App() {
             ) : isAuthRoute ? (
               <AuthPage onNavigate={navigate} onAuthSuccess={setUser} />
             ) : isProfileRoute ? (
-              <ProfileSettings onNavigate={navigate} onAuthSuccess={setUser} onLogout={handleSignOut} />
+              <ProfileSettings onNavigate={navigate} onAuthSuccess={setUser} onLogout={handleSignOut} user={user} />
             ) : isAIRoute ? (
               <FullScreenAIWorkspace onNavigate={navigate} />
             ) : isPortfolioRoute ? (
@@ -552,6 +552,7 @@ export default function App() {
                 onNavigate={navigate} 
                 watchlist={watchlist} 
                 onToggleWatchlist={handleToggleWatchlist} 
+                user={user}
               />
             )}
           </motion.div>

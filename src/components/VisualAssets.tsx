@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Sparkles, TrendingUp, TrendingDown, RefreshCw, Zap } from "lucide-react";
 import { motion, useMotionValue, useTransform, useSpring } from "motion/react";
 
-const greenBullImg = new URL("../assets/images/green_bull_market_1782602289763.jpg", import.meta.url).href;
-const redBearImg = new URL("../assets/images/red_bear_market_1782602304881.jpg", import.meta.url).href;
+
 
 // Floating Financial Particles background canvas
 export const FloatingFinancialParticles: React.FC = () => {
@@ -278,14 +277,11 @@ export const GlowingBullModel: React.FC<{ size?: number }> = ({ size = 180 }) =>
         />
 
         {/* Image Frame */}
-        <div className="relative z-10 w-full flex-1 rounded-xl overflow-hidden border border-emerald-500/15 bg-black">
-          <img
-            src={greenBullImg}
-            alt="Bullish Trend Scene (Green Bull)"
-            className="w-full h-full object-cover filter brightness-[1.05] contrast-[1.2] group-hover:scale-105 transition-transform duration-700"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        <div className="relative z-10 w-full flex-1 rounded-xl overflow-hidden border border-emerald-500/15 bg-emerald-950/20 flex flex-col items-center justify-center p-6 shadow-inner">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <TrendingUp size={36} className="animate-pulse" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
         </div>
 
         {/* Badge & Meta Label */}
@@ -403,14 +399,11 @@ export const GlowingBearModel: React.FC<{ size?: number }> = ({ size = 180 }) =>
         />
 
         {/* Image Frame */}
-        <div className="relative z-10 w-full flex-1 rounded-xl overflow-hidden border border-rose-500/15 bg-black">
-          <img
-            src={redBearImg}
-            alt="Bearish Trend Scene (Red Bear)"
-            className="w-full h-full object-cover filter brightness-[1.05] contrast-[1.2] group-hover:scale-105 transition-transform duration-700"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        <div className="relative z-10 w-full flex-1 rounded-xl overflow-hidden border border-rose-500/15 bg-rose-950/20 flex flex-col items-center justify-center p-6 shadow-inner">
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
+            <TrendingDown size={36} className="animate-pulse" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
         </div>
 
         {/* Badge & Meta Label */}

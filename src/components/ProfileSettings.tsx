@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
-import { supabase } from "../config/supabaseClient";
+import { supabase } from "../supabaseClient";
 import { 
   ArrowLeft, 
   User, 
@@ -19,6 +19,7 @@ interface ProfileSettingsProps {
   onNavigate: (path: string) => void;
   onAuthSuccess: (user: any) => void;
   onLogout: () => void;
+  user?: any;
 }
 
 const AVATAR_PRESETS = [
@@ -29,8 +30,9 @@ const AVATAR_PRESETS = [
   "https://api.dicebear.com/9.x/planets/svg?seed=Nova"
 ];
 
-export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }: ProfileSettingsProps) {
+export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, user: propUser }: ProfileSettingsProps) {
   const [user, setUser] = useState<any>(() => {
+    if (propUser) return propUser;
     try {
       const stored = localStorage.getItem("supabase_user");
       return stored ? JSON.parse(stored) : null;
@@ -47,11 +49,12 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout }:
 
   // Sync state if user changes
   useEffect(() => {
-    if (user) {
-      setFullName(user.user_metadata?.full_name || "");
-      setAvatarUrl(user.user_metadata?.avatar_url || "");
+    if (propUser) {
+      setUser(propUser);
+      setFullName(propUser.user_metadata?.full_name || "");
+      setAvatarUrl(propUser.user_metadata?.avatar_url || "");
     }
-  }, [user]);
+  }, [propUser]);
 
   // Load session and subscribe to auth state changes using getSession and onAuthStateChange
   useEffect(() => {
