@@ -680,62 +680,113 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
     });
   };
 
+  // Group sessions by date range for sidebar category grouping
+  const groupedSessions = React.useMemo(() => {
+    const today: ChatSession[] = [];
+    const past7Days: ChatSession[] = [];
+    const older: ChatSession[] = [];
+    
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    
+    sessions.forEach(s => {
+      const diff = now - s.timestamp;
+      if (diff < oneDayMs) {
+        today.push(s);
+      } else if (diff < 7 * oneDayMs) {
+        past7Days.push(s);
+      } else {
+        older.push(s);
+      }
+    });
+    
+    return { today, past7Days, older };
+  }, [sessions]);
+
+  const renderSidebarSessionItem = (s: ChatSession) => {
+    const isActive = s.id === activeSessionId;
+    return (
+      <div 
+        key={s.id}
+        onClick={() => setActiveSessionId(s.id)}
+        className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
+          isActive 
+            ? "bg-[#3D81E3]/15 border-[#3D81E3]/25 text-white" 
+            : "border-transparent hover:bg-white/[0.02] text-white/60 hover:text-white"
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "text-cyan-400" : "text-white/30"}`} />
+          <span className="text-xs font-medium truncate tracking-wide">{s.title}</span>
+        </div>
+        <button 
+          onClick={(e) => handleDeleteSession(s.id, e)}
+          className="p-1 rounded-md text-white/20 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity transition-colors cursor-pointer ml-1"
+          title="Delete Session"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-1 h-[calc(100vh-4rem)] bg-[#050608] overflow-hidden" id="full-screen-ai-workspace">
       {/* Dynamic Background Accents */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3D81E3]/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/5 blur-[120px] pointer-events-none" />
 
-      {/* Left Sidebar: Session History (ChatGPT-style) */}
-      <div className="w-80 border-r border-white/5 bg-black/40 backdrop-blur-md flex flex-col hidden md:flex relative z-10" id="ai-sidebar">
+      {/* Left Sidebar: Session History (Dark liquid-glass styling) */}
+      <div className="w-80 border-r border-white/5 bg-[#090b0e]/70 backdrop-blur-xl flex flex-col hidden md:flex relative z-10 shadow-2xl" id="ai-sidebar">
         {/* Sidebar Header */}
         <div className="p-4 border-b border-white/5">
           <button 
             onClick={handleCreateNewSession}
-            className="w-full py-3 px-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.08] text-white text-xs font-bold font-mono tracking-wider uppercase transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 text-white text-xs font-bold font-mono tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-cyan-500/5"
           >
             <Plus className="w-4 h-4 text-cyan-400" />
-            <span>New Chat</span>
+            <span>+ New Analysis</span>
           </button>
         </div>
 
-        {/* Sessions list */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-white/5">
-          <div className="text-[10px] text-white/40 font-mono uppercase tracking-widest px-3 mb-2 flex items-center gap-1.5">
-            <History className="w-3 h-3" />
-            <span>Chat History</span>
-          </div>
-          
-          {sessions.map((s) => {
-            const isActive = s.id === activeSessionId;
-            return (
-              <div 
-                key={s.id}
-                onClick={() => setActiveSessionId(s.id)}
-                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
-                  isActive 
-                    ? "bg-[#3D81E3]/15 border border-[#3D81E3]/20 text-white" 
-                    : "hover:bg-white/[0.02] text-white/60 hover:text-white"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "text-cyan-400" : "text-white/30"}`} />
-                  <span className="text-xs font-medium truncate tracking-wide">{s.title}</span>
-                </div>
-                <button 
-                  onClick={(e) => handleDeleteSession(s.id, e)}
-                  className="p-1 rounded-md text-white/20 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity transition-colors cursor-pointer ml-1"
-                  title="Delete Session"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
+        {/* Grouped Sessions list */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4 scrollbar-thin scrollbar-thumb-white/5">
+          {/* Today Group */}
+          {groupedSessions.today.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[9px] text-white/30 font-mono uppercase tracking-widest px-3 mb-1.5 flex items-center gap-1.5">
+                <History className="w-3 h-3 text-cyan-400/50" />
+                <span>Today</span>
               </div>
-            );
-          })}
+              {groupedSessions.today.map((s) => renderSidebarSessionItem(s))}
+            </div>
+          )}
+
+          {/* Past 7 Days Group */}
+          {groupedSessions.past7Days.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[9px] text-white/30 font-mono uppercase tracking-widest px-3 mb-1.5 flex items-center gap-1.5">
+                <History className="w-3 h-3 text-white/20" />
+                <span>Past 7 Days</span>
+              </div>
+              {groupedSessions.past7Days.map((s) => renderSidebarSessionItem(s))}
+            </div>
+          )}
+
+          {/* Older Group */}
+          {groupedSessions.older.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[9px] text-white/30 font-mono uppercase tracking-widest px-3 mb-1.5 flex items-center gap-1.5">
+                <History className="w-3 h-3 text-white/20" />
+                <span>Older</span>
+              </div>
+              {groupedSessions.older.map((s) => renderSidebarSessionItem(s))}
+            </div>
+          )}
         </div>
 
         {/* Sidebar footer */}
-        <div className="p-4 border-t border-white/5 text-center">
+        <div className="p-4 border-t border-white/5 text-center bg-black/10">
           <div className="flex items-center justify-between text-[10px] font-mono text-white/30">
             <span>NOVA AI Analyst</span>
             <span>v2.5 (Core)</span>
@@ -785,28 +836,57 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
           className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent text-left"
           id="workspace-conversation-scroller"
         >
-          {activeSession && activeSession.messages.map((msg) => (
-            <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-              <div 
-                className={`max-w-[85%] rounded-2xl px-5 py-4 text-xs shadow-2xl border relative overflow-hidden leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-gradient-to-br from-[#3D81E3]/15 to-cyan-500/10 border-[#3D81E3]/25 text-white rounded-tr-none"
-                    : "bg-white/[0.02] border-white/5 text-white/95 rounded-tl-none font-sans"
-                }`}
-              >
-                {msg.role === "model" && (
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
+          {activeSession && activeSession.messages.length > 1 ? (
+            activeSession.messages.map((msg) => (
+              <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                <div 
+                  className={`max-w-[85%] rounded-2xl px-5 py-4 text-xs shadow-2xl border relative overflow-hidden leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-gradient-to-br from-[#3D81E3]/15 to-cyan-500/10 border-[#3D81E3]/25 text-white rounded-tr-none"
+                      : "bg-white/[0.02] border-white/5 text-white/95 rounded-tl-none font-sans"
+                  }`}
+                >
+                  {msg.role === "model" && (
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
+                  )}
+                  {formatText(msg.text)}
+                </div>
+
+                {msg.stockCard && (
+                  <div className="w-full max-w-2xl self-start mt-3 animate-fade-in">
+                    <StockIntelligenceCard card={msg.stockCard} />
+                  </div>
                 )}
-                {formatText(msg.text)}
+              </div>
+            ))
+          ) : (
+            /* Bespoke Welcome Anchor for empty/new session state */
+            <div className="flex flex-col items-center justify-center text-center py-10 max-w-2xl mx-auto space-y-6" id="nova-ai-welcome-hero">
+              {/* Animated Liquid-Glass Nova AI Core orb */}
+              <div className="relative w-36 h-36 flex items-center justify-center">
+                {/* Rotational Aura */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-cyan-500/20 blur-xl animate-spin" style={{ animationDuration: '8s' }} />
+                {/* Pulsing Outer Ring */}
+                <div className="absolute inset-2 rounded-full border border-cyan-500/30 animate-pulse bg-cyan-900/10 shadow-[0_0_30px_rgba(34,211,238,0.2)]" />
+                {/* Multi-layered Liquid-Glass Core */}
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-600 to-cyan-400 p-0.5 shadow-2xl overflow-hidden group">
+                  <div className="w-full h-full rounded-full bg-[#050608]/90 backdrop-blur-md flex items-center justify-center overflow-hidden relative">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 via-transparent to-indigo-500/30 animate-pulse" />
+                    <Sparkles className="w-10 h-10 text-cyan-400 animate-pulse" />
+                  </div>
+                </div>
               </div>
 
-              {msg.stockCard && (
-                <div className="w-full max-w-2xl self-start mt-3 animate-fade-in">
-                  <StockIntelligenceCard card={msg.stockCard} />
-                </div>
-              )}
+              <div className="space-y-2.5">
+                <h2 className="text-xl md:text-2xl font-black tracking-tight text-white font-sans">
+                  Nova Market Intelligence <span className="text-cyan-400 font-mono">v2.5</span>
+                </h2>
+                <p className="text-xs text-white/60 leading-relaxed font-sans max-w-lg mx-auto">
+                  Nova Market Intelligence v2.5 — Ready to analyze equities, F&O, and macroeconomic trends.
+                </p>
+              </div>
             </div>
-          ))}
+          )}
 
           {isLoading && (
             <div className="flex flex-col gap-2">
@@ -824,28 +904,51 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
           )}
         </div>
 
-        {/* Suggestions Panel (Floating quick taps when input is empty) */}
+        {/* Suggestions Panel (Enhanced Suggested Intelligence Deck) */}
         {activeSession && activeSession.messages.length <= 1 && (
-          <div className="max-w-4xl mx-auto w-full px-6 pb-2 text-left animate-fade-in">
-            <span className="text-[10px] text-cyan-300 font-mono uppercase tracking-widest block mb-2.5">Suggested Intelligence Prompts:</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="max-w-4xl mx-auto w-full px-6 pb-6 text-left animate-fade-in" id="nova-suggestions-deck">
+            <span className="text-[10px] text-cyan-400/60 font-mono uppercase tracking-widest block mb-4">Suggested Intelligence Prompts:</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { title: "Who am I?", desc: "Learn about NOVA's analyst identity", prompt: "Who am I?" },
-                { title: "Analyze Reliance Industries", desc: "Triggers instant technical momentum review", prompt: "Analyze RELIANCE" },
-                { title: "Which stocks are bullish today?", desc: "Scan market sentiment for top bullish assets", prompt: "Which stocks are bullish today?" },
-                { title: "Why is the market moving today?", desc: "Get live market updates and index trends", prompt: "Why is the market moving today?" },
-                { title: "Compare two stocks", desc: "Compare technical indicators of HDFC Bank vs ICICI Bank", prompt: "Compare HDFC Bank vs ICICI Bank" }
+                { 
+                  category: "MOMENTUM", 
+                  title: "Which stocks are bullish?", 
+                  desc: "Scan active indicators for positive breakouts.",
+                  prompt: "Which stocks are bullish today?" 
+                },
+                { 
+                  category: "DERIVATIVES", 
+                  title: "Analyze Reliance F&O", 
+                  desc: "Calculate derivative flows & support/resistance.",
+                  prompt: "Analyze RELIANCE" 
+                },
+                { 
+                  category: "MACRO", 
+                  title: "Platform Identity & Core", 
+                  desc: "Review NOVA's quantitative methodology.",
+                  prompt: "Who am I?" 
+                }
               ].map((item) => (
                 <button
                   key={item.title}
                   onClick={() => handleSendMessage(item.prompt)}
-                  className="p-3.5 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.05] hover:border-cyan-500/30 text-left transition-all cursor-pointer flex justify-between items-center group shadow-md"
+                  className="p-4 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-[#3D81E3]/5 hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-36 group relative overflow-hidden"
                 >
-                  <div className="min-w-0 pr-2">
-                    <span className="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors block truncate">{item.title}</span>
-                    <span className="text-[10px] text-white/40 mt-0.5 block font-sans truncate">{item.desc}</span>
+                  <div>
+                    <span className="inline-block text-[8px] font-black font-mono tracking-widest px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 mb-3">
+                      {item.category}
+                    </span>
+                    <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block leading-snug">
+                      {item.title}
+                    </span>
+                    <span className="text-[10px] text-white/40 mt-1 block font-sans leading-normal">
+                      {item.desc}
+                    </span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/25 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
+                  <div className="flex items-center gap-1 text-[9px] font-mono text-cyan-400/60 group-hover:text-cyan-300 mt-2.5 transition-colors self-end">
+                    <span>Launch Analysis</span>
+                    <ChevronRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </button>
               ))}
             </div>
@@ -867,6 +970,26 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Quick-query trigger chips */}
+          <div className="max-w-4xl mx-auto flex flex-wrap items-center gap-2 mb-3.5" id="input-trigger-chips">
+            <span className="text-[9px] font-mono text-white/35 uppercase tracking-widest mr-1">Quick Scans:</span>
+            {[
+              { label: "$NIFTY", prompt: "Explain Nifty 50 movement today" },
+              { label: "$RELIANCE", prompt: "Analyze Reliance stock indicators" },
+              { label: "/scan-bulls", prompt: "Which stocks are bullish today?" },
+              { label: "/scan-bears", prompt: "Which stocks are bearish today?" }
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => handleSendMessage(chip.prompt)}
+                className="px-2.5 py-1 rounded-md border border-white/5 bg-white/[0.02] hover:bg-cyan-500/10 hover:border-cyan-500/30 text-[9px] font-mono text-white/60 hover:text-cyan-300 transition-all cursor-pointer select-none"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
 
           <form
             onSubmit={(e) => {
@@ -895,7 +1018,7 @@ Type any stock symbol like **RELIANCE**, **TATAMOTORS**, **HDFCBANK** or ask gen
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
-                className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/10 font-sans shadow-inner transition-all"
+                className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] font-sans shadow-inner transition-all duration-200"
                 disabled={isLoading}
               />
               <button

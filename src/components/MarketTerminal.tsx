@@ -692,38 +692,6 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
         {/* Center/Right Dynamic View (10 cols) */}
         <div className="col-span-12 lg:col-span-10 space-y-6" id="terminal-content-view">
           
-          {/* Internal Terminal Menu */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4" id="terminal-sub-navbar">
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg overflow-x-auto max-w-full whitespace-nowrap scrollbar-none shrink-0" id="terminal-nav-pills">
-              {[
-                { label: "Dashboard", path: "/dashboard", icon: Layout },
-                { label: "Indian Market Hub", path: "/stocks", icon: BarChart2 },
-                { label: "Portfolio Analyzer", path: "/portfolio", icon: Briefcase },
-                { label: "AI News Feed", path: "/news", icon: Newspaper },
-                { label: "Quant Academy", path: "/learn", icon: BookOpen }
-              ].map((item) => {
-                const isActive = item.path === currentRoute || (item.path === "/dashboard" && currentRoute === "/");
-                return (
-                  <button 
-                    key={item.label}
-                    onClick={() => onNavigate(item.path)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-colors shrink-0 ${
-                      isActive ? "bg-white/10 text-white shadow-sm" : "text-white/55 hover:text-white hover:bg-white/[0.02]"
-                    }`}
-                    id={`subnav-btn-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    <item.icon className="w-3.5 h-3.5" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="text-xs text-white/40 font-mono flex items-center gap-1.5" id="utc-clock">
-              <Clock className="w-3.5 h-3.5" />
-              <span>UTC-7 (PDT) Terminal Connection</span>
-            </div>
-          </div>
 
           {/* Weekend Market Closed Notice */}
           {(() => {

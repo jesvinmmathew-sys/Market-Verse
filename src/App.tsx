@@ -340,7 +340,7 @@ export default function App() {
                       isWeekend ? "bg-amber-500" : "bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                     }`} />
                     <span className="text-[9px] font-mono tracking-widest font-bold uppercase">
-                      {isWeekend ? "CLOSED" : "LIVE FEED"}
+                      {isWeekend ? "IST (UTC+5:30) • NSE Closed" : "IST (UTC+5:30) • NSE Live Feed"}
                     </span>
                   </div>
                 );
