@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { 
   Sparkles, 
   Send, 
@@ -27,6 +27,160 @@ import { motion, AnimatePresence } from "motion/react";
 import { marketVerseAI } from "../services/marketVerseAI";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
 import { NovaLogo } from "./NovaLogo";
+
+// Gemini dynamic wave canvas component
+interface GeminiWaveCanvasProps {
+  isFocused: boolean;
+  isTyping: boolean;
+}
+
+export const GeminiWaveCanvas: React.FC<GeminiWaveCanvasProps> = ({ isFocused, isTyping }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let particles: Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      color: string;
+      alpha: number;
+      decay?: number;
+      speedMult?: number;
+    }> = [];
+
+    const colors = [
+      'rgba(34, 211, 238, ',  // cyan
+      'rgba(99, 102, 241, ',  // indigo
+      'rgba(236, 72, 153, ',  // pink
+      'rgba(16, 185, 129, ',  // emerald
+    ];
+
+    const resizeCanvas = () => {
+      if (canvas && canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
+        canvas.height = 200;
+      }
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initialize baseline ambient particles
+    const initAmbientParticles = () => {
+      particles = [];
+      const count = 30;
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 2 + 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: Math.random() * 0.25 + 0.05,
+          speedMult: 1
+        });
+      }
+    };
+    initAmbientParticles();
+
+    // Trigger an energetic ripple when focus starts or user typing
+    const triggerFocusRipple = () => {
+      const rippleCount = 50;
+      for (let i = 0; i < rippleCount; i++) {
+        const angle = Math.random() * Math.PI - Math.PI; // upwards semi-circle
+        const speed = Math.random() * 2 + 0.8;
+        particles.push({
+          x: canvas.width / 2 + (Math.random() - 0.5) * 120,
+          y: canvas.height - 10,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 0.5,
+          size: Math.random() * 2.5 + 1.2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 0.75,
+          decay: Math.random() * 0.02 + 0.012,
+          speedMult: 1.4
+        });
+      }
+    };
+
+    if (isFocused || isTyping) {
+      triggerFocusRipple();
+    }
+
+    const animate = () => {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw and update particles
+      particles.forEach((p) => {
+        const currentSpeedMult = isFocused || isTyping ? 1.6 : 1.0;
+        
+        p.x += p.vx * currentSpeedMult;
+        p.y += p.vy * currentSpeedMult;
+
+        if (p.decay) {
+          p.alpha -= p.decay;
+        }
+
+        // Boundary wrap/re-init for ambient particles
+        if (!p.decay) {
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        }
+
+        // Draw particle
+        if (p.alpha > 0) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color + p.alpha + ')';
+          ctx.fill();
+        }
+      });
+
+      // Filter out dead particles
+      particles = particles.filter(p => p.alpha > 0);
+
+      // Top up ambient particles if they drop below limit
+      if (particles.filter(p => !p.decay).length < 30) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 2 + 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: Math.random() * 0.25 + 0.05,
+          speedMult: 1
+        });
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isFocused, isTyping]);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute bottom-[90px] left-0 w-full h-[200px] pointer-events-none z-0 opacity-70" 
+      id="gemini-focus-mesh-canvas"
+    />
+  );
+};
 
 // Interfaces
 interface Message {
@@ -287,6 +441,8 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
   const [isTextToSpeechEnabled, setIsTextToSpeechEnabled] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [userName, setUserName] = useState("Trader");
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize browser speech recognition if supported
@@ -422,6 +578,52 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
 
     window.speechSynthesis.speak(utterance);
   };
+
+  const handleToggleSpeak = (msgId: string, text: string) => {
+    if (speakingMsgId === msgId) {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setSpeakingMsgId(null);
+    } else {
+      if (typeof window === "undefined" || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+
+      const cleanText = text
+        .replace(/[#*`|\[\]]/g, "")
+        .replace(/STOCK ANALYSIS[\s\S]*?(?=Last Updated|$)/i, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 160);
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const chosenVoice = voices.find(v => v.lang.includes("en-US") || v.lang.includes("en-IN"));
+      if (chosenVoice) utterance.voice = chosenVoice;
+
+      utterance.onend = () => {
+        setSpeakingMsgId(null);
+      };
+      utterance.onerror = () => {
+        setSpeakingMsgId(null);
+      };
+
+      setSpeakingMsgId(msgId);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setSpeakingMsgId(null);
+    };
+  }, [activeSessionId]);
 
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return;
@@ -796,18 +998,16 @@ I couldn't complete the high-performance AI API call because the rate limits are
           <div className="flex items-center gap-3.5">
             {/* Speaker Sound output toggle */}
             <button 
+              type="button"
               onClick={() => setIsTextToSpeechEnabled(!isTextToSpeechEnabled)}
-              className={`p-2 rounded-lg border transition-all cursor-pointer ${
-                isTextToSpeechEnabled 
-                  ? "bg-[#3D81E3]/15 border-[#3D81E3]/35 text-cyan-400" 
-                  : "bg-white/[0.01] border-white/5 text-white/30 hover:text-white/60"
-              }`}
+              className={"p-2 rounded-lg border transition-all cursor-pointer " + (isTextToSpeechEnabled ? "bg-[#3D81E3]/15 border-[#3D81E3]/35 text-cyan-400" : "bg-white/[0.01] border-white/5 text-white/30 hover:text-white/60")}
               title={isTextToSpeechEnabled ? "Voice Output Active" : "Voice Output Muted"}
             >
               {isTextToSpeechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
             <button 
+              type="button"
               onClick={() => onNavigate("/dashboard")}
               className="text-[10px] font-mono uppercase tracking-widest border border-white/10 px-3 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] text-white/70 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
             >
@@ -816,6 +1016,10 @@ I couldn't complete the high-performance AI API call because the rate limits are
             </button>
           </div>
         </div>
+
+        {/* Custom CSS for Shimmer and visualizer */}
+        <style dangerouslySetInnerHTML={{__html: "@keyframes shimmer-loader { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } } .animate-shimmer { background-size: 200% 100%; animation: shimmer-loader 1.5s infinite linear; }"}} />
+
 
         {/* Conversation flow container */}
         <div 
@@ -839,13 +1043,21 @@ I couldn't complete the high-performance AI API call because the rate limits are
                     <>
                       <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-400/40" />
                       <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        {speakingMsgId === msg.id && (
+                          <div className="flex items-end gap-[2px] h-3.5 px-1.5 mr-1 select-none">
+                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '12px', animationDelay: '0.1s' }} />
+                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '14px', animationDelay: '0.2s' }} />
+                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '8px', animationDelay: '0.3s' }} />
+                            <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '11px', animationDelay: '0.4s' }} />
+                          </div>
+                        )}
                         <button
                           type="button"
-                          onClick={() => speakVoice(msg.text, true)}
-                          className="p-1 rounded bg-white/5 border border-white/10 text-cyan-400 hover:text-cyan-300 hover:bg-white/10 transition-colors cursor-pointer"
-                          title="Speak response"
+                          onClick={() => handleToggleSpeak(msg.id, msg.text)}
+                          className="p-1 rounded bg-white/5 border border-white/10 text-cyan-400 hover:text-cyan-300 hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center"
+                          title={speakingMsgId === msg.id ? "Stop Reading" : "Read Aloud"}
                         >
-                          <Volume2 className="w-3.5 h-3.5" />
+                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </>
@@ -892,8 +1104,20 @@ I couldn't complete the high-performance AI API call because the rate limits are
                 </div>
               </div>
 
-              {/* Compact Prompt Cards - Gemini-style horizontal deck */}
-              <div className="w-full" id="nova-suggestions-deck">
+              {/* Compact Prompt Cards - Gemini-style horizontal deck with staggered animations */}
+              <motion.div 
+                className="w-full" 
+                id="nova-suggestions-deck"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.08
+                    }
+                  }
+                }}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { 
@@ -921,9 +1145,14 @@ I couldn't complete the high-performance AI API call because the rate limits are
                       prompt: "Provide a summary of the last trading session indices and news" 
                     }
                   ].map((item) => (
-                    <button
+                    <motion.button
                       key={item.title}
                       onClick={() => handleSendMessage(item.prompt)}
+                      variants={{
+                        hidden: { opacity: 0, y: 12 },
+                        visible: { opacity: 1, y: 0 }
+                      }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
                       className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-300 cursor-pointer flex flex-col justify-between h-28 group relative"
                     >
                       <div className="space-y-1">
@@ -935,31 +1164,47 @@ I couldn't complete the high-performance AI API call because the rate limits are
                           {item.desc}
                         </span>
                       </div>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             </div>
           )}
 
           {isLoading && (
-            <div className="flex flex-col gap-2">
-              <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-5 text-xs text-white/60 flex items-center gap-3.5 font-mono max-w-xl shadow-xl">
-                <div className="relative flex items-center justify-center flex-shrink-0">
-                  <div className="w-5 h-5 rounded-full border border-cyan-400 border-t-transparent animate-spin" />
-                  <span className="absolute w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <div className="flex flex-col gap-3 max-w-2xl animate-pulse">
+              <div className="bg-[#101217]/60 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-xs shadow-2xl relative overflow-hidden flex items-start gap-4">
+                {/* Glowing Pulse Beacon */}
+                <div className="relative flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="absolute w-4 h-4 rounded-full bg-cyan-500/30 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee]" />
                 </div>
-                <div>
-                  <span className="font-bold text-white tracking-widest block text-[10px] uppercase mb-0.5">Analyst thinking...</span>
-                  <span className="text-white/40 text-[10px]">Evaluating technical oscillators & sector metrics on live NSE feed</span>
+                <div className="space-y-2.5 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-white tracking-widest text-[10px] uppercase">
+                      NOVA MARKET ANALYST
+                    </span>
+                    <span className="text-[9px] text-cyan-400 font-mono animate-pulse">
+                      • ANALYZING
+                    </span>
+                  </div>
+                  {/* Liquid-glass shimmer bars */}
+                  <div className="space-y-2">
+                    <div className="h-2.5 w-11/12 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s' }} />
+                    <div className="h-2.5 w-5/6 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                    <div className="h-2.5 w-2/3 rounded bg-gradient-to-r from-white/10 via-white/20 to-white/10 bg-[length:200%_auto] animate-shimmer" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
 
+        {/* GeminiWaveCanvas element */}
+        <GeminiWaveCanvas isFocused={isInputFocused} isTyping={!!inputValue} />
+
         {/* Input Bottom Console */}
-        <div className="p-6 border-t border-white/5 bg-[#090b0e]/80 backdrop-blur-xl relative">
+        <div className="p-6 border-t border-white/5 bg-[#090b0e]/80 backdrop-blur-xl relative z-10">
           <AnimatePresence>
             {speechError && (
               <motion.div
@@ -1000,6 +1245,8 @@ I couldn't complete the high-performance AI API call because the rate limits are
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
                 className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] font-sans shadow-inner transition-all duration-200"
                 disabled={isLoading}
