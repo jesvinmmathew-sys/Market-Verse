@@ -220,3 +220,74 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* ========================================================
+   LIGHT THEME CONTRAST & READABILITY OVERRIDES
+   ======================================================== */
+[data-theme="light"],
+[data-theme="institutional-light"] {
+  color-scheme: light;
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --accent-green: #16a34a;
+  --accent-red: #dc2626;
+  --brand-primary: #4f46e5;
+}
+
+/* Force hardcoded dark-mode text classes to dark ink in light mode */
+[data-theme="light"] body,
+[data-theme="institutional-light"] body,
+[data-theme="light"] main,
+[data-theme="institutional-light"] main {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-white,
+[data-theme="institutional-light"] .text-white,
+[data-theme="light"] .text-slate-100,
+[data-theme="institutional-light"] .text-slate-100,
+[data-theme="light"] .text-slate-200,
+[data-theme="institutional-light"] .text-slate-200,
+[data-theme="light"] .text-gray-100,
+[data-theme="institutional-light"] .text-gray-100,
+[data-theme="light"] .text-gray-200,
+[data-theme="institutional-light"] .text-gray-200 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-gray-300,
+[data-theme="institutional-light"] .text-gray-300,
+[data-theme="light"] .text-gray-400,
+[data-theme="institutional-light"] .text-gray-400,
+[data-theme="light"] .text-slate-400,
+[data-theme="institutional-light"] .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Fix background surfaces & borders in light mode */
+[data-theme="light"] .bg-\[\#06080f\],
+[data-theme="institutional-light"] .bg-\[\#06080f\],
+[data-theme="light"] .bg-\[\#0b0f19\],
+[data-theme="institutional-light"] .bg-\[\#0b0f19\],
+[data-theme="light"] .bg-gray-950,
+[data-theme="institutional-light"] .bg-gray-950,
+[data-theme="light"] .bg-slate-950,
+[data-theme="institutional-light"] .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .border-white\/10,
+[data-theme="institutional-light"] .border-white\/10,
+[data-theme="light"] .border-gray-800,
+[data-theme="institutional-light"] .border-gray-800,
+[data-theme="light"] .border-slate-800,
+[data-theme="institutional-light"] .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}

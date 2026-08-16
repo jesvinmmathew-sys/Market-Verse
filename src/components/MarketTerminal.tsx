@@ -1244,7 +1244,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                       placeholder="Symbol (e.g. ZOMATO)"
                       value={stockSearchQuery}
                       onChange={(e) => setStockSearchQuery(e.target.value)}
-                      className="bg-transparent border-none text-xs text-white placeholder-white/20 focus:outline-none px-2 py-1 w-full max-w-[140px]"
+                      className="bg-transparent border-none text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none px-2 py-1 w-full max-w-[140px]"
                     />
                     <button
                       onClick={async () => {
@@ -1727,7 +1727,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => setTradeShares(prev => Math.max(1, prev - 5))}
-                    className="w-10 h-10 rounded border border-white/10 hover:border-white/20 bg-white/5 flex items-center justify-center text-white font-bold cursor-pointer transition-colors"
+                    className="w-10 h-10 rounded border border-[var(--border-color)] hover:border-white/20 bg-[var(--bg-card)] flex items-center justify-center text-[var(--text-primary)] font-bold cursor-pointer transition-colors"
                   >
                     -5
                   </button>
@@ -1736,11 +1736,11 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                     type="number" 
                     value={tradeShares}
                     onChange={(e) => setTradeShares(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="flex-1 h-10 bg-black/40 text-center rounded text-white border border-white/10 text-sm font-semibold focus:outline-none focus:border-brand"
+                    className="flex-1 h-10 bg-[var(--bg-card)] text-center rounded text-[var(--text-primary)] border border-[var(--border-color)] text-sm font-semibold focus:outline-none focus:border-brand"
                   />
                   <button 
                     onClick={() => setTradeShares(prev => prev + 5)}
-                    className="w-10 h-10 rounded border border-white/10 hover:border-white/20 bg-white/5 flex items-center justify-center text-white font-bold cursor-pointer transition-colors"
+                    className="w-10 h-10 rounded border border-[var(--border-color)] hover:border-white/20 bg-[var(--bg-card)] flex items-center justify-center text-[var(--text-primary)] font-bold cursor-pointer transition-colors"
                   >
                     +5
                   </button>

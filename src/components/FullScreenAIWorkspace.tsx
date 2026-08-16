@@ -1281,7 +1281,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                 <button
                   type="button"
                   onClick={handleToggleVoiceInput}
-                  className={"p-3.5 rounded-2xl border transition-all flex items-center justify-center flex-shrink-0 cursor-pointer " + (isListening ? "bg-rose-500/25 border-rose-500/40 text-rose-400 animate-pulse" : "bg-white/[0.01] border-white/10 text-white/55 hover:text-white hover:bg-white/[0.06]")}
+                  className={"p-3.5 rounded-2xl border transition-all flex items-center justify-center flex-shrink-0 cursor-pointer " + (isListening ? "bg-rose-500/25 border-rose-500/40 text-rose-400 animate-pulse" : "bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.06]")}
                   title={isListening ? "Listening... Speak now." : "Start Voice Input"}
                 >
                   {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -1302,7 +1302,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                       }
                     }}
                     placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
-                    className="w-full pl-5 pr-14 py-4 bg-[#0B0F19]/90 border border-white/[0.08] hover:border-white/15 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)] rounded-2xl text-xs text-white placeholder-white/20 focus:outline-none font-sans shadow-inner transition-all duration-300 resize-none overflow-y-auto max-h-[120px] scrollbar-none align-middle"
+                    className="w-full pl-5 pr-14 py-4 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-white/15 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)] rounded-2xl text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none font-sans shadow-inner transition-all duration-300 resize-none overflow-y-auto max-h-[120px] scrollbar-none align-middle"
                     disabled={isLoading}
                   />
                   <button
