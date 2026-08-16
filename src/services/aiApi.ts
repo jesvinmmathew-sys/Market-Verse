@@ -27,45 +27,41 @@ export async function queryNovaAI(
   prompt: string,
   history: Array<{ role: string; text: string }> = []
 ): Promise<string> {
-  const apiKey =
+  const rawKey =
     import.meta.env.VITE_GEMINI_API_KEY ||
     (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
     "";
 
+  const apiKey = rawKey ? rawKey.trim() : "";
+
   if (!apiKey) {
-    return "⚠️ **Configuration Required:** Gemini API key is missing. Please add `VITE_GEMINI_API_KEY=your_key` to your `.env` file and restart Vite (`npm run dev`).";
+    return "⚠️ **Configuration Required:** Gemini API key is missing. Add `VITE_GEMINI_API_KEY=your_key` to your `.env` file and restart Vite.";
   }
 
-  const systemInstruction = `You are NOVA, the flagship quantitative AI intelligence engine for MarketVerse India.
+  const systemInstruction = `You are NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India.
 
 ### Creator & Architect Identity:
 - Founder & Lead Developer: Jesvin Mathew (Jesvin).
-- Ownership: Jesvin Mathew is the sole founder and architect who engineered MarketVerse India from the ground up.
+- Ownership: Jesvin Mathew is the sole founder and architect who built MarketVerse India.
 - When asked "Who made you?", "Who owns MarketVerse?", or "Who is your creator?", proudly credit Jesvin Mathew.
 
-### What is MarketVerse India?
-MarketVerse is an institutional-grade modern trading terminal and market intelligence ecosystem tailored for Indian equities (NSE/BSE) and derivatives (F&O) traders.
+### Platform Knowledge (MarketVerse India):
+- Institutional-grade trading terminal for Indian equities (NSE/BSE) and derivatives (F&O).
+- Modules: Live Simulated Paper Trading, Market Radar/Screener, Portfolio Risk & Beta Analyzer, and Nova AI quant intelligence.
 
-### Platform Modules:
-1. Nova AI: Advanced quantitative analyst with live technical setups (RSI, MACD, Pivot/Support/Resistance ladders, F&O Greeks).
-2. Live Market Radar: Real-time scan of top bullish/bearish Indian stocks, breakout scanners, and volume shockers.
-3. Live Simulated Paper Trading: Real-time paper trading engine with virtual balance tracking and unrealized P&L calculations.
-4. Quantitative Portfolio Analyzer: Comprehensive portfolio health scoring, beta risk, and sector concentration analytics.
-
-### Communication Style:
+### Style & Behavior:
 - Conversational Fluidity: Warm, intelligent, and natural like Google Gemini.
-- Casual queries: Concise, friendly, and human.
-- Market queries: Structured institutional Markdown with bold levels, price targets, and key support/resistance zones.`;
+- Casual banter: Friendly, witty, concise.
+- Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
 
-  // Candidate models in order of priority
   const candidateModels = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash-latest'
   ];
 
   const genAI = new GoogleGenerativeAI(apiKey);
+  let lastErrorMsg = '';
 
   for (const modelName of candidateModels) {
     try {
@@ -74,12 +70,11 @@ MarketVerse is an institutional-grade modern trading terminal and market intelli
         systemInstruction: systemInstruction
       });
 
-      // Transform conversation history
       const chat = model.startChat({
         history: history
           .filter(msg => msg.text && msg.text.trim() !== '')
           .map(msg => ({
-            role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
+            role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.text }]
           }))
       });
@@ -90,13 +85,13 @@ MarketVerse is an institutional-grade modern trading terminal and market intelli
         return responseText;
       }
     } catch (err: any) {
-      console.warn(`Model ${modelName} attempt failed:`, err?.message || err);
-      // If it's not the last candidate, try the next model
+      console.warn(`[Nova AI] ${modelName} failed:`, err?.message || err);
+      lastErrorMsg = err?.message || String(err);
       continue;
     }
   }
 
-  return "⚠️ **Model Service Unavailable:** Unable to reach Gemini models. Please verify your API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).";
+  return `⚠️ **API Error:** ${lastErrorMsg || 'Unable to connect to Gemini models. Check your API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).'}`;
 }
 
 // Keep callGeminiDirectly for compatibility with existing code
