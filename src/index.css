@@ -15,20 +15,6 @@
   --brand-primary: #6366f1;
 }
 
-[data-theme="institutional-light"] {
-  --bg-base: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --border-color: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --accent-green: #16a34a;
-  --accent-red: #dc2626;
-  --brand-primary: #4f46e5;
-}
-
 [data-theme="cyber-emerald"] {
   --bg-base: #020b05;
   --bg-surface: #041a0e;
@@ -117,11 +103,24 @@ html, body {
 /* Custom overlay styles for glassmorphism */
 .liquid-glass {
   background: var(--bg-card);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-color);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Blur strength settings */
+[data-blur="high"] .liquid-glass {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+[data-blur="medium"] .liquid-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+[data-blur="none"] .liquid-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-surface);
 }
 
 /* Dynamic overrides for theme support */
@@ -163,6 +162,7 @@ html, body {
   background: radial-gradient(circle at 100% 0%, var(--accent-green) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
+  transition: opacity 0.3s ease;
 }
 
 .glow-crimson {
@@ -179,6 +179,22 @@ html, body {
   background: radial-gradient(circle at 100% 0%, var(--accent-red) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Glow intensity settings */
+[data-glow="subtle"] .glow-emerald::after,
+[data-glow="subtle"] .glow-crimson::after {
+  opacity: 0.4;
+}
+[data-glow="high"] .glow-emerald::after,
+[data-glow="high"] .glow-crimson::after {
+  opacity: 1.0;
+}
+[data-glow="off"] .glow-emerald::after,
+[data-glow="off"] .glow-crimson::after {
+  opacity: 0;
+  display: none;
 }
 
 /* Fonts override for numbers and quotes */
@@ -219,75 +235,4 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
-}
-
-/* ========================================================
-   LIGHT THEME CONTRAST & READABILITY OVERRIDES
-   ======================================================== */
-[data-theme="light"],
-[data-theme="institutional-light"] {
-  color-scheme: light;
-  --bg-base: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --border-color: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --accent-green: #16a34a;
-  --accent-red: #dc2626;
-  --brand-primary: #4f46e5;
-}
-
-/* Force hardcoded dark-mode text classes to dark ink in light mode */
-[data-theme="light"] body,
-[data-theme="institutional-light"] body,
-[data-theme="light"] main,
-[data-theme="institutional-light"] main {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .text-white,
-[data-theme="institutional-light"] .text-white,
-[data-theme="light"] .text-slate-100,
-[data-theme="institutional-light"] .text-slate-100,
-[data-theme="light"] .text-slate-200,
-[data-theme="institutional-light"] .text-slate-200,
-[data-theme="light"] .text-gray-100,
-[data-theme="institutional-light"] .text-gray-100,
-[data-theme="light"] .text-gray-200,
-[data-theme="institutional-light"] .text-gray-200 {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .text-gray-300,
-[data-theme="institutional-light"] .text-gray-300,
-[data-theme="light"] .text-gray-400,
-[data-theme="institutional-light"] .text-gray-400,
-[data-theme="light"] .text-slate-400,
-[data-theme="institutional-light"] .text-slate-400 {
-  color: #475569 !important;
-}
-
-/* Fix background surfaces & borders in light mode */
-[data-theme="light"] .bg-\[\#06080f\],
-[data-theme="institutional-light"] .bg-\[\#06080f\],
-[data-theme="light"] .bg-\[\#0b0f19\],
-[data-theme="institutional-light"] .bg-\[\#0b0f19\],
-[data-theme="light"] .bg-gray-950,
-[data-theme="institutional-light"] .bg-gray-950,
-[data-theme="light"] .bg-slate-950,
-[data-theme="institutional-light"] .bg-slate-950 {
-  background-color: #ffffff !important;
-}
-
-[data-theme="light"] .border-white\/10,
-[data-theme="institutional-light"] .border-white\/10,
-[data-theme="light"] .border-gray-800,
-[data-theme="institutional-light"] .border-gray-800,
-[data-theme="light"] .border-slate-800,
-[data-theme="institutional-light"] .border-slate-800 {
-  border-color: #e2e8f0 !important;
 }

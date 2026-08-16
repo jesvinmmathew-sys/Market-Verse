@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
 import { supabase } from "../supabaseClient";
-import { useTheme, ThemeType } from "../context/ThemeContext";
+import { useTheme, ThemeType, GlowIntensity, BlurStrength } from "../context/ThemeContext";
 import { 
   ArrowLeft, 
   User, 
@@ -33,7 +33,14 @@ const AVATAR_PRESETS = [
 ];
 
 export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, user: propUser }: ProfileSettingsProps) {
-  const { theme, setTheme } = useTheme();
+  const { 
+    theme, 
+    setTheme, 
+    glowIntensity, 
+    setGlowIntensity, 
+    blurStrength, 
+    setBlurStrength 
+  } = useTheme();
   const [user, setUser] = useState<any>(() => {
     if (propUser) return propUser;
     try {
@@ -357,27 +364,22 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
               </div>
 
               {/* Appearance & Theme (1-click selector with swatch mini UI previews) */}
-              <div className="space-y-2.5">
-                <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
-                  Appearance & Theme
-                </label>
+              <div className="space-y-4 border-t border-white/5 pt-4">
+                <div>
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider block">
+                    Appearance & Theme
+                  </h3>
+                  <p className="text-[10px] text-white/40 mt-0.5">Choose your institutional dark terminal layout.</p>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
                       id: "obsidian",
-                      name: "Obsidian",
+                      name: "Obsidian Space",
                       bg: "#06080F",
                       card: "rgba(15, 23, 42, 0.65)",
                       accent: "#10b981",
-                      description: "Liquid Glass Space"
-                    },
-                    {
-                      id: "institutional-light",
-                      name: "Institutional Light",
-                      bg: "#f8fafc",
-                      card: "#ffffff",
-                      accent: "#16a34a",
-                      description: "Pearl Contrast"
+                      description: "Deep Onyx & Emerald"
                     },
                     {
                       id: "cyber-emerald",
@@ -385,7 +387,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                       bg: "#020b05",
                       card: "rgba(6, 35, 19, 0.7)",
                       accent: "#00ff88",
-                      description: "Green Glow"
+                      description: "Sharp Matrix Green"
                     },
                     {
                       id: "bloomberg-amber",
@@ -400,8 +402,8 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                       name: "Midnight Slate",
                       bg: "#0f172a",
                       card: "rgba(30, 41, 59, 0.7)",
-                      accent: "#34d399",
-                      description: "High-Contrast Blue"
+                      accent: "#38bdf8",
+                      description: "Nordic Slate & Blue"
                     },
                     {
                       id: "tokyo-crimson",
@@ -409,7 +411,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                       bg: "#0e0a12",
                       card: "rgba(32, 20, 43, 0.75)",
                       accent: "#f43f5e",
-                      description: "Cyberpunk Pink"
+                      description: "Vaporwave Ruby"
                     }
                   ].map((t) => {
                     const isSelected = theme === t.id;
@@ -448,6 +450,69 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Sub-controls: Glow Intensity and Blur Strength */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-3">
+                  {/* Glow intensity selector */}
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
+                        Ambient Border Glow
+                      </label>
+                      <p className="text-[9px] text-white/30">Set intensity for active indicator glows.</p>
+                    </div>
+                    <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 gap-1">
+                      {[
+                        { id: "off", label: "Off" },
+                        { id: "subtle", label: "Subtle" },
+                        { id: "high", label: "High" }
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setGlowIntensity(opt.id as GlowIntensity)}
+                          className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                            glowIntensity === opt.id
+                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md"
+                              : "text-white/40 hover:text-white hover:bg-white/5"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Blur strength selector */}
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
+                        Glassmorphism Blur
+                      </label>
+                      <p className="text-[9px] text-white/30">Adjust transparency filter strength.</p>
+                    </div>
+                    <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 gap-1">
+                      {[
+                        { id: "none", label: "Solid" },
+                        { id: "medium", label: "Medium" },
+                        { id: "high", label: "High" }
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setBlurStrength(opt.id as BlurStrength)}
+                          className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                            blurStrength === opt.id
+                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md"
+                              : "text-white/40 hover:text-white hover:bg-white/5"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 

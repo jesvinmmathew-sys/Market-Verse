@@ -380,7 +380,6 @@ export default function App() {
                       </div>
                       {[
                         { id: "obsidian", name: "Obsidian Space", color: "#10b981" },
-                        { id: "institutional-light", name: "Institutional Light", color: "#16a34a" },
                         { id: "cyber-emerald", name: "Matrix Neon", color: "#00ff88" },
                         { id: "bloomberg-amber", name: "Bloomberg Amber", color: "#f59e0b" },
                         { id: "midnight-slate", name: "Midnight Slate", color: "#38bdf8" },

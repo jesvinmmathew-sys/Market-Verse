@@ -2,15 +2,21 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 export type ThemeType = 
   | "obsidian" 
-  | "institutional-light" 
   | "cyber-emerald" 
   | "bloomberg-amber" 
   | "midnight-slate" 
   | "tokyo-crimson";
 
+export type GlowIntensity = "subtle" | "high" | "off";
+export type BlurStrength = "medium" | "high" | "none";
+
 interface ThemeContextProps {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
+  glowIntensity: GlowIntensity;
+  setGlowIntensity: (glow: GlowIntensity) => void;
+  blurStrength: BlurStrength;
+  setBlurStrength: (blur: BlurStrength) => void;
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
@@ -21,7 +27,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const stored = localStorage.getItem("marketverse_theme");
       if (
         stored === "obsidian" || 
-        stored === "institutional-light" || 
         stored === "cyber-emerald" || 
         stored === "bloomberg-amber" || 
         stored === "midnight-slate" || 
@@ -33,6 +38,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return "obsidian";
   });
 
+  const [glowIntensity, setGlowIntensityState] = useState<GlowIntensity>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("marketverse_glow");
+      if (stored === "subtle" || stored === "high" || stored === "off") {
+        return stored as GlowIntensity;
+      }
+    }
+    return "subtle";
+  });
+
+  const [blurStrength, setBlurStrengthState] = useState<BlurStrength>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("marketverse_blur");
+      if (stored === "medium" || stored === "high" || stored === "none") {
+        return stored as BlurStrength;
+      }
+    }
+    return "high";
+  });
+
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
     try {
@@ -42,14 +67,41 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const setGlowIntensity = (intensity: GlowIntensity) => {
+    setGlowIntensityState(intensity);
+    try {
+      localStorage.setItem("marketverse_glow", intensity);
+    } catch (e) {
+      console.warn("Failed to save glow setting", e);
+    }
+  };
+
+  const setBlurStrength = (strength: BlurStrength) => {
+    setBlurStrengthState(strength);
+    try {
+      localStorage.setItem("marketverse_blur", strength);
+    } catch (e) {
+      console.warn("Failed to save blur setting", e);
+    }
+  };
+
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.setAttribute("data-glow", glowIntensity);
+      document.documentElement.setAttribute("data-blur", blurStrength);
     }
-  }, [theme]);
+  }, [theme, glowIntensity, blurStrength]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setTheme, 
+      glowIntensity, 
+      setGlowIntensity, 
+      blurStrength, 
+      setBlurStrength 
+    }}>
       {children}
     </ThemeContext.Provider>
   );
