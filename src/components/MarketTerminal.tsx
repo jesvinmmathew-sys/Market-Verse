@@ -655,7 +655,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   const portfolioGainPct = portfolioCost > 0 ? (portfolioGain / portfolioCost) * 100 : 0;
 
   return (
-    <div className="relative min-h-screen bg-[#06080F] text-white flex flex-col justify-between selection:bg-brand/30" id="terminal-root">
+    <div className="relative min-h-screen bg-bg-app text-text-main flex flex-col justify-between selection:bg-brand/30" id="terminal-root">
       
       {/* Terminal Main Layout */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 grid grid-cols-12 gap-6 items-start relative z-10" id="terminal-main-grid">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
 import { supabase } from "../supabaseClient";
+import { useTheme, ThemeType } from "../context/ThemeContext";
 import { 
   ArrowLeft, 
   User, 
@@ -12,7 +13,8 @@ import {
   AlertTriangle, 
   LogOut,
   Camera,
-  Trash2
+  Trash2,
+  Check
 } from "lucide-react";
 
 interface ProfileSettingsProps {
@@ -31,6 +33,7 @@ const AVATAR_PRESETS = [
 ];
 
 export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, user: propUser }: ProfileSettingsProps) {
+  const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<any>(() => {
     if (propUser) return propUser;
     try {
@@ -350,6 +353,85 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                     className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white/5 border border-white/15 text-white rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/20 transition-all font-sans"
                     placeholder="Enter your full name"
                   />
+                </div>
+              </div>
+
+              {/* Appearance & Theme (1-click selector with swatch mini UI previews) */}
+              <div className="space-y-2.5">
+                <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
+                  Appearance & Theme
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    {
+                      id: "obsidian",
+                      name: "Obsidian",
+                      bg: "#06080F",
+                      card: "rgba(11, 15, 25, 0.7)",
+                      accent: "#10b981",
+                      description: "Liquid Glass"
+                    },
+                    {
+                      id: "light",
+                      name: "Light",
+                      bg: "#f1f5f9",
+                      card: "rgba(255, 255, 255, 0.85)",
+                      accent: "#059669",
+                      description: "Pearl Contrast"
+                    },
+                    {
+                      id: "cyber",
+                      name: "Matrix Neon",
+                      bg: "#020b05",
+                      card: "rgba(4, 26, 14, 0.75)",
+                      accent: "#00ff88",
+                      description: "Green Glow"
+                    },
+                    {
+                      id: "bloomberg",
+                      name: "Bloomberg",
+                      bg: "#0a0d14",
+                      card: "rgba(15, 23, 42, 0.75)",
+                      accent: "#f59e0b",
+                      description: "Terminal Amber"
+                    }
+                  ].map((t) => {
+                    const isSelected = theme === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTheme(t.id as ThemeType)}
+                        className={`group relative text-left rounded-xl p-3 border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between h-24 ${
+                          isSelected 
+                            ? "border-cyan-400 ring-2 ring-cyan-400/20 bg-white/[0.04]" 
+                            : "border-white/5 hover:border-white/15 bg-white/[0.01]"
+                        }`}
+                      >
+                        {/* Swatch Swatch */}
+                        <div className="w-full h-8 rounded-lg flex gap-1 p-1 mb-2 overflow-hidden border border-white/5" style={{ backgroundColor: t.bg }}>
+                          <div className="w-3/5 h-full rounded border border-white/5" style={{ backgroundColor: t.card }} />
+                          <div className="w-2/5 h-full rounded border border-white/5 flex flex-col justify-between p-0.5">
+                            <div className="w-full h-1 rounded" style={{ backgroundColor: t.accent }} />
+                            <div className="w-full h-1 rounded bg-white/10" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-[10px] font-bold tracking-wide truncate" style={{ color: isSelected ? '#22d3ee' : '#f8fafc' }}>
+                            {t.name}
+                          </div>
+                          <div className="text-[8px] opacity-40 font-medium truncate mt-0.5">{t.description}</div>
+                        </div>
+
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 p-0.5 shadow-md">
+                            <Check className="w-2.5 h-2.5" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

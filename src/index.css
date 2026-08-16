@@ -1,6 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
+:root, [data-theme="obsidian"] {
+  --bg-app: #06080f;
+  --bg-surface: rgba(11, 15, 25, 0.7);
+  --bg-surface-hover: rgba(22, 30, 49, 0.8);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-primary: #10b981;
+}
+
+[data-theme="light"] {
+  --bg-app: #f1f5f9;
+  --bg-surface: rgba(255, 255, 255, 0.85);
+  --bg-surface-hover: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.09);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --accent-primary: #059669;
+}
+
+[data-theme="cyber"] {
+  --bg-app: #020b05;
+  --bg-surface: rgba(4, 26, 14, 0.75);
+  --bg-surface-hover: rgba(6, 40, 21, 0.85);
+  --border-subtle: rgba(16, 185, 129, 0.25);
+  --text-main: #e6fffa;
+  --text-muted: #6ee7b7;
+  --accent-primary: #00ff88;
+}
+
+[data-theme="bloomberg"] {
+  --bg-app: #0a0d14;
+  --bg-surface: rgba(15, 23, 42, 0.75);
+  --bg-surface-hover: rgba(30, 41, 59, 0.85);
+  --border-subtle: rgba(245, 158, 11, 0.25);
+  --text-main: #ffedd5;
+  --text-muted: #fbbf24;
+  --accent-primary: #f59e0b;
+}
+
 @theme {
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
@@ -8,14 +48,23 @@
   --color-obsidian-dark: #06080F;
   --color-obsidian-medium: #0B0F19;
   --color-obsidian-light: #111726;
+
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-accent-primary: var(--accent-primary);
 }
 
 html, body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #06080F;
-  color: #ffffff;
+  background-color: var(--bg-app);
+  color: var(--text-main);
   scroll-behavior: smooth;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
@@ -24,11 +73,36 @@ html, body {
 
 /* Custom overlay styles for glassmorphism */
 .liquid-glass {
-  background: rgba(11, 15, 25, 0.6);
+  background: var(--bg-surface);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dynamic overrides for theme support */
+#ai-sidebar, #full-screen-ai-workspace, #ai-chat-workspace, #terminal-root {
+  background-color: var(--bg-app) !important;
+  color: var(--text-main) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#ai-sidebar {
+  background-color: var(--bg-surface) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+}
+
+#profile-settings-page input, #profile-settings-page textarea,
+#full-screen-ai-workspace textarea, #full-screen-ai-workspace input,
+#terminal-root input, #terminal-root select {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+#profile-settings-page, #terminal-main-grid {
+  color: var(--text-main) !important;
 }
 
 /* Ambient Corner Glow States for key active widgets */
@@ -43,7 +117,7 @@ html, body {
   right: 0;
   width: 60px;
   height: 60px;
-  background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at 100% 0%, var(--accent-primary) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
 }
@@ -59,7 +133,7 @@ html, body {
   right: 0;
   width: 60px;
   height: 60px;
-  background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at 100% 0%, #EF4444 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
 }

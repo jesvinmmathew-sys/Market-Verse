@@ -199,7 +199,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#060608] text-white flex flex-col">
+    <div className="min-h-screen bg-bg-app text-text-main flex flex-col">
       {!isAuraRoute && !isAuthRoute && (
         <header className="border-b border-white/5 bg-black/45 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 min-h-16 flex flex-wrap items-center justify-between gap-3 md:gap-4">
