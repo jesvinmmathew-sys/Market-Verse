@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-export type ThemeType = "obsidian" | "light" | "cyber" | "bloomberg";
+export type ThemeType = 
+  | "obsidian" 
+  | "institutional-light" 
+  | "cyber-emerald" 
+  | "bloomberg-amber" 
+  | "midnight-slate" 
+  | "tokyo-crimson";
 
 interface ThemeContextProps {
   theme: ThemeType;
@@ -13,7 +19,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<ThemeType>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("marketverse_theme");
-      if (stored === "obsidian" || stored === "light" || stored === "cyber" || stored === "bloomberg") {
+      if (
+        stored === "obsidian" || 
+        stored === "institutional-light" || 
+        stored === "cyber-emerald" || 
+        stored === "bloomberg-amber" || 
+        stored === "midnight-slate" || 
+        stored === "tokyo-crimson"
+      ) {
         return stored as ThemeType;
       }
     }

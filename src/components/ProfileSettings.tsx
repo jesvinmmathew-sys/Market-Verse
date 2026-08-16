@@ -361,39 +361,55 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
                 <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
                   Appearance & Theme
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
                       id: "obsidian",
                       name: "Obsidian",
                       bg: "#06080F",
-                      card: "rgba(11, 15, 25, 0.7)",
+                      card: "rgba(15, 23, 42, 0.65)",
                       accent: "#10b981",
-                      description: "Liquid Glass"
+                      description: "Liquid Glass Space"
                     },
                     {
-                      id: "light",
-                      name: "Light",
-                      bg: "#f1f5f9",
-                      card: "rgba(255, 255, 255, 0.85)",
-                      accent: "#059669",
+                      id: "institutional-light",
+                      name: "Institutional Light",
+                      bg: "#f8fafc",
+                      card: "#ffffff",
+                      accent: "#16a34a",
                       description: "Pearl Contrast"
                     },
                     {
-                      id: "cyber",
+                      id: "cyber-emerald",
                       name: "Matrix Neon",
                       bg: "#020b05",
-                      card: "rgba(4, 26, 14, 0.75)",
+                      card: "rgba(6, 35, 19, 0.7)",
                       accent: "#00ff88",
                       description: "Green Glow"
                     },
                     {
-                      id: "bloomberg",
+                      id: "bloomberg-amber",
                       name: "Bloomberg",
                       bg: "#0a0d14",
-                      card: "rgba(15, 23, 42, 0.75)",
+                      card: "rgba(20, 26, 38, 0.75)",
                       accent: "#f59e0b",
                       description: "Terminal Amber"
+                    },
+                    {
+                      id: "midnight-slate",
+                      name: "Midnight Slate",
+                      bg: "#0f172a",
+                      card: "rgba(30, 41, 59, 0.7)",
+                      accent: "#34d399",
+                      description: "High-Contrast Blue"
+                    },
+                    {
+                      id: "tokyo-crimson",
+                      name: "Tokyo Crimson",
+                      bg: "#0e0a12",
+                      card: "rgba(32, 20, 43, 0.75)",
+                      accent: "#f43f5e",
+                      description: "Cyberpunk Pink"
                     }
                   ].map((t) => {
                     const isSelected = theme === t.id;

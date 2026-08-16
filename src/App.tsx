@@ -11,6 +11,7 @@ import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
 import { AuthPage } from "./components/AuthPage";
 import ProfileSettings from "./components/ProfileSettings";
 import { supabase } from "./supabaseClient";
+import { useTheme, ThemeType } from "./context/ThemeContext";
 import { 
   Menu, 
   X, 
@@ -25,7 +26,9 @@ import {
   Activity,
   LogOut,
   User,
-  UploadCloud
+  UploadCloud,
+  Palette,
+  Check
 } from "lucide-react";
 
 export default function App() {
@@ -44,6 +47,9 @@ export default function App() {
   // Removed isAuthModalOpen modal state in favor of dedicated /auth page
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme } = useTheme();
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
+  const themeDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -138,6 +144,9 @@ export default function App() {
       }
       if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
         setIsAvatarDropdownOpen(false);
+      }
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target as Node)) {
+        setIsThemeDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -345,6 +354,62 @@ export default function App() {
                   </div>
                 );
               })()}
+
+              {/* Quick Theme Switcher Dropdown */}
+              <div className="relative shrink-0" ref={themeDropdownRef}>
+                <button
+                  onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
+                  className="p-1.5 text-text-sub hover:text-text-main hover:bg-white/5 rounded-lg transition-all cursor-pointer border border-border-subtle flex items-center justify-center"
+                  title="Switch theme"
+                  id="navbar-theme-switcher"
+                >
+                  <Palette className="w-4 h-4 text-cyan-400" />
+                </button>
+
+                <AnimatePresence>
+                  {isThemeDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-48 rounded-xl border border-border-subtle bg-surface/95 backdrop-blur-xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 text-left"
+                    >
+                      <div className="px-3 py-1.5 border-b border-border-subtle mb-1 select-none">
+                        <p className="text-[8px] text-text-dim font-bold uppercase tracking-wider">Active Terminal Theme</p>
+                      </div>
+                      {[
+                        { id: "obsidian", name: "Obsidian Space", color: "#10b981" },
+                        { id: "institutional-light", name: "Institutional Light", color: "#16a34a" },
+                        { id: "cyber-emerald", name: "Matrix Neon", color: "#00ff88" },
+                        { id: "bloomberg-amber", name: "Bloomberg Amber", color: "#f59e0b" },
+                        { id: "midnight-slate", name: "Midnight Slate", color: "#38bdf8" },
+                        { id: "tokyo-crimson", name: "Tokyo Crimson", color: "#e11d48" }
+                      ].map((t) => {
+                        const isSelected = theme === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              setTheme(t.id as ThemeType);
+                              setIsThemeDropdownOpen(false);
+                            }}
+                            className={`w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition-all flex items-center justify-between ${
+                              isSelected ? "text-cyan-400 bg-white/5 font-extrabold" : "text-text-sub hover:text-text-main hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full border border-white/10" style={{ backgroundColor: t.color }} />
+                              <span>{t.name}</span>
+                            </div>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400" />}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Authentication Trigger */}
               {user ? (
