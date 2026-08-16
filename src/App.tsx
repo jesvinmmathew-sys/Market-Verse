@@ -59,6 +59,31 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState<string>("appearance");
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
+  const [customPfp, setCustomPfp] = useState<string | null>(null);
+
+  const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+      const parts = user.user_metadata.full_name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return user.user_metadata.full_name.slice(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.slice(0, 2).toUpperCase();
+    }
+    return "TR";
+  };
+
+  useEffect(() => {
+    setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
+    const handlePfpUpdate = () => {
+      setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
+    };
+    window.addEventListener("marketverse_pfp_updated", handlePfpUpdate);
+    return () => window.removeEventListener("marketverse_pfp_updated", handlePfpUpdate);
+  }, []);
+
   const openSettingsWithTab = (tab: string) => {
     setSettingsTab(tab);
     setIsSettingsOpen(true);
@@ -428,16 +453,16 @@ export default function App() {
                 <div className="relative" ref={avatarDropdownRef}>
                   <button
                     onClick={() => setIsAvatarDropdownOpen(!isAvatarDropdownOpen)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md hover:scale-[1.05] transition-all border border-cyan-500/20 overflow-hidden"
-                    style={{
-                      background: user.user_metadata?.avatar_url && user.user_metadata.avatar_url.startsWith("linear-gradient") ? user.user_metadata.avatar_url : "transparent",
-                      backgroundColor: user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? "transparent" : "#1e293b"
-                    }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md hover:scale-[1.05] transition-all border border-cyan-500/20 overflow-hidden relative"
                   >
-                    {user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                    {customPfp ? (
+                      <img src={customPfp} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
                       <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <span>{user.user_metadata?.full_name ? user.user_metadata.full_name[0].toUpperCase() : user.email?.[0].toUpperCase()}</span>
+                      <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">
+                        {getInitials()}
+                      </div>
                     )}
                   </button>                  <AnimatePresence>
                     {isAvatarDropdownOpen && (
@@ -450,16 +475,15 @@ export default function App() {
                       >
                         {/* User Header */}
                         <div className="flex items-center gap-3 border-b border-white/5 pb-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border border-cyan-500/20 overflow-hidden shrink-0"
-                            style={{
-                              background: user.user_metadata?.avatar_url && user.user_metadata.avatar_url.startsWith("linear-gradient") ? user.user_metadata.avatar_url : "transparent",
-                              backgroundColor: user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? "transparent" : "#1e293b"
-                            }}
-                          >
-                            {user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border border-cyan-500/20 overflow-hidden shrink-0 relative">
+                            {customPfp ? (
+                              <img src={customPfp} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
                               <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                              <span>{user.user_metadata?.full_name ? user.user_metadata.full_name[0].toUpperCase() : user.email?.[0].toUpperCase()}</span>
+                              <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">
+                                {getInitials()}
+                              </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">

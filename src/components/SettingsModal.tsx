@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme, ThemeType, GlowIntensity, BlurStrength } from "../context/ThemeContext";
 import { 
   X, 
   Settings, 
-  Sliders, 
   Palette, 
   ShieldAlert, 
-  Key, 
   Info, 
   Check, 
   User, 
   Camera, 
   Trash2,
-  RefreshCw,
-  LogOut,
-  Mail,
-  Loader2
+  Loader2,
+  Mail
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 
@@ -29,14 +25,6 @@ interface SettingsModalProps {
   onNavigate: (path: string) => void;
   initialTab?: string;
 }
-
-const AVATAR_PRESETS = [
-  "https://api.dicebear.com/9.x/bottts/svg?seed=Market1",
-  "https://api.dicebear.com/9.x/lorelei/svg?seed=Alpha",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Trader",
-  "https://api.dicebear.com/9.x/glass/svg?seed=Verse",
-  "https://api.dicebear.com/9.x/planets/svg?seed=Nova"
-];
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -58,42 +46,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setTransparencyLevel
   } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
-  
+  // Normalize initialTab since we only support: general, appearance, about
+  const normalizedTab = initialTab === "trading" || initialTab === "api" ? "appearance" : initialTab;
+  const [activeTab, setActiveTab] = useState<string>(normalizedTab);
+
   // Sync tab choice when reopened
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab);
+      const normalized = initialTab === "trading" || initialTab === "api" ? "appearance" : initialTab;
+      setActiveTab(normalized);
     }
   }, [isOpen, initialTab]);
 
   // User metadata states
   const [user, setUser] = useState<any>(propUser);
   const [fullName, setFullName] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Trading preferences states
-  const [defaultOrderSize, setDefaultOrderSize] = useState<number>(() => {
-    return parseInt(localStorage.getItem("marketverse_default_order_size") || "5");
+  // Profile Picture Upload states
+  const [customPfp, setCustomPfp] = useState<string | null>(() => {
+    return localStorage.getItem("marketverse_user_pfp");
   });
-  const [riskTolerance, setRiskTolerance] = useState<string>(() => {
-    return localStorage.getItem("marketverse_risk_tolerance") || "balanced";
-  });
-
-  // API Feeds state
-  const [customApiKey, setCustomApiKey] = useState<string>(() => {
-    return localStorage.getItem("marketverse_custom_gemini_key") || "";
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync user state
   useEffect(() => {
     if (propUser) {
       setUser(propUser);
       setFullName(propUser.user_metadata?.full_name || "");
-      setAvatarUrl(propUser.user_metadata?.avatar_url || "");
     }
   }, [propUser]);
 
@@ -110,13 +92,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  // General tab avatar options
-  const handlePresetSelect = (preset: string) => {
-    setAvatarUrl(preset);
+  // Handle local Base64 profile upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    setSuccessMsg(null);
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError("Image size must be smaller than 2MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setCustomPfp(base64);
+        localStorage.setItem("marketverse_user_pfp", base64);
+        window.dispatchEvent(new Event("marketverse_pfp_updated"));
+        setSuccessMsg("Custom profile avatar loaded successfully.");
+        setTimeout(() => setSuccessMsg(null), 3000);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleRemoveAvatar = () => {
-    setAvatarUrl("");
+  const handleResetPfp = () => {
+    setError(null);
+    setCustomPfp(null);
+    localStorage.removeItem("marketverse_user_pfp");
+    window.dispatchEvent(new Event("marketverse_pfp_updated"));
+    setSuccessMsg("Profile avatar reset to initials.");
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
+  const getInitials = () => {
+    if (fullName) {
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return fullName.slice(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.slice(0, 2).toUpperCase();
+    }
+    return "TR";
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -132,10 +151,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         return;
       }
 
+      // We update full name to Supabase
       const { data, error: updateErr } = await supabase.auth.updateUser({
         data: {
-          full_name: fullName.trim(),
-          avatar_url: avatarUrl
+          full_name: fullName.trim()
         }
       });
 
@@ -144,38 +163,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       if (data.user) {
         localStorage.setItem("supabase_user", JSON.stringify(data.user));
         onAuthSuccess(data.user);
-        setSuccessMsg("Terminal profile updated successfully.");
-        // Dispatch event
+        setSuccessMsg("Account profile details updated successfully.");
         window.dispatchEvent(new Event("aura_profile_updated"));
+        setTimeout(() => setSuccessMsg(null), 3000);
       }
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "An error occurred while saving your changes.");
     } finally {
       setSaveLoading(false);
-    }
-  };
-
-  const handleSaveTrading = () => {
-    localStorage.setItem("marketverse_default_order_size", defaultOrderSize.toString());
-    localStorage.setItem("marketverse_risk_tolerance", riskTolerance);
-    setSuccessMsg("Trading risk preferences saved successfully.");
-    setTimeout(() => setSuccessMsg(null), 3000);
-  };
-
-  const handleSaveApi = () => {
-    localStorage.setItem("marketverse_custom_gemini_key", customApiKey.trim());
-    setSuccessMsg("Gemini custom API key registered locally.");
-    setTimeout(() => setSuccessMsg(null), 3000);
-  };
-
-  const handleResetBalance = () => {
-    if (window.confirm("Are you sure you want to reset your virtual simulated portfolio balance back to ₹1,000,000? All active holdings will be cleared.")) {
-      localStorage.removeItem("marketverse_paper_balance");
-      localStorage.removeItem("marketverse_portfolio_holdings");
-      window.dispatchEvent(new Event("marketverse_balance_reset"));
-      setSuccessMsg("Simulated portfolio successfully reset.");
-      setTimeout(() => setSuccessMsg(null), 3000);
     }
   };
 
@@ -189,7 +185,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="liquid-glass rounded-2xl max-w-4xl w-full border border-white/10 bg-[#0B0F19] flex flex-col md:flex-row h-[85vh] overflow-hidden"
+        className="liquid-glass rounded-2xl max-w-4xl w-full border border-white/10 bg-[#0B0F19] flex flex-col md:flex-row h-[80vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         id="settings-modal-box"
       >
@@ -203,11 +199,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <nav className="space-y-1" id="settings-nav">
               {[
-                { id: "general", label: "General", icon: User },
-                { id: "appearance", label: "Appearance & Themes", icon: Palette },
-                { id: "trading", label: "Trading & Risk", icon: Sliders },
-                { id: "api", label: "API Keys & Feeds", icon: Key },
-                { id: "about", label: "About Terminal", icon: Info }
+                { id: "general", label: "Profile & Account", icon: User },
+                { id: "appearance", label: "Appearance & Glass", icon: Palette },
+                { id: "about", label: "About MarketVerse", icon: Info }
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -243,7 +237,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
                 className="w-full py-2 px-3 border border-red-500/20 hover:border-red-500/40 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5" />
                 <span>Logout Session</span>
               </button>
             ) : (
@@ -267,9 +260,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               {activeTab === "general" && "Profile & Account Management"}
-              {activeTab === "appearance" && "Appearance & Theme Customizer"}
-              {activeTab === "trading" && "Simulated Paper Trading Risk Rules"}
-              {activeTab === "api" && "Custom API Endpoints & Feeds"}
+              {activeTab === "appearance" && "Appearance & Glassmorphism Customizer"}
               {activeTab === "about" && "About MarketVerse India"}
             </h2>
             <button 
@@ -292,54 +283,64 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
 
             {successMsg && (
-              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium animate-fade-in">
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium animate-fade-in">
                 <Check className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{successMsg}</span>
               </div>
             )}
 
-            {/* General Tab */}
+            {/* Profile & Account Tab */}
             {activeTab === "general" && (
               <form onSubmit={handleSaveProfile} className="space-y-6 text-left">
                 <div className="flex flex-col sm:flex-row gap-6 items-start">
-                  {/* Left: Avatar Upload / Presets */}
-                  <div className="space-y-3 shrink-0">
-                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Profile Image</label>
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-20 h-20 rounded-full border border-white/10 overflow-hidden bg-[#06080F] flex items-center justify-center text-white text-2xl font-bold shadow-inner relative group">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{fullName ? fullName[0]?.toUpperCase() : user?.email?.[0]?.toUpperCase()}</span>
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5 text-center">
-                        <span className="text-[8px] font-bold text-white/30 uppercase tracking-wider block">Choose Preset</span>
-                        <div className="flex items-center gap-1.5 justify-center">
-                          {AVATAR_PRESETS.map((preset, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => handlePresetSelect(preset)}
-                              className={`w-7 h-7 rounded-full border transition-all cursor-pointer overflow-hidden bg-slate-900 ${
-                                avatarUrl === preset ? "border-cyan-400 scale-110 ring-2 ring-cyan-400/20" : "border-white/10 hover:border-white/40 hover:scale-105"
-                              }`}
-                            >
-                              <img src={preset} alt={`Preset ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                            </button>
-                          ))}
+                  
+                  {/* Custom Profile Picture Upload Section */}
+                  <div className="space-y-3 shrink-0 w-full sm:w-44 flex flex-col items-center">
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block text-center">Profile Image</label>
+                    
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-20 h-20 rounded-full border border-white/10 overflow-hidden bg-[#06080F] flex items-center justify-center text-white text-2xl font-bold shadow-inner relative group cursor-pointer hover:border-cyan-400 transition-all"
+                    >
+                      {customPfp ? (
+                        <img src={customPfp} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : user?.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                        <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center font-bold text-white text-lg">
+                          {getInitials()}
                         </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                        <Camera className="w-5 h-5 text-white" />
                       </div>
+                    </div>
 
-                      {avatarUrl && (
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-1.5 border border-cyan-500/20 hover:border-cyan-500/40 bg-cyan-500/5 hover:bg-cyan-500/10 text-cyan-400 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Upload Avatar</span>
+                      </button>
+                      {customPfp && (
                         <button
                           type="button"
-                          onClick={handleRemoveAvatar}
-                          className="w-full py-1 border border-red-500/20 hover:border-red-500/50 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[9px] font-bold uppercase tracking-wider text-red-400 hover:text-red-300 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                          onClick={handleResetPfp}
+                          className="w-full py-1 border border-white/5 hover:border-white/10 bg-white/[0.02] text-white/40 hover:text-white text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
-                          <span>Remove Avatar</span>
+                          <span>Reset to Default</span>
                         </button>
                       )}
                     </div>
@@ -350,7 +351,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Email Address (Verified)</label>
                       <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/25">
                           <Mail className="w-4 h-4" />
                         </div>
                         <input
@@ -363,7 +364,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block" htmlFor="settings-fullname-input">Full Name</label>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block" htmlFor="settings-fullname-input">Display Name</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
                           <User className="w-4 h-4 text-cyan-400" />
@@ -375,8 +376,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           className="block w-full pl-9 pr-3 py-2.5 text-xs bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/20 transition-all font-sans"
-                          placeholder="Enter your full name"
+                          placeholder="Enter display name"
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Account Tier</span>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Active Trader · Professional Tier</span>
                       </div>
                     </div>
 
@@ -584,17 +593,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div 
                         className="w-40 p-3 rounded-lg border text-center shadow-lg relative z-10 transition-all duration-200"
                         style={{
-                          backgroundColor: `rgba(15, 23, 42, ${0.98 - ((transparencyLevel - 1) / 9) * 0.95})`,
-                          backdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 32)}px) saturate(180%)`,
-                          WebkitBackdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 32)}px) saturate(180%)`,
-                          borderColor: `rgba(255, 255, 255, ${0.15 - ((transparencyLevel - 1) / 9) * 0.09})`,
-                          boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)`
+                          backgroundColor: `rgba(15, 23, 42, ${0.95 - ((transparencyLevel - 1) / 9) * 0.93})`,
+                          backdropFilter: `blur(${transparencyLevel === 1 ? 0 : Math.max(3, Math.round(12 - (transparencyLevel - 5) * 1.6))}px)`,
+                          WebkitBackdropFilter: `blur(${transparencyLevel === 1 ? 0 : Math.max(3, Math.round(12 - (transparencyLevel - 5) * 1.6))}px)`,
+                          borderColor: `rgba(255, 255, 255, 0.08)`,
+                          boxShadow: `0 4px 24px -1px rgba(0, 0, 0, 0.25)`
                         }}
                       >
                         <div className="text-[10px] font-bold text-white uppercase tracking-wider">Live Preview</div>
                         <div className="text-[8px] text-white/50 mt-1 font-mono leading-tight">
-                          Opacity: {Math.round((0.98 - ((transparencyLevel - 1) / 9) * 0.95) * 100)}%<br />
-                          Blur: {Math.round(((transparencyLevel - 1) / 9) * 32)}px
+                          Opacity: {Math.round((0.95 - ((transparencyLevel - 1) / 9) * 0.93) * 100)}%<br />
+                          Blur: {transparencyLevel === 1 ? 0 : Math.max(3, Math.round(12 - (transparencyLevel - 5) * 1.6))}px
                         </div>
                       </div>
                     </div>
@@ -665,120 +674,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         ))}
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Trading Tab */}
-            {activeTab === "trading" && (
-              <div className="space-y-6 text-left">
-                <div className="space-y-4">
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block" htmlFor="default-qty-input">
-                      Default Order Quantity
-                    </label>
-                    <p className="text-[9px] text-white/30">The pre-filled shares amount when launching order tickets.</p>
-                    <input
-                      id="default-qty-input"
-                      type="number"
-                      min={1}
-                      value={defaultOrderSize}
-                      onChange={(e) => setDefaultOrderSize(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="block w-full max-w-[200px] px-3 py-2 text-xs bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:border-cyan-400 font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">
-                      Profile Risk Tolerance
-                    </label>
-                    <p className="text-[9px] text-white/30">Determines advisory guidelines suggested by NOVA.</p>
-                    <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/5 gap-1 max-w-sm">
-                      {[
-                        { id: "conservative", label: "Conservative" },
-                        { id: "balanced", label: "Balanced" },
-                        { id: "aggressive", label: "Aggressive" }
-                      ].map((opt) => (
-                        <button
-                          key={opt.id}
-                          onClick={() => setRiskTolerance(opt.id)}
-                          className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
-                            riskTolerance === opt.id
-                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md"
-                              : "text-white/40 hover:text-white hover:bg-white/5"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 pt-4 space-y-4">
-                  <div>
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider block text-red-400">Danger Zone</h3>
-                    <p className="text-[10px] text-white/30 mt-0.5">Reset terminal parameters back to factory settings.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={handleSaveTrading}
-                      className="py-2 px-4 bg-[#3D81E3] hover:bg-[#3D81E3]/80 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                    >
-                      Save Trading Preferences
-                    </button>
-                    <button
-                      onClick={handleResetBalance}
-                      className="py-2 px-4 border border-red-500/30 hover:border-red-500/60 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Reset Portfolio Balance</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* API Feeds Tab */}
-            {activeTab === "api" && (
-              <div className="space-y-6 text-left">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-cyan-400">
-                    <Key className="w-4 h-4" />
-                    <label className="text-[10px] font-bold uppercase tracking-wider block" htmlFor="settings-api-key">Custom Gemini AI API Key (Local Overrides)</label>
-                  </div>
-                  <p className="text-[10px] text-white/50 leading-relaxed font-sans">
-                    By default, NOVA runs on MarketVerse's high-speed quantitative API keys. However, if rate limits are busy, you can input your own Gemini API key. It is saved securely inside your browser's local sandbox storage and never sent to our servers.
-                  </p>
-                  <input
-                    id="settings-api-key"
-                    type="password"
-                    value={customApiKey}
-                    onChange={(e) => setCustomApiKey(e.target.value)}
-                    placeholder="Enter your VITE_GEMINI_API_KEY..."
-                    className="block w-full px-4 py-3 text-xs bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/20 transition-all font-mono"
-                  />
-                  <div className="pt-2 flex gap-3">
-                    <button
-                      onClick={handleSaveApi}
-                      className="py-2 px-4 bg-[#3D81E3] hover:bg-[#3D81E3]/80 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                    >
-                      Register Custom Key
-                    </button>
-                    {customApiKey && (
-                      <button
-                        onClick={() => {
-                          setCustomApiKey("");
-                          localStorage.removeItem("marketverse_custom_gemini_key");
-                          setSuccessMsg("Custom API key cleared. Now reverting back to shared platform feeds.");
-                          setTimeout(() => setSuccessMsg(null), 3000);
-                        }}
-                        className="py-2 px-4 border border-white/10 hover:border-white/20 text-white/50 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                      >
-                        Clear Key
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
