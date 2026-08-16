@@ -100,96 +100,9 @@ export const generateGeneralMarketAnalysis = (): string => {
     "*Disclaimer: Compiled directly from the quantitative local market intelligence dataset. Educational analysis only, not financial advice.*";
 };
 
-export async function queryNovaAI(
-  prompt: string, 
-  history: Array<{ role: string; text: string }> = []
-): Promise<string> {
-  const apiKey =
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-    "";
+import { queryNovaAI, callGeminiDirectly } from "./aiApi";
 
-  if (!apiKey) {
-    return "⚠️ **Configuration Required:** Gemini API key is missing. Please add `VITE_GEMINI_API_KEY=your_key` to your `.env` file and restart Vite (`npm run dev`).";
-  }
-
-  // Format multi-turn chat history for Gemini
-  const contents = [
-    ...history
-      .filter(msg => msg.text && msg.text.trim() !== '')
-      .map(msg => ({
-        role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.text }]
-      })),
-    {
-      role: 'user',
-      parts: [{ text: prompt }]
-    }
-  ];
-
-  const systemInstruction = {
-    parts: [{
-      text: "You are NOVA, the flagship quantitative AI intelligence engine for MarketVerse India.\n\n" +
-        "### Creator & Architect Identity\n" +
-        "- Founder & Developer: Jesvin Mathew (Jesvin).\n" +
-        "- Ownership: Jesvin Mathew is the sole founder, architect, and lead engineer who built MarketVerse India from the ground up.\n" +
-        "- When asked \"Who made you?\", \"Who owns MarketVerse?\", or \"Who is your creator?\", speak with authentic pride about Jesvin Mathew's engineering and vision behind the platform.\n\n" +
-        "### What is MarketVerse India?\n" +
-        "MarketVerse is an institutional-grade, modern trading terminal and market intelligence ecosystem designed for Indian equities and derivatives traders.\n\n" +
-        "### Core Architecture & Platform Modules:\n" +
-        "1. Nova AI (You): Advanced quantitative market analyst equipped with real-time Indian stock market knowledge, technical indicators (RSI, MACD, Moving Averages), Support/Resistance calculation, and F&O derivative analysis.\n" +
-        "2. Live Market Radar & Screener: Scans active Indian stocks across NSE/BSE, tracking bullish breakouts, bearish pullbacks, volume shockers, and sectoral momentum.\n" +
-        "3. Live Simulated Paper Trading: Real-time paper trading engine allowing users to execute simulated buy/sell orders, track live portfolio valuation, unrealized P&L, and test strategies risk-free.\n" +
-        "4. Quantitative Portfolio Analyzer: Comprehensive portfolio health analysis, sector concentration breakdowns, beta risk measurements, and automated rebalancing recommendations.\n" +
-        "5. AI Market News Hub: Curated financial intelligence, macroeconomic alerts, and earnings breakdowns tailored to Dalal Street.\n" +
-        "6. Market Telemetry: Tracks live trading hours (IST UTC+5:30) with weekend/holiday detection.\n\n" +
-        "### Tone & Interaction Style:\n" +
-        "- Adopt the conversational fluidity, warmth, wit, and intuitive peer-to-peer nature of Google Gemini.\n" +
-        "- Answer general conversation naturally and concisely.\n" +
-        "- For financial analysis, deliver structured institutional breakdowns with bold technical levels, risk-to-reward metrics, and clear invalidation zones without robotic filler disclaimers."
-    }]
-  };
-
-  try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          systemInstruction,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1200
-          }
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Gemini API Error details:", data);
-      return "⚠️ **AI API Error (" + response.status + "):** " + (data.error?.message || "Check your API key and quota.");
-    }
-
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I didn't receive a response. Please try again.";
-  } catch (err: any) {
-    console.error("Fetch failure in queryNovaAI:", err);
-    return "⚠️ **Network Error:** Could not connect to Gemini API. Details: " + err.message;
-  }
-}
-
-// Keep callGeminiDirectly for compatibility with aiApi and aiAgent
-export const callGeminiDirectly = async (
-  prompt: string,
-  history: { role: string; text: string }[] = [],
-  systemInstruction?: string,
-  model: string = "gemini-1.5-flash"
-): Promise<string> => {
-  return queryNovaAI(prompt, history);
-};
+export { queryNovaAI, callGeminiDirectly };
 
 export const marketVerseAI = {
   /**
