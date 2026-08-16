@@ -500,22 +500,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   
                   <div className="flex flex-col md:flex-row gap-6 items-center">
-                    {/* Left side: Range Slider + Context Labels */}
-                    <div className="flex-1 w-full space-y-3">
+                    {/* Left side: Custom Range Slider + Context Labels */}
+                    <div className="flex-1 w-full space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-cyan-400 uppercase font-mono">
-                          {transparencyLevel === 1 && "Level 1: Solid Opaque (0%)"}
-                          {transparencyLevel >= 2 && transparencyLevel <= 4 && `Level ${transparencyLevel}: Dense Sheer`}
-                          {transparencyLevel === 5 && "Level 5: Balanced Glass (40%)"}
-                          {transparencyLevel >= 6 && transparencyLevel <= 9 && `Level ${transparencyLevel}: Clear Glass`}
-                          {transparencyLevel === 10 && "Level 10: Ultra Sheer (85%)"}
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono text-[9px] font-bold">
-                          Level {transparencyLevel}/10
-                        </span>
+                        <div className="px-2.5 py-1 rounded-full bg-white/[0.02] border border-white/5 text-cyan-400 font-mono text-[9px] font-bold">
+                          Level {transparencyLevel} / 10 • {
+                            transparencyLevel === 1 ? "Solid Opaque" :
+                            transparencyLevel <= 4 ? "Dense Sheer" :
+                            transparencyLevel <= 7 ? "Balanced Glass" :
+                            transparencyLevel <= 9 ? "Clear Crystal" : "Pure Glass"
+                          }
+                        </div>
                       </div>
 
-                      <div className="relative pt-2 pb-6">
+                      {/* Custom Range Slider Container */}
+                      <div className="relative py-4 select-none">
+                        {/* Interactive Invisible HTML range input overlaid */}
                         <input
                           type="range"
                           min="1"
@@ -523,18 +523,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           step="1"
                           value={transparencyLevel}
                           onChange={(e) => setTransparencyLevel(parseInt(e.target.value))}
-                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                         />
-                        {/* Step Tick indicators */}
-                        <div className="absolute inset-x-0 bottom-1.5 flex justify-between px-0.5">
+
+                        {/* Track Background */}
+                        <div className="h-1.5 bg-white/5 rounded-full w-full relative z-0">
+                          {/* Filled track gradient */}
+                          <div 
+                            className="absolute top-0 left-0 h-full rounded-full bg-gradient-to-r from-emerald-500/30 to-[#10B981] transition-all duration-150"
+                            style={{ width: `${((transparencyLevel - 1) / 9) * 100}%` }}
+                          />
+                          
+                          {/* Custom metallic/glass thumb */}
+                          <div 
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full border border-white/40 bg-slate-900 flex items-center justify-center shadow-lg transition-all duration-150 relative z-10 hover:border-emerald-400"
+                            style={{ 
+                              left: `${((transparencyLevel - 1) / 9) * 100}%`,
+                              boxShadow: `0 0 10px rgba(16, 185, 129, ${((transparencyLevel - 1) / 9) * 0.4})`
+                            }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10B981]" />
+                          </div>
+                        </div>
+
+                        {/* Step Tick indicators & click selectors */}
+                        <div className="absolute inset-x-0 -bottom-3 flex justify-between px-0.5 z-10 pointer-events-none">
                           {Array.from({ length: 10 }).map((_, i) => {
                             const val = i + 1;
                             const isActive = transparencyLevel === val;
                             return (
-                              <div key={val} className="flex flex-col items-center gap-1 select-none">
-                                <span className={`w-1 h-1 rounded-full ${isActive ? "bg-cyan-400 shadow-[0_0_6px_#22d3ee]" : "bg-white/20"}`} />
-                                <span className={`text-[7px] font-mono font-bold ${isActive ? "text-cyan-400" : "text-white/20"}`}>{val}</span>
-                              </div>
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setTransparencyLevel(val)}
+                                className="flex flex-col items-center gap-1 cursor-pointer pointer-events-auto"
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                  isActive 
+                                    ? "bg-emerald-400 scale-125 shadow-[0_0_8px_#10B981]" 
+                                    : "bg-white/20 hover:bg-white/45"
+                                }`} />
+                                <span className={`text-[8px] font-mono font-bold transition-all ${
+                                  isActive ? "text-emerald-400" : "text-white/20"
+                                }`}>{val}</span>
+                              </button>
                             );
                           })}
                         </div>
@@ -550,17 +582,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                       {/* Floating preview chip using card variables */}
                       <div 
-                        className="w-40 p-3 rounded-lg border border-white/10 text-center shadow-lg relative z-10"
+                        className="w-40 p-3 rounded-lg border text-center shadow-lg relative z-10 transition-all duration-200"
                         style={{
-                          backgroundColor: `rgba(15, 23, 42, ${0.98 - ((transparencyLevel - 1) / 9) * 0.83})`,
-                          backdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 24)}px)`,
-                          WebkitBackdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 24)}px)`
+                          backgroundColor: `rgba(15, 23, 42, ${0.98 - ((transparencyLevel - 1) / 9) * 0.95})`,
+                          backdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 32)}px) saturate(180%)`,
+                          WebkitBackdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 32)}px) saturate(180%)`,
+                          borderColor: `rgba(255, 255, 255, ${0.15 - ((transparencyLevel - 1) / 9) * 0.09})`,
+                          boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)`
                         }}
                       >
                         <div className="text-[10px] font-bold text-white uppercase tracking-wider">Live Preview</div>
                         <div className="text-[8px] text-white/50 mt-1 font-mono leading-tight">
-                          Opacity: {Math.round((0.98 - ((transparencyLevel - 1) / 9) * 0.83) * 100)}%<br />
-                          Blur: {Math.round(((transparencyLevel - 1) / 9) * 24)}px
+                          Opacity: {Math.round((0.98 - ((transparencyLevel - 1) / 9) * 0.95) * 100)}%<br />
+                          Blur: {Math.round(((transparencyLevel - 1) / 9) * 32)}px
                         </div>
                       </div>
                     </div>
@@ -763,7 +797,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="grid grid-cols-2 gap-4 text-[10.5px]">
                   <div>
                     <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider block">Founder & Lead Architect</span>
-                    <span className="text-white font-bold block mt-0.5">Jesvin Mathew (Jesvin)</span>
+                    <span className="text-white font-bold block mt-0.5">Jesvin M Mathew</span>
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider block">Terminal Version</span>
