@@ -655,7 +655,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   const portfolioGainPct = portfolioCost > 0 ? (portfolioGain / portfolioCost) * 100 : 0;
 
   return (
-    <div className="relative min-h-screen bg-[#060608] text-white flex flex-col justify-between selection:bg-brand/30" id="terminal-root">
+    <div className="relative min-h-screen bg-[#06080F] text-white flex flex-col justify-between selection:bg-brand/30" id="terminal-root">
       
       {/* Terminal Main Layout */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-6 py-6 grid grid-cols-12 gap-6 items-start relative z-10" id="terminal-main-grid">
@@ -665,7 +665,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
           {/* Bull Card */}
           <div 
             onClick={() => onNavigate("/market/bullish")}
-            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.02] hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.02] hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] glow-emerald"
           >
             <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Market Strength</div>
             <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400 mb-3 border border-emerald-500/25 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
@@ -678,7 +678,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
           {/* Bear Card */}
           <div 
             onClick={() => onNavigate("/market/bearish")}
-            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-rose-500/40 hover:bg-rose-500/[0.02] hover:shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+            className="rounded-xl p-4 border text-center flex flex-col items-center cursor-pointer transition-all duration-200 select-none bg-white/[0.02] border-white/5 hover:border-rose-500/40 hover:bg-rose-500/[0.02] hover:shadow-[0_0_15px_rgba(244,63,94,0.1)] glow-crimson"
           >
             <div className="text-[10px] font-mono text-white/40 uppercase mb-3">Hedging Caution</div>
             <div className="w-10 h-10 rounded-full bg-rose-500/15 flex items-center justify-center text-rose-400 mb-3 border border-rose-500/25 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
@@ -751,7 +751,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               </div>
 
               {/* Top Row: AI summary block */}
-              <div className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0f1115]/50 flex items-start gap-4 text-left" id="dashboard-ai-summary-widget">
+              <div className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0B0F19]/60 flex items-start gap-4 text-left" id="dashboard-ai-summary-widget">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-[#0B2551] flex items-center justify-center text-cyan-200 shrink-0">
                   <Sparkles className="w-5 h-5 fill-cyan-400/20 animate-pulse" />
                 </div>
@@ -821,7 +821,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                           <div 
                             key={stock.symbol}
                             onClick={() => onNavigate(`/stock/${stock.symbol.toLowerCase()}`)}
-                            className="bg-[#0c0e12]/80 border border-white/5 rounded-xl p-3.5 hover:border-white/20 hover:bg-[#0c0e12] transition-all cursor-pointer flex flex-col justify-between h-32 text-left group"
+                            className="bg-[#0B0F19]/80 border border-white/5 rounded-xl p-3.5 hover:border-white/20 hover:bg-[#0B0F19] transition-all cursor-pointer flex flex-col justify-between h-32 text-left group"
                           >
                             <div>
                               <div className="flex items-center justify-between">
@@ -1285,9 +1285,9 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                       onChange={(e) => setStockSectorFilter(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 text-white rounded-lg p-2 text-xs focus:outline-none focus:border-[#3D81E3]/50 cursor-pointer"
                     >
-                      <option value="All" className="bg-[#0f1115]">All Sectors</option>
+                      <option value="All" className="bg-[#0B0F19]">All Sectors</option>
                       {["Banking", "IT", "Automobile", "Pharma", "Energy", "FMCG", "Finance", "Infrastructure", "Metals", "Telecom"].map(sec => (
-                        <option key={sec} value={sec} className="bg-[#0f1115]">{sec}</option>
+                        <option key={sec} value={sec} className="bg-[#0B0F19]">{sec}</option>
                       ))}
                     </select>
                   </div>
@@ -1300,10 +1300,10 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                       onChange={(e) => setStockCapFilter(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 text-white rounded-lg p-2 text-xs focus:outline-none focus:border-[#3D81E3]/50 cursor-pointer"
                     >
-                      <option value="All" className="bg-[#0f1115]">All Caps</option>
-                      <option value="Large" className="bg-[#0f1115]">Large Cap (&gt;= ₹2.0T)</option>
-                      <option value="Mid" className="bg-[#0f1115]">Mid Cap (₹0.5T - ₹2.0T)</option>
-                      <option value="Small" className="bg-[#0f1115]">Small Cap (&lt; ₹0.5T)</option>
+                      <option value="All" className="bg-[#0B0F19]">All Caps</option>
+                      <option value="Large" className="bg-[#0B0F19]">Large Cap (&gt;= ₹2.0T)</option>
+                      <option value="Mid" className="bg-[#0B0F19]">Mid Cap (₹0.5T - ₹2.0T)</option>
+                      <option value="Small" className="bg-[#0B0F19]">Small Cap (&lt; ₹0.5T)</option>
                     </select>
                   </div>
 
@@ -1315,9 +1315,9 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                       onChange={(e) => setStockMovementFilter(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 text-white rounded-lg p-2 text-xs focus:outline-none focus:border-[#3D81E3]/50 cursor-pointer"
                     >
-                      <option value="All" className="bg-[#0f1115]">All Changes</option>
-                      <option value="Gainers" className="bg-[#0f1115]">Gainers Only (▲)</option>
-                      <option value="Losers" className="bg-[#0f1115]">Losers Only (▼)</option>
+                      <option value="All" className="bg-[#0B0F19]">All Changes</option>
+                      <option value="Gainers" className="bg-[#0B0F19]">Gainers Only (▲)</option>
+                      <option value="Losers" className="bg-[#0B0F19]">Losers Only (▼)</option>
                     </select>
                   </div>
                 </div>
@@ -1499,7 +1499,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   return (
                     <div 
                       key={article.id}
-                      className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0e1014]/90 text-left flex flex-col justify-between space-y-4"
+                      className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0B0F19]/90 text-left flex flex-col justify-between space-y-4"
                       id={`news-article-${article.id}`}
                     >
                       <div className="space-y-3">
@@ -1545,7 +1545,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                           </p>
                         </div>
                       ) : (
-                        <div className="liquid-glass rounded-lg p-3 text-[11px] bg-[#0e1115] border border-cyan-500/10 text-left flex flex-col justify-between">
+                        <div className="liquid-glass rounded-lg p-3 text-[11px] bg-[#0B0F19] border border-cyan-500/10 text-left flex flex-col justify-between">
                           <div>
                             <div className="flex items-center justify-between border-b border-white/5 pb-1.5 mb-1.5 font-mono">
                               <div className="flex items-center gap-1 text-cyan-300 font-bold">
@@ -1619,7 +1619,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   <motion.div 
                     key={lsn.id}
                     whileTap={{ scale: 0.98 }}
-                    className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0e1014]/90 text-left flex flex-col justify-between h-56"
+                    className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0B0F19]/90 text-left flex flex-col justify-between h-56"
                     id={`lesson-card-${lsn.id}`}
                   >
                     <div>
@@ -1669,7 +1669,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="liquid-glass rounded-2xl p-6 max-w-sm w-full border border-white/10 bg-[#0e1014] text-left space-y-6"
+              className="liquid-glass rounded-2xl p-6 max-w-sm w-full border border-white/10 bg-[#0B0F19] text-left space-y-6"
               id="trade-modal-box"
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -1778,7 +1778,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="liquid-glass rounded-2xl max-w-2xl w-full border border-white/10 bg-[#0c0d10] flex flex-col h-[80vh]"
+              className="liquid-glass rounded-2xl max-w-2xl w-full border border-white/10 bg-[#0B0F19] flex flex-col h-[80vh]"
               id="lesson-modal-box"
             >
               {/* Header */}

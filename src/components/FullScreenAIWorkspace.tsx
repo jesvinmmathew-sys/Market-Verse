@@ -950,13 +950,13 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
   };
 
   return (
-    <div className="flex flex-1 h-[calc(100vh-4rem)] bg-[#050608] overflow-hidden" id="full-screen-ai-workspace">
+    <div className="flex flex-1 h-[calc(100vh-4rem)] bg-[#06080F] overflow-hidden" id="full-screen-ai-workspace">
       {/* Dynamic Background Accents */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3D81E3]/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/5 blur-[120px] pointer-events-none" />
 
       {/* Left Sidebar: Session History (Dark liquid-glass styling) */}
-      <div className="w-80 border-r border-white/5 bg-[#090b0e]/70 backdrop-blur-xl flex flex-col hidden md:flex relative z-10 shadow-2xl" id="ai-sidebar">
+      <div className="w-80 border-r border-white/5 bg-[#0B0F19]/70 backdrop-blur-xl flex flex-col hidden md:flex relative z-10 shadow-2xl" id="ai-sidebar">
         {/* Sidebar Header */}
         <div className="p-4 border-b border-white/5">
           <button 
@@ -1014,7 +1014,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       </div>
 
       {/* Right Content Panel: ChatGPT Workspace */}
-      <div className="flex-1 flex flex-col bg-[#050608]/40 relative z-10" id="ai-chat-workspace">
+      <div className="flex-1 flex flex-col bg-[#06080F]/40 relative z-10" id="ai-chat-workspace">
         
         {/* Workspace Top Header Bar */}
         <div className="h-14 border-b border-white/5 px-6 flex items-center justify-between bg-black/25">
@@ -1083,7 +1083,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                       return (
                         <div key={msg.id} className="flex gap-4 items-start w-full group">
                           {/* Small Nova Icon */}
-                          <div className="w-7 h-7 rounded-full bg-[#090b0e] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
+                          <div className="w-7 h-7 rounded-full bg-[#0B0F19] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
                             <NovaLogo className="w-full h-full" />
                           </div>
                           
@@ -1166,7 +1166,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                       {/* Pulsing Outer Ring */}
                       <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
                       {/* Official Nova AI Emblem */}
-                      <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
+                      <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#06080F]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
                         <NovaLogo className="w-full h-full" />
                       </div>
                     </div>
@@ -1220,7 +1220,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
 
             {isLoading && (
               <div className="flex flex-col gap-3 max-w-2xl animate-pulse">
-                <div className="bg-[#101217]/60 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-xs shadow-2xl relative overflow-hidden flex items-start gap-4">
+                <div className="bg-[#0B0F19]/60 border border-white/5 backdrop-blur-md rounded-2xl p-5 text-xs shadow-2xl relative overflow-hidden flex items-start gap-4">
                   {/* Glowing Pulse Beacon */}
                   <div className="relative flex items-center justify-center flex-shrink-0 mt-1">
                     <span className="absolute w-4 h-4 rounded-full bg-cyan-500/30 animate-ping" />
@@ -1302,7 +1302,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                       }
                     }}
                     placeholder={isListening ? "Listening... Speak your query clearly." : "Ask NOVA about any Indian stock or index..."}
-                    className="w-full pl-5 pr-14 py-4 bg-[#101217] border border-white/10 rounded-2xl text-xs text-white placeholder-white/20 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] font-sans shadow-inner transition-all duration-200 resize-none overflow-y-auto max-h-[120px] scrollbar-none align-middle"
+                    className="w-full pl-5 pr-14 py-4 bg-[#0B0F19]/90 border border-white/[0.08] hover:border-white/15 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:shadow-[0_0_20px_rgba(34,211,238,0.25)] rounded-2xl text-xs text-white placeholder-white/20 focus:outline-none font-sans shadow-inner transition-all duration-300 resize-none overflow-y-auto max-h-[120px] scrollbar-none align-middle"
                     disabled={isLoading}
                   />
                   <button
