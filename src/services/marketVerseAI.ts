@@ -115,10 +115,12 @@ export async function queryNovaAI(
 
   // Format multi-turn chat history for Gemini
   const contents = [
-    ...history.map(msg => ({
-      role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
-      parts: [{ text: msg.text }]
-    })),
+    ...history
+      .filter(msg => msg.text && msg.text.trim() !== '')
+      .map(msg => ({
+        role: msg.role === 'assistant' || msg.role === 'model' ? 'model' : 'user',
+        parts: [{ text: msg.text }]
+      })),
     {
       role: 'user',
       parts: [{ text: prompt }]

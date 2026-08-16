@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+
+const nanoid = () => "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
 import { 
   Sparkles, 
   Send, 
@@ -519,8 +521,17 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && parsed.length > 0) {
-          setSessions(parsed);
-          setActiveSessionId(parsed[0].id);
+          const hydrated = parsed.map((s: ChatSession) => {
+            const sessionMsgs = localStorage.getItem(`nova_active_session_${s.id}`);
+            if (sessionMsgs) {
+              try {
+                return { ...s, messages: JSON.parse(sessionMsgs) };
+              } catch (e) {}
+            }
+            return s;
+          });
+          setSessions(hydrated);
+          setActiveSessionId(hydrated[0].id);
           return;
         }
       }
@@ -544,6 +555,9 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
     setSessions(updated);
     try {
       localStorage.setItem("marketverse_ai_sessions", JSON.stringify(updated));
+      updated.forEach(s => {
+        localStorage.setItem(`nova_active_session_${s.id}`, JSON.stringify(s.messages));
+      });
     } catch (e) {
       console.warn("Could not save AI sessions:", e);
     }
@@ -639,7 +653,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
     if (!currentSession) return;
 
     const userMsg: Message = {
-      id: `msg-${Date.now()}-user`,
+      id: nanoid(),
       role: "user",
       text: textToSend.trim()
     };
@@ -775,6 +789,10 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
 
   const handleDeleteSession = (idToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    try {
+      localStorage.removeItem(`nova_active_session_${idToDelete}`);
+    } catch (err) {}
+
     if (sessions.length <= 1) {
       // Just clear history messages
       const cleared: ChatSession = {
@@ -1041,147 +1059,164 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
             className={"flex-1 overflow-y-auto py-6 space-y-6 scrollbar-thin scrollbar-thumb-white/5 scrollbar-track-transparent " + (activeSession && activeSession.messages.length === 0 ? "flex flex-col items-center justify-center text-center" : "")}
             id="workspace-conversation-scroller"
           >
-            {activeSession && activeSession.messages.length > 0 ? (
-              <div className="max-w-3xl mx-auto w-full space-y-6">
-                {activeSession.messages.map((msg) => {
-                  const isUser = msg.role === "user";
-                  if (isUser) {
-                    return (
-                      <div key={msg.id} className="flex flex-col items-end w-full">
-                        <div className="max-w-[70%] rounded-2xl px-4 py-2.5 text-xs bg-blue-900/20 border border-blue-500/15 backdrop-blur-md text-white font-sans rounded-tr-none shadow-md">
-                          {formatText(msg.text)}
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div key={msg.id} className="flex gap-4 items-start w-full group">
-                        {/* Small Nova Icon */}
-                        <div className="w-7 h-7 rounded-full bg-[#090b0e] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
-                          <NovaLogo className="w-full h-full" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0 space-y-2 text-left">
-                          {/* Clean response text without heavy border boxes */}
-                          <div className="text-xs text-white/95 leading-relaxed font-sans">
+            <AnimatePresence mode="wait">
+              {activeSession && activeSession.messages.length > 0 ? (
+                <motion.div 
+                  key="chat-active"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="max-w-3xl mx-auto w-full space-y-6 animate-fade-in"
+                >
+                  {activeSession.messages.map((msg) => {
+                    const isUser = msg.role === "user";
+                    if (isUser) {
+                      return (
+                        <div key={msg.id} className="flex flex-col items-end w-full">
+                          <div className="max-w-[70%] rounded-2xl px-4 py-2.5 text-xs bg-blue-900/20 border border-blue-500/15 backdrop-blur-md text-white font-sans rounded-tr-none shadow-md">
                             {formatText(msg.text)}
                           </div>
-
-                          {msg.stockCard && (
-                            <div className="w-full max-w-2xl mt-3 animate-fade-in">
-                              <StockIntelligenceCard card={msg.stockCard} />
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div key={msg.id} className="flex gap-4 items-start w-full group">
+                          {/* Small Nova Icon */}
+                          <div className="w-7 h-7 rounded-full bg-[#090b0e] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
+                            <NovaLogo className="w-full h-full" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0 space-y-2 text-left">
+                            {/* Clean response text without heavy border boxes */}
+                            <div className="text-xs text-white/95 leading-relaxed font-sans">
+                              {formatText(msg.text)}
                             </div>
-                          )}
 
-                          {/* Action Footer */}
-                          <div className="flex items-center gap-3 pt-2 text-[10px] text-white/40 font-mono">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleSpeak(msg.id, msg.text)}
-                              className="flex items-center gap-1 hover:text-cyan-300 transition-colors cursor-pointer"
-                            >
-                              {speakingMsgId === msg.id ? (
-                                <>
-                                  <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                                  <span>Stop</span>
-                                  <div className="flex items-end gap-[1.5px] h-3 px-1 select-none">
-                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '9px', animationDelay: '0.1s' }} />
-                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '11px', animationDelay: '0.2s' }} />
-                                    <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '0.3s' }} />
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 className="w-3.5 h-3.5" />
-                                  <span>Listen</span>
-                                </>
-                              )}
-                            </button>
+                            {msg.stockCard && (
+                              <div className="w-full max-w-2xl mt-3 animate-fade-in">
+                                <StockIntelligenceCard card={msg.stockCard} />
+                              </div>
+                            )}
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(msg.text);
-                                alert("Copied to clipboard!");
-                              }}
-                              className="hover:text-cyan-300 transition-colors cursor-pointer"
-                            >
-                              Copy
-                            </button>
+                            {/* Action Footer */}
+                            <div className="flex items-center gap-3 pt-2 text-[10px] text-white/40 font-mono">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSpeak(msg.id, msg.text)}
+                                className="flex items-center gap-1 hover:text-cyan-300 transition-colors cursor-pointer"
+                              >
+                                {speakingMsgId === msg.id ? (
+                                  <>
+                                    <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                                    <span>Stop</span>
+                                    <div className="flex items-end gap-[1.5px] h-3 px-1 select-none">
+                                      <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '9px', animationDelay: '0.1s' }} />
+                                      <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '11px', animationDelay: '0.2s' }} />
+                                      <span className="w-[1.5px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '0.3s' }} />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-3.5 h-3.5" />
+                                    <span>Listen</span>
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(msg.text);
+                                  alert("Copied to clipboard!");
+                                }}
+                                className="hover:text-cyan-300 transition-colors cursor-pointer"
+                              >
+                                Copy
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      );
+                    }
+                  })}
+                </motion.div>
+              ) : (
+                /* STATE A: Gemini Landing Empty State Canvas */
+                <motion.div 
+                  key="chat-empty"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex flex-col items-center justify-center text-center space-y-12 py-8 flex-1 max-w-2xl mx-auto w-full animate-fade-in" 
+                  id="nova-ai-welcome-hero"
+                >
+                  <div className="flex flex-col items-center space-y-6">
+                    {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
+                    <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in">
+                      {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-xl animate-spin" style={{ animationDuration: '10s' }} />
+                      {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
+                      <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[35px]" 
+                           style={{
+                             background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
+                           }} 
+                      />
+                      {/* Pulsing Outer Ring */}
+                      <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
+                      {/* Official Nova AI Emblem */}
+                      <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
+                        <NovaLogo className="w-full h-full" />
                       </div>
-                    );
-                  }
-                })}
-              </div>
-            ) : (
-              /* STATE A: Gemini Landing Empty State Canvas */
-              <div className="flex flex-col items-center justify-center text-center space-y-12 py-8 flex-1 max-w-2xl mx-auto w-full animate-fade-in" id="nova-ai-welcome-hero">
-                <div className="flex flex-col items-center space-y-6">
-                  {/* Animated Liquid-Glass Nova AI Core orb with Official Emblem */}
-                  <div className="relative w-36 h-36 flex items-center justify-center animate-fade-in">
-                    {/* Rotational Aura matching dual emerald-green and crimson-red color scheme */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/20 via-red-500/20 to-emerald-500/20 blur-xl animate-spin" style={{ animationDuration: '10s' }} />
-                    {/* Subtle refined radial glow backdrop (emerald left, crimson right) */}
-                    <div className="absolute inset-0 rounded-full pointer-events-none opacity-45 blur-[35px]" 
-                         style={{
-                           background: "radial-gradient(circle at 35% 50%, rgba(16, 185, 129, 0.25) 0%, transparent 60%), radial-gradient(circle at 65% 50%, rgba(239, 68, 68, 0.25) 0%, transparent 60%)"
-                         }} 
-                    />
-                    {/* Pulsing Outer Ring */}
-                    <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
-                    {/* Official Nova AI Emblem */}
-                    <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#050608]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
-                      <NovaLogo className="w-full h-full" />
+                    </div>
+
+                    <div className="space-y-3">
+                      <h1 className="text-3xl font-semibold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent font-sans">
+                        Ask away, {userName}!
+                      </h1>
+                      <p className="text-xs text-white/50 leading-relaxed font-sans max-w-md mx-auto">
+                        Live NSE technical analysis, F&O momentum, and institutional market intelligence.
+                      </p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <h1 className="text-3xl font-semibold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent font-sans">
-                      Ask away, {userName}!
-                    </h1>
-                    <p className="text-xs text-white/50 leading-relaxed font-sans max-w-md mx-auto">
-                      Live NSE technical analysis, F&O momentum, and institutional market intelligence.
-                    </p>
+                  {/* 4 Compact Suggestion Cards (2x2 Grid) */}
+                  <div className="w-full max-w-xl" id="nova-suggestions-deck">
+                    <div className="grid grid-cols-2 gap-4">
+                      {String.fromCharCode(55357, 56520) !== "" && [
+                        { 
+                          title: String.fromCharCode(55357, 56520) + " Nifty 50 Breakout Scan", 
+                          prompt: "Explain Nifty 50 breakout momentum scan" 
+                        },
+                        { 
+                          title: String.fromCharCode(9889) + " High Momentum Stocks", 
+                          prompt: "Which stocks are exhibiting high momentum breakouts today?" 
+                        },
+                        { 
+                          title: String.fromCharCode(55357, 56522) + " Reliance F&O Analysis", 
+                          prompt: "Analyze Reliance F&O and option dynamics" 
+                        },
+                        { 
+                          title: String.fromCharCode(55356, 57263) + " Option Chain & PCR Analysis", 
+                          prompt: "Provide Option Chain and PCR analysis for major indices" 
+                        }
+                      ].map((item) => (
+                        <button
+                          key={item.title}
+                          onClick={() => handleSendMessage(item.prompt)}
+                          className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-200 cursor-pointer flex flex-col justify-center h-20 group"
+                        >
+                          <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block leading-tight">
+                            {item.title}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-
-                {/* 4 Compact Suggestion Cards (2x2 Grid) */}
-                <div className="w-full max-w-xl" id="nova-suggestions-deck">
-                  <div className="grid grid-cols-2 gap-4">
-                    {String.fromCharCode(55357, 56520) !== "" && [
-                      { 
-                        title: String.fromCharCode(55357, 56520) + " Nifty 50 Breakout Scan", 
-                        prompt: "Explain Nifty 50 breakout momentum scan" 
-                      },
-                      { 
-                        title: String.fromCharCode(9889) + " High Momentum Stocks", 
-                        prompt: "Which stocks are exhibiting high momentum breakouts today?" 
-                      },
-                      { 
-                        title: String.fromCharCode(55357, 56522) + " Reliance F&O Analysis", 
-                        prompt: "Analyze Reliance F&O and option dynamics" 
-                      },
-                      { 
-                        title: String.fromCharCode(55356, 57263) + " Option Chain & PCR Analysis", 
-                        prompt: "Provide Option Chain and PCR analysis for major indices" 
-                      }
-                    ].map((item) => (
-                      <button
-                        key={item.title}
-                        onClick={() => handleSendMessage(item.prompt)}
-                        className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-[#3D81E3]/5 hover:border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)] text-left transition-all duration-200 cursor-pointer flex flex-col justify-center h-20 group"
-                      >
-                        <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block leading-tight">
-                          {item.title}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {isLoading && (
               <div className="flex flex-col gap-3 max-w-2xl animate-pulse">
@@ -1197,7 +1232,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                         NOVA MARKET ANALYST
                       </span>
                       <span className="text-[9px] text-cyan-400 font-mono animate-pulse">
-                        â€¢ ANALYZING
+                        • Nova is analyzing...
                       </span>
                     </div>
                     {/* Liquid-glass shimmer bars */}
