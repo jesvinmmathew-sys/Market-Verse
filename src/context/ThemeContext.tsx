@@ -113,10 +113,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.setAttribute("data-glow", glowIntensity);
       document.documentElement.setAttribute("data-blur", blurStrength);
 
-      // Opacity ranges from 0.98 (level 1) down to 0.15 (level 10)
-      const alpha = (0.98 - ((transparencyLevel - 1) / 9) * 0.83).toFixed(2);
-      // Blur ranges from 0px (level 1) up to 24px (level 10)
-      const blurPx = Math.round(((transparencyLevel - 1) / 9) * 24);
+      // Opacity ranges from 0.98 (level 1) down to 0.05 (level 10)
+      const alpha = (0.98 - ((transparencyLevel - 1) / 9) * 0.93).toFixed(2);
+      // Blur ranges from 0px (level 1) up to 30px (level 10)
+      const blurPx = Math.round(((transparencyLevel - 1) / 9) * 30);
 
       document.documentElement.style.setProperty('--glass-alpha', alpha);
       document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);

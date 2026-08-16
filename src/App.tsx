@@ -11,6 +11,7 @@ import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
 import { AuthPage } from "./components/AuthPage";
 import ProfileSettings from "./components/ProfileSettings";
 import { SettingsModal } from "./components/SettingsModal";
+import { LogoutConfirmModal } from "./components/LogoutConfirmModal";
 import { supabase } from "./supabaseClient";
 import { useTheme, ThemeType } from "./context/ThemeContext";
 import { 
@@ -30,7 +31,9 @@ import {
   UploadCloud,
   Palette,
   Check,
-  Settings
+  Settings,
+  Sliders,
+  Key
 } from "lucide-react";
 
 export default function App() {
@@ -53,6 +56,13 @@ export default function App() {
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string>("appearance");
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+  const openSettingsWithTab = (tab: string) => {
+    setSettingsTab(tab);
+    setIsSettingsOpen(true);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -429,43 +439,137 @@ export default function App() {
                     ) : (
                       <span>{user.user_metadata?.full_name ? user.user_metadata.full_name[0].toUpperCase() : user.email?.[0].toUpperCase()}</span>
                     )}
-                  </button>
-
-                  <AnimatePresence>
+                  </button>                  <AnimatePresence>
                     {isAvatarDropdownOpen && (
                       <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-[#0c0e12]/95 backdrop-blur-xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 text-left"
+                        className="absolute right-0 mt-2 w-64 rounded-2xl border border-border-subtle bg-surface/95 backdrop-blur-xl p-3 shadow-[0_15px_40px_rgba(0,0,0,0.6)] z-50 text-left space-y-3.5"
                       >
-                        <div className="px-3 py-2 border-b border-white/5 mb-1 select-none">
-                          <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider">Signed in as</p>
-                          <p className="text-[11px] text-white/80 truncate font-mono mt-0.5">{user.email}</p>
+                        {/* User Header */}
+                        <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border border-cyan-500/20 overflow-hidden shrink-0"
+                            style={{
+                              background: user.user_metadata?.avatar_url && user.user_metadata.avatar_url.startsWith("linear-gradient") ? user.user_metadata.avatar_url : "transparent",
+                              backgroundColor: user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? "transparent" : "#1e293b"
+                            }}
+                          >
+                            {user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                              <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{user.user_metadata?.full_name ? user.user_metadata.full_name[0].toUpperCase() : user.email?.[0].toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-bold text-white truncate font-sans">
+                              {user.user_metadata?.full_name || "Active Trader"}
+                            </p>
+                            <p className="text-[9px] text-white/40 truncate font-mono mt-0.5">{user.email}</p>
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold uppercase tracking-wider mt-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              <span>Active Trader • Pro Tier</span>
+                            </div>
+                          </div>
                         </div>
-                        
-                        <button
-                          onClick={() => {
-                            setIsAvatarDropdownOpen(false);
-                            setIsSettingsOpen(true);
-                          }}
-                          className="w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2"
-                        >
-                          <Settings className="w-3.5 h-3.5 text-cyan-400" />
-                          <span>Terminal Settings</span>
-                        </button>
 
-                        <button
-                          onClick={() => {
-                            setIsAvatarDropdownOpen(false);
-                            handleSignOut();
-                          }}
-                          className="w-full text-left text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all flex items-center gap-2"
-                        >
-                          <LogOut className="w-3.5 h-3.5" />
-                          <span>Logout</span>
-                        </button>
+                        {/* Quick Metrics Bar */}
+                        <div className="grid grid-cols-2 gap-2 bg-white/[0.02] border border-white/5 p-2 rounded-xl text-[9px] select-none font-mono">
+                          <div className="text-left space-y-0.5 border-r border-white/5">
+                            <span className="text-white/30 uppercase text-[8px] block">Paper P&L</span>
+                            <span className="text-emerald-400 font-bold font-mono-numbers">+₹24,500</span>
+                          </div>
+                          <div className="pl-2 text-left space-y-0.5">
+                            <span className="text-white/30 uppercase text-[8px] block">Win Rate</span>
+                            <span className="text-cyan-400 font-bold font-mono-numbers">68%</span>
+                          </div>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="space-y-0.5" id="profile-dropdown-menu">
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openSettingsWithTab("general");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <User className="w-4 h-4 text-cyan-400" />
+                            <span>My Trading Profile</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openSettingsWithTab("appearance");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Palette className="w-4 h-4 text-cyan-400" />
+                            <span>Appearance & Themes</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openSettingsWithTab("trading");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Sliders className="w-4 h-4 text-cyan-400" />
+                            <span>Risk & Trading Preferences</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openSettingsWithTab("api");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Key className="w-4 h-4 text-cyan-400" />
+                            <span>API Keys & Broker Connect</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              setIsAboutOpen(true);
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <Info className="w-4 h-4 text-cyan-400" />
+                            <span>Help & Terminal Docs</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              alert("Keyboard Shortcuts:\n\n• Press ESC to close modals/dialogs\n• Scroll options with standard mouse movements\n• Select presets and indicators using standard terminal point-and-click.");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center justify-between cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <Sliders className="w-4 h-4 text-cyan-400" />
+                              <span>Keyboard Shortcuts</span>
+                            </div>
+                            <span className="text-[9px] font-mono text-white/30 font-bold">ESC</span>
+                          </button>
+
+                          <div className="border-t border-white/5 my-2 pt-1.5" />
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              setIsLogoutConfirmOpen(true);
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2.5 rounded-lg text-red-400 hover:text-red-350 hover:bg-red-500/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out Terminal</span>
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -734,6 +838,17 @@ export default function App() {
             onAuthSuccess={setUser}
             onLogout={handleSignOut}
             onNavigate={navigate}
+            initialTab={settingsTab}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isLogoutConfirmOpen && (
+          <LogoutConfirmModal
+            isOpen={isLogoutConfirmOpen}
+            onClose={() => setIsLogoutConfirmOpen(false)}
+            onConfirm={handleSignOut}
           />
         )}
       </AnimatePresence>

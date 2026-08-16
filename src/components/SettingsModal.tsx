@@ -27,6 +27,7 @@ interface SettingsModalProps {
   onAuthSuccess: (user: any) => void;
   onLogout: () => void;
   onNavigate: (path: string) => void;
+  initialTab?: string;
 }
 
 const AVATAR_PRESETS = [
@@ -43,7 +44,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   user: propUser,
   onAuthSuccess,
   onLogout,
-  onNavigate
+  onNavigate,
+  initialTab = "appearance"
 }) => {
   const { 
     theme, 
@@ -56,8 +58,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setTransparencyLevel
   } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<string>("appearance");
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   
+  // Sync tab choice when reopened
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
+
   // User metadata states
   const [user, setUser] = useState<any>(propUser);
   const [fullName, setFullName] = useState("");
