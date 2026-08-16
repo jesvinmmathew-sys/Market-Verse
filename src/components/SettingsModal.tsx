@@ -51,7 +51,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     glowIntensity, 
     setGlowIntensity, 
     blurStrength, 
-    setBlurStrength 
+    setBlurStrength,
+    transparencyLevel,
+    setTransparencyLevel
   } = useTheme();
 
   const [activeTab, setActiveTab] = useState<string>("appearance");
@@ -478,6 +480,81 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* 1-to-10 Glassmorphism Transparency Slider */}
+                <div className="space-y-4 border-t border-white/5 pt-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider block">Liquid Glass Transparency</h3>
+                    <p className="text-[10px] text-white/40 mt-0.5">Control the background opacity and translucent sheer of terminal cards.</p>
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-6 items-center">
+                    {/* Left side: Range Slider + Context Labels */}
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase font-mono">
+                          {transparencyLevel === 1 && "Level 1: Solid Opaque (0%)"}
+                          {transparencyLevel >= 2 && transparencyLevel <= 4 && `Level ${transparencyLevel}: Dense Sheer`}
+                          {transparencyLevel === 5 && "Level 5: Balanced Glass (40%)"}
+                          {transparencyLevel >= 6 && transparencyLevel <= 9 && `Level ${transparencyLevel}: Clear Glass`}
+                          {transparencyLevel === 10 && "Level 10: Ultra Sheer (85%)"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono text-[9px] font-bold">
+                          Level {transparencyLevel}/10
+                        </span>
+                      </div>
+
+                      <div className="relative pt-2 pb-6">
+                        <input
+                          type="range"
+                          min="1"
+                          max="10"
+                          step="1"
+                          value={transparencyLevel}
+                          onChange={(e) => setTransparencyLevel(parseInt(e.target.value))}
+                          className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                        />
+                        {/* Step Tick indicators */}
+                        <div className="absolute inset-x-0 bottom-1.5 flex justify-between px-0.5">
+                          {Array.from({ length: 10 }).map((_, i) => {
+                            const val = i + 1;
+                            const isActive = transparencyLevel === val;
+                            return (
+                              <div key={val} className="flex flex-col items-center gap-1 select-none">
+                                <span className={`w-1 h-1 rounded-full ${isActive ? "bg-cyan-400 shadow-[0_0_6px_#22d3ee]" : "bg-white/20"}`} />
+                                <span className={`text-[7px] font-mono font-bold ${isActive ? "text-cyan-400" : "text-white/20"}`}>{val}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right side: Real-time Live Preview Chip */}
+                    <div className="w-full md:w-56 h-28 rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center bg-black/45">
+                      {/* Simulated background mesh grid */}
+                      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" />
+                      <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-cyan-500/10 filter blur-md pointer-events-none" />
+                      <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-violet-500/10 filter blur-md pointer-events-none" />
+
+                      {/* Floating preview chip using card variables */}
+                      <div 
+                        className="w-40 p-3 rounded-lg border border-white/10 text-center shadow-lg relative z-10"
+                        style={{
+                          backgroundColor: `rgba(15, 23, 42, ${0.98 - ((transparencyLevel - 1) / 9) * 0.83})`,
+                          backdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 24)}px)`,
+                          WebkitBackdropFilter: `blur(${Math.round(((transparencyLevel - 1) / 9) * 24)}px)`
+                        }}
+                      >
+                        <div className="text-[10px] font-bold text-white uppercase tracking-wider">Live Preview</div>
+                        <div className="text-[8px] text-white/50 mt-1 font-mono leading-tight">
+                          Opacity: {Math.round((0.98 - ((transparencyLevel - 1) / 9) * 0.83) * 100)}%<br />
+                          Blur: {Math.round(((transparencyLevel - 1) / 9) * 24)}px
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

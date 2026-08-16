@@ -17,6 +17,8 @@ interface ThemeContextProps {
   setGlowIntensity: (glow: GlowIntensity) => void;
   blurStrength: BlurStrength;
   setBlurStrength: (blur: BlurStrength) => void;
+  transparencyLevel: number;
+  setTransparencyLevel: (level: number) => void;
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
@@ -58,6 +60,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return "high";
   });
 
+  const [transparencyLevel, setTransparencyLevelState] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("marketverse_transparency");
+      if (stored) {
+        const val = parseInt(stored);
+        if (val >= 1 && val <= 10) return val;
+      }
+    }
+    return 5;
+  });
+
   const setTheme = (newTheme: ThemeType) => {
     setThemeState(newTheme);
     try {
@@ -85,13 +98,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const setTransparencyLevel = (level: number) => {
+    setTransparencyLevelState(level);
+    try {
+      localStorage.setItem("marketverse_transparency", String(level));
+    } catch (e) {
+      console.warn("Failed to save transparency setting", e);
+    }
+  };
+
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", theme);
       document.documentElement.setAttribute("data-glow", glowIntensity);
       document.documentElement.setAttribute("data-blur", blurStrength);
+
+      // Opacity ranges from 0.98 (level 1) down to 0.15 (level 10)
+      const alpha = (0.98 - ((transparencyLevel - 1) / 9) * 0.83).toFixed(2);
+      // Blur ranges from 0px (level 1) up to 24px (level 10)
+      const blurPx = Math.round(((transparencyLevel - 1) / 9) * 24);
+
+      document.documentElement.style.setProperty('--glass-alpha', alpha);
+      document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
     }
-  }, [theme, glowIntensity, blurStrength]);
+  }, [theme, glowIntensity, blurStrength, transparencyLevel]);
 
   return (
     <ThemeContext.Provider value={{ 
@@ -100,7 +130,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       glowIntensity, 
       setGlowIntensity, 
       blurStrength, 
-      setBlurStrength 
+      setBlurStrength,
+      transparencyLevel,
+      setTransparencyLevel
     }}>
       {children}
     </ThemeContext.Provider>
