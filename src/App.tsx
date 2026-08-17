@@ -198,9 +198,9 @@ export default function App() {
     };
   }, []);
 
-  // Redirect logged-in users away from landing page
+  // Redirect logged-in users away from landing/auth pages
   useEffect(() => {
-    if (user && (route === "/" || route === "/aura")) {
+    if (user && (route === "/" || route === "/aura" || route === "/auth")) {
       navigate("/dashboard");
     }
   }, [user, route]);
