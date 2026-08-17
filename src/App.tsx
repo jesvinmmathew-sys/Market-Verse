@@ -42,7 +42,23 @@ import {
 
 export default function App() {
   const [route, setRoute] = useState<string>(() => {
-    return window.location.pathname || "/";
+    const path = window.location.pathname || "/";
+    try {
+      const stored = localStorage.getItem("supabase_user");
+      const hasUser = stored ? JSON.parse(stored) : null;
+      const isProtectedRoute = 
+        path === "/nova-ai" || 
+        path === "/portfolio" || 
+        path === "/markets" || 
+        path === "/terminal" || 
+        path === "/ai" || 
+        path === "/dashboard" || 
+        path === "/stocks";
+      if (!hasUser && isProtectedRoute) {
+        return "/auth";
+      }
+    } catch (_) {}
+    return path;
   });
 
   const [user, setUser] = useState<any>(() => {
@@ -63,6 +79,7 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState<string>("appearance");
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isGateOpen, setIsGateOpen] = useState(false);
+  const [authHeadline, setAuthHeadline] = useState<string | null>(null);
 
   const [customPfp, setCustomPfp] = useState<string | null>(null);
 
@@ -227,15 +244,70 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      setRoute(window.location.pathname || "/");
+      const path = window.location.pathname || "/";
+      const isProtectedRoute = 
+        path === "/nova-ai" || 
+        path === "/portfolio" || 
+        path === "/markets" || 
+        path === "/terminal" || 
+        path === "/ai" || 
+        path === "/dashboard" || 
+        path === "/stocks";
+      if (!user && isProtectedRoute) {
+        setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
+        window.history.replaceState(null, "", "/auth");
+        setRoute("/auth");
+      } else {
+        setRoute(path);
+      }
     };
     window.addEventListener("popstate", handlePopState);
+
+    // Initial/redirect lock check
+    const path = window.location.pathname || "/";
+    const isProtectedRoute = 
+      path === "/nova-ai" || 
+      path === "/portfolio" || 
+      path === "/markets" || 
+      path === "/terminal" || 
+      path === "/ai" || 
+      path === "/dashboard" || 
+      path === "/stocks";
+    if (!user && isProtectedRoute) {
+      setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
+      window.history.replaceState(null, "", "/auth");
+      setRoute("/auth");
+    }
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [user]);
 
   const navigate = (path: string) => {
+    const isProtectedRoute = 
+      path === "/nova-ai" || 
+      path === "/portfolio" || 
+      path === "/markets" || 
+      path === "/terminal" || 
+      path === "/ai" || 
+      path === "/dashboard" || 
+      path === "/stocks";
+
+    if (!user && isProtectedRoute) {
+      setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
+      window.history.pushState(null, "", "/auth");
+      setRoute("/auth");
+      setIsMobileMenuOpen(false);
+      setIsMoreOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (path !== "/auth") {
+      setAuthHeadline(null);
+    }
+
     window.history.pushState(null, "", path);
     setRoute(path);
     setIsMobileMenuOpen(false);
@@ -723,7 +795,7 @@ export default function App() {
                 onOpenAbout={() => setIsAboutOpen(true)}
               />
             ) : isAuthRoute ? (
-              <AuthPage onNavigate={navigate} onAuthSuccess={setUser} />
+              <AuthPage onNavigate={navigate} onAuthSuccess={setUser} headline={authHeadline} />
             ) : isProfileRoute ? (
               <ProfileSettings onNavigate={navigate} onAuthSuccess={setUser} onLogout={handleSignOut} user={user} />
             ) : isAIRoute ? (

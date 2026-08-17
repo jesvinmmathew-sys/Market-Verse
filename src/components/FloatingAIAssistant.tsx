@@ -849,7 +849,14 @@ Try asking me:
         {/* Ambient trigger button with glow - hidden when chat panel is open */}
         {!isOpen && (
           <motion.button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => {
+              const userStored = localStorage.getItem("supabase_user");
+              if (!userStored) {
+                window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
+                return;
+              }
+              setIsOpen(!isOpen);
+            }}
             className="pointer-events-auto w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
             style={{
               boxShadow: "0 4px 24px rgba(0, 0, 0, 0.2)"
