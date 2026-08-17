@@ -46,7 +46,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md" 
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md" 
       onClick={onClose}
       id="legal-modal-overlay"
     >

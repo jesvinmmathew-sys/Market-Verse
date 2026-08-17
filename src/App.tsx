@@ -81,6 +81,7 @@ export default function App() {
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [authHeadline, setAuthHeadline] = useState<string | null>(null);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [onboardingAgreed, setOnboardingAgreed] = useState(false);
 
   const [customPfp, setCustomPfp] = useState<string | null>(null);
 
@@ -1057,16 +1058,62 @@ export default function App() {
                   <p className="text-white/60 leading-normal text-[11px]">
                     I understand that MarketVerse India is an educational quantitative platform founded by **Jesvin M Mathew**. Simulated paper trading carries zero real-money liability. All data points, option chain calculations, and AI insights are purely hypothetical.
                   </p>
+                  <p className="text-white/60 leading-normal text-[11px] border-t border-white/5 pt-2">
+                    To proceed, you must review and agree to our{" "}
+                    <button
+                      type="button"
+                      onClick={() => openLegalWithTab("terms")}
+                      className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                    >
+                      Terms of Service
+                    </button>
+                    ,{" "}
+                    <button
+                      type="button"
+                      onClick={() => openLegalWithTab("privacy")}
+                      className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                    >
+                      Privacy Policy
+                    </button>
+                    , and standard{" "}
+                    <button
+                      type="button"
+                      onClick={() => openLegalWithTab("sebi")}
+                      className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                    >
+                      SEBI Risk Notice
+                    </button>
+                    .
+                  </p>
                 </div>
+              </div>
+
+              {/* Mandatory Checkbox */}
+              <div className="flex items-start gap-2.5 font-sans text-xs text-white/70">
+                <input
+                  id="onboarding-accept-checkbox"
+                  type="checkbox"
+                  checked={onboardingAgreed}
+                  onChange={(e) => setOnboardingAgreed(e.target.checked)}
+                  className="mt-0.5 rounded border-white/10 bg-white/5 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-black cursor-pointer"
+                />
+                <label htmlFor="onboarding-accept-checkbox" className="leading-relaxed cursor-pointer select-none">
+                  I have read and agree to all platform policies and regulatory disclaimers.
+                </label>
               </div>
 
               <div className="pt-2 font-sans">
                 <button
+                  disabled={!onboardingAgreed}
                   onClick={() => {
                     localStorage.setItem(`marketverse_accepted_terms_${user.id}`, new Date().toISOString());
                     setIsOnboardingModalOpen(false);
                   }}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/10 flex items-center justify-center cursor-pointer"
+                  className={`w-full py-3 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center cursor-pointer ${
+                    onboardingAgreed
+                      ? "bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/10"
+                      : "bg-white/5 border border-white/5 text-white/30 cursor-not-allowed"
+                  }`}
                 >
                   Accept & Enter Terminal
                 </button>
