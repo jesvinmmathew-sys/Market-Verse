@@ -101,13 +101,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const applyTransparency = (level: number, currentTheme: ThemeType) => {
     if (typeof document !== "undefined") {
       const clamped = Math.max(1, Math.min(10, Number(level) || 5));
-      // Scale opacity between 0.95 (Level 1) and 0.30 (Level 10)
-      const alpha = (0.95 - ((clamped - 1) / 9) * 0.65).toFixed(2);
-      // Scale blur between 4px (Level 1) and 24px (Level 10)
-      const blurPx = clamped === 1 ? 0 : Math.round(4 + ((clamped - 1) / 9) * 20);
+      
+      // Opacity ranges from 0.92 (Level 1: Solid frosted) down to 0.22 (Level 10: Heavy frosted glass)
+      const alpha = (0.92 - ((clamped - 1) / 9) * 0.70).toFixed(2);
+      
+      // Blur increases with transparency: Level 1: 4px -> Level 5: 16px -> Level 10: 28px (Rich frosted diffusion)
+      const blurPx = Math.round(4 + ((clamped - 1) / 9) * 24);
+      
+      // Saturation boost for vibrant color refraction behind the frosted surface
+      const saturatePercent = Math.round(130 + ((clamped - 1) / 9) * 50);
 
       document.documentElement.style.setProperty('--glass-alpha', alpha);
       document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
+      document.documentElement.style.setProperty('--glass-saturate', `${saturatePercent}%`);
 
       const themeRgbMap: Record<ThemeType, string> = {
         "obsidian": "10, 14, 23",
