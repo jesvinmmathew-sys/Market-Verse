@@ -98,13 +98,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const setTransparencyLevel = (level: number) => {
-    setTransparencyLevelState(level);
+  const applyTransparency = (level: number, currentTheme: ThemeType) => {
+    if (typeof document !== "undefined") {
+      const alpha = (0.95 - ((level - 1) / 9) * 0.93).toFixed(2);
+      const blurPx = level === 1 ? 0 : Math.max(2, Math.round(12 - (level - 5) * 1.5));
+
+      document.documentElement.style.setProperty('--glass-alpha', alpha);
+      document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
+
+      const themeRgbMap: Record<ThemeType, string> = {
+        "obsidian": "10, 14, 23",
+        "cyber-emerald": "4, 26, 14",
+        "bloomberg-amber": "16, 20, 30",
+        "midnight-slate": "30, 41, 59",
+        "tokyo-crimson": "23, 16, 30"
+      };
+      const surfaceRgb = themeRgbMap[currentTheme] || "10, 14, 23";
+      document.documentElement.style.setProperty('--bg-surface-rgb', surfaceRgb);
+    }
     try {
-      localStorage.setItem("marketverse_transparency", String(level));
+      localStorage.setItem('marketverse_transparency', String(level));
     } catch (e) {
       console.warn("Failed to save transparency setting", e);
     }
+  };
+
+  const setTransparencyLevel = (level: number) => {
+    setTransparencyLevelState(level);
+    applyTransparency(level, theme);
   };
 
   useEffect(() => {
@@ -112,14 +133,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.setAttribute("data-theme", theme);
       document.documentElement.setAttribute("data-glow", glowIntensity);
       document.documentElement.setAttribute("data-blur", blurStrength);
-
-      // Level 1: 0.95 opacity -> Level 10: 0.02 opacity (98% crystal clear)
-      const alpha = (0.95 - ((transparencyLevel - 1) / 9) * 0.93).toFixed(2);
-      // Level 1: 0px blur -> Level 5: 8px -> Level 10: 4px (crisp, minimal diffusion)
-      const blurPx = transparencyLevel === 1 ? 0 : Math.max(3, Math.round(12 - (transparencyLevel - 5) * 1.6));
-
-      document.documentElement.style.setProperty('--glass-alpha', alpha);
-      document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
+      applyTransparency(transparencyLevel, theme);
     }
   }, [theme, glowIntensity, blurStrength, transparencyLevel]);
 
