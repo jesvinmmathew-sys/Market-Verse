@@ -19,6 +19,7 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleResendEmail = async () => {
     if (!verificationEmail) return;
@@ -358,10 +359,30 @@ export function AuthPage({ onNavigate, onAuthSuccess }: AuthPageProps) {
                   </div>
                 </div>
 
+                {isSignUp && (
+                  <div className="space-y-3 mb-4 text-left">
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        id="terms-checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-1 cursor-pointer shrink-0"
+                      />
+                      <label htmlFor="terms-checkbox" className="text-[11px] text-slate-500 font-medium leading-normal cursor-pointer select-none">
+                        I agree to the <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">Terms of Service</button>, <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">Privacy Policy</button>, and <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "sebi" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">SEBI Risk Disclosure</button>.
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-normal italic font-sans">
+                      MarketVerse India provides educational quantitative intelligence and simulated paper trading. All trades are virtual.
+                    </p>
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || (isSignUp && !agreedToTerms)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 cursor-pointer disabled:opacity-50 hover:shadow-md"
                 >
                   {loading ? (

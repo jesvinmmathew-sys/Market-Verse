@@ -418,6 +418,16 @@ Try asking me:
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return;
 
+    const userStored = localStorage.getItem("supabase_user");
+    if (!userStored) {
+      const storedCount = parseInt(localStorage.getItem("marketverse_trial_prompts") || "0");
+      if (storedCount >= 2) {
+        window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
+        return;
+      }
+      localStorage.setItem("marketverse_trial_prompts", String(storedCount + 1));
+    }
+
     // Detect if a stock is mentioned
     const stockDetected = detectStockInText(textToSend);
     if (stockDetected) {

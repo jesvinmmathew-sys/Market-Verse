@@ -334,6 +334,14 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   onToggleWatchlist,
   user
 }) => {
+  const checkGuestGate = () => {
+    if (!user) {
+      window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
+      return true;
+    }
+    return false;
+  };
+
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [activeNewsCategory, setActiveNewsCategory] = useState<"All" | "Breaking" | "Company" | "Global" | "Economy">("All");
@@ -636,6 +644,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
 
   // Buy/Sell transaction execution
   const executeSimulatedTrade = async () => {
+    if (checkGuestGate()) return;
     if (!tradeStock) return;
 
     if (tradeType === "buy") {
@@ -918,6 +927,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                               <div className="flex gap-1.5 pt-1.5 border-t border-white/5 justify-end">
                                 <button
                                   onClick={() => {
+                                    if (checkGuestGate()) return;
                                     setTradeStock(matchedStock as Stock);
                                     setTradeType("buy");
                                     setTradeShares(10);
@@ -928,6 +938,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                                 </button>
                                 <button
                                   onClick={() => {
+                                    if (checkGuestGate()) return;
                                     setTradeStock(matchedStock as Stock);
                                     setTradeType("sell");
                                     setTradeShares(Math.min(item.shares, 10));
@@ -1006,6 +1017,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                               <div className="flex gap-1.5 pt-1.5 border-t border-white/5 justify-end" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => {
+                                    if (checkGuestGate()) return;
                                     setTradeStock(w);
                                     setTradeType("buy");
                                     setTradeShares(10);
@@ -1016,6 +1028,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                                 </button>
                                 <button
                                   onClick={() => {
+                                    if (checkGuestGate()) return;
                                     setTradeStock(w);
                                     setTradeType("sell");
                                     setTradeShares(10);
@@ -1431,6 +1444,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                           </button>
                           <button 
                             onClick={() => {
+                              if (checkGuestGate()) return;
                               setTradeStock(stk);
                               setTradeType("buy");
                             }}

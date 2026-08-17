@@ -30,6 +30,11 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onCustomize }) => {
     setIsVisible(false);
   };
 
+  const handleDismiss = () => {
+    localStorage.setItem("marketverse_cookie_consent", "essential");
+    setIsVisible(false);
+  };
+
   if (!isVisible) return null;
 
   return (
@@ -79,7 +84,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onCustomize }) => {
         </div>
 
         <button
-          onClick={handleDeclineNonEssential}
+          onClick={handleDismiss}
           className="absolute top-1.5 right-1.5 p-1 text-white/30 hover:text-white hover:bg-white/5 rounded-lg border border-transparent hover:border-white/5 transition-all cursor-pointer"
           aria-label="Close Banner"
         >

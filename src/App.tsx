@@ -62,6 +62,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("appearance");
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isGateOpen, setIsGateOpen] = useState(false);
 
   const [customPfp, setCustomPfp] = useState<string | null>(null);
 
@@ -98,11 +99,16 @@ export default function App() {
       setLegalTab(tab);
       setIsLegalOpen(true);
     };
+    const handleTriggerGate = () => {
+      setIsGateOpen(true);
+    };
     window.addEventListener("marketverse_pfp_updated", handlePfpUpdate);
     window.addEventListener("marketverse_open_legal", handleOpenLegal);
+    window.addEventListener("marketverse_trigger_gate", handleTriggerGate);
     return () => {
       window.removeEventListener("marketverse_pfp_updated", handlePfpUpdate);
       window.removeEventListener("marketverse_open_legal", handleOpenLegal);
+      window.removeEventListener("marketverse_trigger_gate", handleTriggerGate);
     };
   }, []);
 
@@ -882,6 +888,61 @@ export default function App() {
             onClose={() => setIsLegalOpen(false)}
             initialTab={legalTab}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isGateOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" id="guest-gate-overlay">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="liquid-glass border border-white/10 bg-[#080a0f]/95 rounded-2xl p-6 max-w-md w-full text-left space-y-5 relative overflow-hidden"
+              id="guest-gate-box"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <div className="flex items-center gap-2">
+                  <LogoMark className="w-5 h-5 text-cyan-400" />
+                  <span className="text-xs font-black text-white font-sans uppercase tracking-wider">Access Lock</span>
+                </div>
+                <button
+                  onClick={() => setIsGateOpen(false)}
+                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer border border-white/5 transition-all"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 font-sans">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Sign In to Unlock Full Terminal Execution</h3>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Create a free account to access your ₹10,00,000 virtual balance, live order tracking, and Nova AI quant intelligence.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1 font-sans">
+                <button
+                  onClick={() => {
+                    setIsGateOpen(false);
+                    navigate("/auth");
+                  }}
+                  className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/10 flex items-center justify-center cursor-pointer"
+                >
+                  Sign In / Register
+                </button>
+                <button
+                  onClick={() => setIsGateOpen(false)}
+                  className="w-full py-2 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-white/60 hover:text-white text-[9.5px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Keep Exploring as Guest
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

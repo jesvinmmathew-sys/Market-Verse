@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, ArrowRight, RefreshCw, Database } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { marketVerseAI } from "../services/marketVerseAI";
@@ -43,6 +43,16 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
 
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return;
+
+    const userStored = localStorage.getItem("supabase_user");
+    if (!userStored) {
+      const storedCount = parseInt(localStorage.getItem("marketverse_trial_prompts") || "0");
+      if (storedCount >= 2) {
+        window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
+        return;
+      }
+      localStorage.setItem("marketverse_trial_prompts", String(storedCount + 1));
+    }
 
     const userMsg: Message = {
       id: `msg-${Date.now()}-user`,
