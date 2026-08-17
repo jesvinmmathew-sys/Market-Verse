@@ -113,41 +113,30 @@ html, body {
    ======================================================== */
 :root {
   --bg-surface-rgb: 10, 14, 23;
+  --glass-alpha: 0.65;
+  --glass-blur: 16px;
 }
 
-/* Apply dynamic transparency to all surfaces, cards, modals, sidebars, and navbars */
-body,
-main,
-header,
-nav,
-aside,
+/* Clean, specific glass styling for cards, panels, headers, navbars, sidebars, and dialog modals */
 .liquid-glass,
 .liquid-glass-card,
 .glass-panel,
 .terminal-card,
-div[class*="bg-slate-9"],
-div[class*="bg-gray-9"],
-div[class*="bg-[#"],
-div[class*="bg-surface"],
-div[class*="bg-card"],
-section,
-dialog,
-.modal-overlay > div,
-dropdown-menu,
-[role="dialog"] {
+.modal-surface,
+header.glass-nav,
+nav.glass-nav,
+aside.glass-sidebar,
+div.glass-dropdown,
+[role="dialog"],
+#settings-modal-box,
+#about-modal-box,
+#logout-confirm-box,
+div[class*="bg-surface/95"] {
   background-color: rgba(var(--bg-surface-rgb), var(--glass-alpha)) !important;
-  backdrop-filter: blur(var(--glass-blur)) !important;
-  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   transition: background-color 0.15s ease-out, backdrop-filter 0.15s ease-out, border-color 0.15s ease-out;
-}
-
-/* Ensure borders remain crisp and translucent */
-.liquid-glass,
-.liquid-glass-card,
-.glass-panel,
-.terminal-card,
-div[class*="border-"] {
-  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Blur strength overrides based on data-blur attributes (fallback/override modes) */

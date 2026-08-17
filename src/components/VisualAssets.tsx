@@ -177,7 +177,7 @@ export const FloatingFinancialParticles: React.FC = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 bg-[#020204]" />;
+  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 bg-transparent overflow-hidden border-none shadow-none" />;
 };
 
 // Premium Interactive Bull Asset (3D holographic hover card + slow floating + sweeps of light)

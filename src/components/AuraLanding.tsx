@@ -512,13 +512,7 @@ export const MarketVerseLanding: React.FC<{
           id="hero-headline"
         >
           Understand Markets. <br />Predict Movements. <br />
-          <span 
-            className="animate-shiny inline-block font-black"
-            style={{
-              color: '#e2e8f0',
-              filter: 'url(#c3-noise)'
-            }}
-          >
+          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent block font-black">
             Invest Smarter.
           </span>
         </motion.h1>

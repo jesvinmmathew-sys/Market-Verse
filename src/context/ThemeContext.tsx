@@ -100,8 +100,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const applyTransparency = (level: number, currentTheme: ThemeType) => {
     if (typeof document !== "undefined") {
-      const alpha = (0.95 - ((level - 1) / 9) * 0.93).toFixed(2);
-      const blurPx = level === 1 ? 0 : Math.max(2, Math.round(12 - (level - 5) * 1.5));
+      const clamped = Math.max(1, Math.min(10, Number(level) || 5));
+      // Scale opacity between 0.95 (Level 1) and 0.30 (Level 10)
+      const alpha = (0.95 - ((clamped - 1) / 9) * 0.65).toFixed(2);
+      // Scale blur between 4px (Level 1) and 24px (Level 10)
+      const blurPx = clamped === 1 ? 0 : Math.round(4 + ((clamped - 1) / 9) * 20);
 
       document.documentElement.style.setProperty('--glass-alpha', alpha);
       document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
