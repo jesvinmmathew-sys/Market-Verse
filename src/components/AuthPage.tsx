@@ -311,6 +311,26 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
                   <span>Continue with Google</span>
                 </button>
                 
+                <p className="text-[10.5px] text-slate-500 text-center leading-normal font-sans px-2">
+                  By clicking 'Continue with Google', you agree to our{" "}
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))}
+                    className="text-cyan-600 hover:text-cyan-750 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                  >
+                    Terms of Service
+                  </button>
+                  ,{" "}
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))}
+                    className="text-cyan-600 hover:text-cyan-750 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer inline"
+                  >
+                    Privacy Policy
+                  </button>
+                  , and acknowledge that all market paper trades and Nova AI outputs are simulated and educational.
+                </p>
+                
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-slate-200/50" />
                   <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">or email access</span>

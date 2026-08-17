@@ -80,6 +80,7 @@ export default function App() {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isGateOpen, setIsGateOpen] = useState(false);
   const [authHeadline, setAuthHeadline] = useState<string | null>(null);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   const [customPfp, setCustomPfp] = useState<string | null>(null);
 
@@ -204,6 +205,18 @@ export default function App() {
       navigate("/dashboard");
     }
   }, [user, route]);
+
+  // Check if first-time user has accepted the OAuth/Terms access agreement
+  useEffect(() => {
+    if (user) {
+      const hasAccepted = localStorage.getItem(`marketverse_accepted_terms_${user.id}`);
+      if (!hasAccepted) {
+        setIsOnboardingModalOpen(true);
+      }
+    } else {
+      setIsOnboardingModalOpen(false);
+    }
+  }, [user]);
 
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
@@ -1011,6 +1024,51 @@ export default function App() {
                   className="w-full py-2 border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-white/60 hover:text-white text-[9.5px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
                 >
                   Keep Exploring as Guest
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isOnboardingModalOpen && user && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" id="onboarding-gate-overlay">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="liquid-glass border border-white/10 bg-[#080a0f]/95 rounded-2xl p-6 max-w-md w-full text-left space-y-5 relative overflow-hidden"
+              id="onboarding-gate-box"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+                <LogoMark className="w-5 h-5 text-cyan-400" />
+                <span className="text-xs font-black text-white font-sans uppercase tracking-wider">Access Agreement</span>
+              </div>
+
+              <div className="space-y-4 font-sans text-xs">
+                <p className="text-white/80 leading-relaxed">
+                  Welcome to the terminal, <span className="font-bold text-white">{user.user_metadata?.full_name || user.email}</span>. Before starting, please confirm:
+                </p>
+                <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl space-y-2.5">
+                  <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider block">Important Disclaimer Notice:</span>
+                  <p className="text-white/60 leading-normal text-[11px]">
+                    I understand that MarketVerse India is an educational quantitative platform founded by **Jesvin M Mathew**. Simulated paper trading carries zero real-money liability. All data points, option chain calculations, and AI insights are purely hypothetical.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 font-sans">
+                <button
+                  onClick={() => {
+                    localStorage.setItem(`marketverse_accepted_terms_${user.id}`, new Date().toISOString());
+                    setIsOnboardingModalOpen(false);
+                  }}
+                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/10 flex items-center justify-center cursor-pointer"
+                >
+                  Accept & Enter Terminal
                 </button>
               </div>
             </motion.div>
