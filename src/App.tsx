@@ -12,6 +12,8 @@ import { AuthPage } from "./components/AuthPage";
 import ProfileSettings from "./components/ProfileSettings";
 import { SettingsModal } from "./components/SettingsModal";
 import { LogoutConfirmModal } from "./components/LogoutConfirmModal";
+import { LegalModal } from "./components/legal/LegalModal";
+import { CookieBanner } from "./components/CookieBanner";
 import { supabase } from "./supabaseClient";
 import { useTheme, ThemeType } from "./context/ThemeContext";
 import { 
@@ -33,7 +35,9 @@ import {
   Check,
   Settings,
   Sliders,
-  Key
+  Key,
+  FileText,
+  ShieldAlert
 } from "lucide-react";
 
 export default function App() {
@@ -75,13 +79,31 @@ export default function App() {
     return "TR";
   };
 
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<"terms" | "sebi" | "privacy" | "cookies">("terms");
+
+  const openLegalWithTab = (tab: "terms" | "sebi" | "privacy" | "cookies") => {
+    setLegalTab(tab);
+    setIsLegalOpen(true);
+  };
+
   useEffect(() => {
     setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
     const handlePfpUpdate = () => {
       setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
     };
+    const handleOpenLegal = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const tab = customEvent.detail || "terms";
+      setLegalTab(tab);
+      setIsLegalOpen(true);
+    };
     window.addEventListener("marketverse_pfp_updated", handlePfpUpdate);
-    return () => window.removeEventListener("marketverse_pfp_updated", handlePfpUpdate);
+    window.addEventListener("marketverse_open_legal", handleOpenLegal);
+    return () => {
+      window.removeEventListener("marketverse_pfp_updated", handlePfpUpdate);
+      window.removeEventListener("marketverse_open_legal", handleOpenLegal);
+    };
   }, []);
 
   const openSettingsWithTab = (tab: string) => {
@@ -533,6 +555,28 @@ export default function App() {
                             <span>About MarketVerse</span>
                           </button>
 
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openLegalWithTab("terms");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <FileText className="w-4 h-4 text-cyan-400" />
+                            <span>Terms & Conditions</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              openLegalWithTab("sebi");
+                            }}
+                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-cyan-400" />
+                            <span>SEBI Risk Notice</span>
+                          </button>
+
                           <div className="border-t border-white/5 my-2 pt-1.5" />
 
                           <button
@@ -828,6 +872,18 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {isLegalOpen && (
+          <LegalModal
+            isOpen={isLegalOpen}
+            onClose={() => setIsLegalOpen(false)}
+            initialTab={legalTab}
+          />
+        )}
+      </AnimatePresence>
+
+      <CookieBanner onCustomize={() => openLegalWithTab("cookies")} />
     </div>
   );
 }

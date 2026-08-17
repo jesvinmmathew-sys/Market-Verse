@@ -933,8 +933,17 @@ export const MarketVerseLanding: React.FC<{
       </section>
 
       {/* Footer */}
-      <footer className="relative z-20 border-t border-white/5 py-8 text-center text-xs text-white/30 font-mono">
+      <footer className="relative z-20 border-t border-white/5 py-8 text-center text-xs text-white/30 font-mono space-y-3">
         <p>© 2026 MarketVerse India Intelligence Inc. All rights reserved.</p>
+        <div className="flex items-center justify-center gap-4 text-[10px] text-white/40">
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))} className="hover:text-white transition-all cursor-pointer">Terms of Service</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))} className="hover:text-white transition-all cursor-pointer">Privacy Policy</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "sebi" }))} className="hover:text-white transition-all cursor-pointer">SEBI Risk Disclaimer</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "cookies" }))} className="hover:text-white transition-all cursor-pointer">Cookie Settings</button>
+        </div>
       </footer>
 
       {/* PREMIUM GLASS ABOUT OVERLAY MODAL */}

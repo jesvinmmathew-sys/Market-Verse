@@ -1852,9 +1852,17 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Terminal Footer */}
-      <footer className="border-t border-white/5 py-4 text-center text-[10px] text-white/30 font-mono bg-black/20 relative z-10">
+      <footer className="border-t border-white/5 py-4 text-center text-[10px] text-white/30 font-mono bg-black/20 relative z-10 space-y-2">
         <p>© 2026 MarketVerse Terminal Network. Secured server-side financial telemetry.</p>
+        <div className="flex items-center justify-center gap-3 text-[9px] text-white/45">
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))} className="hover:text-white transition-all cursor-pointer">Terms of Service</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))} className="hover:text-white transition-all cursor-pointer">Privacy Policy</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "sebi" }))} className="hover:text-white transition-all cursor-pointer">SEBI Risk Disclaimer</button>
+          <span>·</span>
+          <button onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "cookies" }))} className="hover:text-white transition-all cursor-pointer">Cookie Settings</button>
+        </div>
       </footer>
     </div>
   );
