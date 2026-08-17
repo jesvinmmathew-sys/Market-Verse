@@ -185,19 +185,10 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Light & Minimalist Glassmorphism (40% width on desktop) */}
-      <div className="w-full md:w-[40%] h-[55vh] md:h-screen bg-white/70 backdrop-blur-md border-l border-white/25 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-16 relative text-left" id="auth-right-minimal">
-        {/* Back navigation button */}
-        <button
-          onClick={() => onNavigate("/")}
-          className="absolute top-6 left-6 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors py-2 px-3 rounded-lg hover:bg-slate-150/40 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 text-slate-500" />
-          <span className="text-slate-600">Back to Landing</span>
-        </button>
-
-        {/* Inner centered form container with explicit dark text default */}
-        <div className="w-full max-w-sm flex flex-col justify-center py-6 text-slate-900">
+      {/* RIGHT COLUMN: Dark Glassmorphism (40% width on desktop) */}
+      <div className="w-full md:w-[40%] h-[55vh] md:h-screen bg-[#080c14]/90 backdrop-blur-md border-l border-white/10 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-16 relative text-left text-white" id="auth-right-minimal">
+        {/* Inner centered form container with explicit dark theme text default */}
+        <div className="flex flex-col justify-center max-w-md w-full mx-auto py-8 text-white">
           {verificationEmail ? (
             /* Verification Screen */
             <div>
@@ -263,7 +254,7 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
                     setError(null);
                     setSuccessMsg(null);
                   }}
-                  className="w-full py-2.5 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                  className="w-full py-2.5 px-4 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
                 >
                   Back to Sign In
                 </button>
@@ -272,27 +263,19 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
           ) : (
             /* Login/Signup Form */
             <>
-              <div className="mb-8">
-                <motion.h2 
-                  key={headline ? "gated-title" : (isSignUp ? "signup-title" : "login-title")}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl font-extrabold text-slate-900 tracking-tight font-sans"
+              <div className="mb-6">
+                <button 
+                  onClick={() => onNavigate("/")} 
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors mb-4 cursor-pointer"
                 >
-                  {headline ? headline : (isSignUp ? "Enter the MarketVerse." : "Welcome back.")}
-                </motion.h2>
-                <motion.p 
-                  key={headline ? "gated-sub" : (isSignUp ? "signup-sub" : "login-sub")}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.65 }}
-                  className="text-xs text-slate-500 mt-2 font-medium leading-relaxed font-mono uppercase tracking-wider"
-                >
-                  {headline 
-                    ? "Authentication Required" 
-                    : (isSignUp 
-                      ? "Command your capital with next-generation analytics. Your journey starts here."
-                      : "The markets are moving. Your portfolio is ready.")}
-                </motion.p>
+                  <ArrowLeft className="w-3.5 h-3.5"/> Back to Landing
+                </button>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400 block mb-1 font-sans">
+                  {headline ? "AUTHENTICATION REQUIRED" : (isSignUp ? "WELCOME TO MARKETVERSE" : "WELCOME BACK")}
+                </span>
+                <h1 className="text-2xl font-bold text-white tracking-tight font-sans">
+                  {headline ? headline : (isSignUp ? "Unlock MarketVerse Terminal" : "Sign In to Your Workspace")}
+                </h1>
               </div>
 
               {/* Google OAuth Button */}
@@ -369,20 +352,21 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
                 {/* Full Name input field (Signup only) */}
                 {isSignUp && (
                   <div className="space-y-1.5 animate-fadeIn">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="fullname-input">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" htmlFor="fullname-input">
                       Full Name
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <User className="w-4 h-4" />
                       </div>
                       <input
                         id="fullname-input"
                         type="text"
+                        placeholder="Jesvin M Mathew"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all text-sm font-sans"
                       />
                     </div>
                   </div>
@@ -390,59 +374,85 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
 
                 {/* Email input field */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="email-input">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" htmlFor="email-input">
                     Email Address
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Mail className="w-4 h-4" />
                     </div>
                     <input
                       id="email-input"
                       type="email"
+                      placeholder="name@domain.com"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all text-sm font-sans"
                     />
                   </div>
                 </div>
 
                 {/* Password input field */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block" htmlFor="password-input">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" htmlFor="password-input">
                     Password
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
                       id="password-input"
                       type="password"
+                      placeholder="••••••••"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all font-sans placeholder-slate-400"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all text-sm font-sans"
                     />
                   </div>
                 </div>
 
                 {isSignUp && (
-                  <div className="space-y-3 mb-4 text-left">
-                    <div className="flex items-start gap-2">
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-2 mb-4 text-left">
+                    <label className="flex items-start gap-2.5 cursor-pointer">
                       <input
                         type="checkbox"
                         id="terms-checkbox"
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-1 cursor-pointer shrink-0"
+                        className="mt-1 rounded border-white/20 bg-white/10 text-cyan-500 focus:ring-0 cursor-pointer"
                       />
-                      <label htmlFor="terms-checkbox" className="text-[11px] text-slate-500 font-medium leading-normal cursor-pointer select-none">
-                        I agree to the <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">Terms of Service</button>, <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">Privacy Policy</button>, and <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "sebi" }))} className="text-[#3D81E3] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer">SEBI Risk Disclosure</button>.
-                      </label>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-normal italic font-sans">
+                      <span className="text-xs text-slate-300">
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))}
+                          className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          Terms of Service
+                        </button>
+                        ,{" "}
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "privacy" }))}
+                          className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          Privacy Policy
+                        </button>
+                        , and{" "}
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "sebi" }))}
+                          className="text-amber-400 hover:text-amber-305 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                        >
+                          SEBI Risk Disclosure
+                        </button>
+                        .
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-slate-400 leading-normal pl-6 font-sans">
                       MarketVerse India provides educational quantitative intelligence and simulated paper trading. All trades are virtual.
                     </p>
                   </div>
@@ -452,7 +462,7 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
                 <button
                   type="submit"
                   disabled={loading || (isSignUp && !agreedToTerms)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-850 text-white text-sm font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-slate-900/10 cursor-pointer disabled:opacity-50 hover:shadow-md"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/10 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -467,7 +477,7 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
 
               {/* Toggle Login/Signup Trigger */}
               <div className="mt-8 text-center text-xs">
-                <span className="text-slate-500 font-medium">
+                <span className="text-slate-400 font-medium">
                   {isSignUp ? "Already have an account?" : "New to MarketVerse?"}
                 </span>{" "}
                 <button
@@ -477,7 +487,7 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
                     setError(null);
                     setSuccessMsg(null);
                   }}
-                  className="font-bold text-[#3D81E3] hover:text-[#336ec4] transition-colors cursor-pointer ml-1"
+                  className="font-bold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer ml-1"
                 >
                   {isSignUp ? "Sign In" : "Create Account"}
                 </button>
