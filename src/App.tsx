@@ -493,43 +493,44 @@ export default function App() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-60 rounded-2xl border border-border-subtle bg-surface/95 backdrop-blur-xl p-3 shadow-[0_15px_40px_rgba(0,0,0,0.6)] z-50 text-left space-y-3"
+                        className="profile-dropdown-menu absolute right-0 top-full mt-2 w-72 rounded-2xl p-2 border border-white/10 shadow-2xl z-50 text-left space-y-2 animate-in fade-in zoom-in-95 duration-150"
                       >
                         {/* User Header */}
-                        <div className="flex items-center gap-3 border-b border-white/5 pb-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border border-cyan-500/20 overflow-hidden shrink-0 relative">
-                            {customPfp ? (
-                              <img src={customPfp} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
-                              <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">
-                                {getInitials()}
+                        <div className="p-3 bg-white/[0.04] rounded-xl mb-2 border border-white/5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border border-cyan-500/20 overflow-hidden shrink-0 relative shadow-md">
+                              {customPfp ? (
+                                <img src={customPfp} alt="Avatar" className="w-full h-full object-cover" />
+                              ) : user.user_metadata?.avatar_url && !user.user_metadata.avatar_url.startsWith("linear-gradient") ? (
+                                <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs">
+                                  {getInitials()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-white text-sm truncate">{user.user_metadata?.full_name || "Jesvin M Mathew"}</span>
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                  PRO
+                                </span>
                               </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-bold text-white truncate font-sans">
-                              {user.user_metadata?.full_name || "Active Trader"}
-                            </p>
-                            <p className="text-[9px] text-white/40 truncate font-mono mt-0.5">{user.email}</p>
-                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold uppercase tracking-wider mt-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              <span>Active Trader</span>
+                              <p className="text-xs text-slate-400 truncate">{user.email || "support.marketverse@gmail.com"}</p>
                             </div>
                           </div>
                         </div>
 
                         {/* Menu Items */}
-                        <div className="space-y-0.5" id="profile-dropdown-menu">
+                        <div className="space-y-0.5">
                           <button
                             onClick={() => {
                               setIsAvatarDropdownOpen(false);
                               openSettingsWithTab("general");
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
                           >
-                            <Settings className="w-4 h-4 text-cyan-400" />
+                            <Settings className="w-4 h-4 text-emerald-400" />
                             <span>Settings</span>
                           </button>
 
@@ -538,7 +539,7 @@ export default function App() {
                               setIsAvatarDropdownOpen(false);
                               openSettingsWithTab("appearance");
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
                           >
                             <Palette className="w-4 h-4 text-cyan-400" />
                             <span>Appearance & Themes</span>
@@ -549,9 +550,9 @@ export default function App() {
                               setIsAvatarDropdownOpen(false);
                               setIsAboutOpen(true);
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
                           >
-                            <Info className="w-4 h-4 text-cyan-400" />
+                            <Info className="w-4 h-4 text-indigo-400" />
                             <span>About MarketVerse</span>
                           </button>
 
@@ -560,9 +561,9 @@ export default function App() {
                               setIsAvatarDropdownOpen(false);
                               openLegalWithTab("terms");
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
                           >
-                            <FileText className="w-4 h-4 text-cyan-400" />
+                            <FileText className="w-4 h-4 text-slate-400" />
                             <span>Terms & Conditions</span>
                           </button>
 
@@ -571,22 +572,23 @@ export default function App() {
                               setIsAvatarDropdownOpen(false);
                               openLegalWithTab("sebi");
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-lg text-text-sub hover:text-text-main hover:bg-white/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
                           >
-                            <ShieldAlert className="w-4 h-4 text-cyan-400" />
+                            <ShieldAlert className="w-4 h-4 text-amber-400" />
                             <span>SEBI Risk Notice</span>
                           </button>
+                        </div>
 
-                          <div className="border-t border-white/5 my-2 pt-1.5" />
-
+                        {/* Divider & Sign Out */}
+                        <div className="mt-2 pt-2 border-t border-white/[0.08]">
                           <button
                             onClick={() => {
                               setIsAvatarDropdownOpen(false);
                               setIsLogoutConfirmOpen(true);
                             }}
-                            className="w-full text-left text-[10.5px] font-bold uppercase tracking-wider px-2.5 py-2.5 rounded-lg text-red-400 hover:text-red-350 hover:bg-red-500/5 transition-all flex items-center gap-2.5 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all cursor-pointer text-left"
                           >
-                            <LogOut className="w-4 h-4" />
+                            <LogOut className="w-4 h-4 text-red-400" />
                             <span>Sign Out</span>
                           </button>
                         </div>

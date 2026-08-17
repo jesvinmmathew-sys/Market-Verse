@@ -263,3 +263,16 @@ div[class*="bg-surface/95"] {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* Floating overlays, dropdowns, and context menus */
+.profile-dropdown-menu,
+.floating-popover,
+div[role="menu"],
+.dropdown-content {
+  background-color: rgba(10, 14, 23, 0.92) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  z-index: 9999 !important;
+}
