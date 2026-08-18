@@ -1,20 +1,27 @@
 import { PortfolioItem, Stock } from "../types";
 import { marketApi } from "./marketApi";
 
-const PORTFOLIO_KEY = "aura_trading_portfolio";
-const CASH_KEY = "aura_trading_cash";
+const getUserId = (): string => {
+  try {
+    const userStored = localStorage.getItem("supabase_user");
+    if (userStored) {
+      const parsed = JSON.parse(userStored);
+      return parsed.id || "guest";
+    }
+  } catch (_) {}
+  return "guest";
+};
 
-const INITIAL_PORTFOLIO: PortfolioItem[] = [
-  { symbol: "RELIANCE", name: "Reliance Industries", shares: 15, avgBuyPrice: 2820.00, currentPrice: 2885.50, type: "india" },
-  { symbol: "TATAMOTORS", name: "Tata Motors Limited", shares: 40, avgBuyPrice: 890.00, currentPrice: 924.50, type: "india" },
-  { symbol: "EURUSD", name: "EUR / USD", shares: 5000, avgBuyPrice: 1.0790, currentPrice: 1.0845, type: "forex" }
-];
+const getPortfolioKey = () => `marketverse_portfolio_${getUserId()}`;
+const getCashKey = () => `marketverse_cash_${getUserId()}`;
 
-const INITIAL_CASH = 500000; // Starting with ₹5,00,000 cash balance
+const INITIAL_PORTFOLIO: PortfolioItem[] = [];
+const INITIAL_CASH = 1000000; // Starting with ₹10,00,000 cash balance
 
 export const TradingService = {
   getPortfolio(): PortfolioItem[] {
-    const stored = localStorage.getItem(PORTFOLIO_KEY);
+    const key = getPortfolioKey();
+    const stored = localStorage.getItem(key);
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -22,33 +29,34 @@ export const TradingService = {
         return INITIAL_PORTFOLIO;
       }
     }
-    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(INITIAL_PORTFOLIO));
+    localStorage.setItem(key, JSON.stringify(INITIAL_PORTFOLIO));
     return INITIAL_PORTFOLIO;
   },
 
   getCash(): number {
-    const stored = localStorage.getItem(CASH_KEY);
+    const key = getCashKey();
+    const stored = localStorage.getItem(key);
     if (stored) {
       const parsed = parseFloat(stored);
       return isNaN(parsed) ? INITIAL_CASH : parsed;
     }
-    localStorage.setItem(CASH_KEY, INITIAL_CASH.toString());
+    localStorage.setItem(key, INITIAL_CASH.toString());
     return INITIAL_CASH;
   },
 
   setPortfolio(portfolio: PortfolioItem[]) {
-    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolio));
+    localStorage.setItem(getPortfolioKey(), JSON.stringify(portfolio));
     this.notifyChange();
   },
 
   setCash(cash: number) {
-    localStorage.setItem(CASH_KEY, cash.toString());
+    localStorage.setItem(getCashKey(), cash.toString());
     this.notifyChange();
   },
 
   resetAccount() {
-    localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(INITIAL_PORTFOLIO));
-    localStorage.setItem(CASH_KEY, INITIAL_CASH.toString());
+    localStorage.setItem(getPortfolioKey(), JSON.stringify(INITIAL_PORTFOLIO));
+    localStorage.setItem(getCashKey(), INITIAL_CASH.toString());
     this.notifyChange();
   },
 

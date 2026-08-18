@@ -222,9 +222,9 @@ export default function App() {
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("marketverse_watchlist");
-      return stored ? JSON.parse(stored) : ["RELIANCE", "TATAMOTORS", "HDFCBANK"];
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return ["RELIANCE", "TATAMOTORS", "HDFCBANK"];
+      return [];
     }
   });
 

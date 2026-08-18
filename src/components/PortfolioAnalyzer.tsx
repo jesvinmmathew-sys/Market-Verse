@@ -631,7 +631,20 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
 
   // Dashboard Aggregations
   const summaryMetrics = useMemo(() => {
-    if (processedHoldings.length === 0) return null;
+    if (processedHoldings.length === 0) {
+      return {
+        totalInvestment: 0,
+        currentPortfolioValue: 1000000,
+        todaysGainLoss: 0,
+        unrealizedProfit: 0,
+        overallReturnPct: 0,
+        healthScore: 100,
+        holdingsCount: 0,
+        diversificationRating: "None",
+        riskRating: "None",
+        outlookRating: "Stable"
+      };
+    }
 
     let totalInvestment = 0;
     let currentPortfolioValue = 0;
@@ -1404,103 +1417,112 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
               </div>
             </div>
 
-            {/* TAB CONTENT: 7. PREMIUM HOLDINGS CARDS GRID VIEW */}
-            {dashboardTab === "cards" ? (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-              >
-                {filteredHoldings.map((h) => (
-                  <PortfolioStockCard key={h.symbol} holding={h} />
-                ))}
-                {filteredHoldings.length === 0 && (
-                  <div className="py-12 text-center text-xs text-white/30 italic font-sans col-span-full">
-                    No holding component matched the filter settings.
-                  </div>
-                )}
-              </motion.div>
+            {customPortfolio.length === 0 ? (
+              <div className="py-12 text-center text-white/35 text-xs font-sans space-y-3 border border-dashed border-white/10 rounded-2xl bg-white/[0.01]" id="ledger-empty-state">
+                <Briefcase className="w-8 h-8 mx-auto text-slate-500 opacity-60" />
+                <p className="font-semibold text-slate-350 text-sm">No open positions.</p>
+                <p className="text-[11px] text-slate-500 max-w-[280px] mx-auto leading-normal">
+                  Use the Trade Terminal to place your first virtual order.
+                </p>
+              </div>
             ) : (
-              /* TAB CONTENT: TABLE / LEDGER VIEW */
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="overflow-x-auto"
-              >
-                <table className="w-full text-left border-collapse font-mono text-[11px]">
-                  <thead>
-                    <tr className="border-b border-white/5 text-white/45">
-                      {[
-                        { label: "Company", field: "name" },
-                        { label: "Symbol", field: "symbol" },
-                        { label: "Current Price", field: "currentPrice" },
-                        { label: "Avg Buy Price", field: "avgBuyPrice" },
-                        { label: "Quantity", field: "shares" },
-                        { label: "Total Cost", field: "costValue" },
-                        { label: "Current Value", field: "currentValue" },
-                        { label: "Profit / Loss", field: "profitLoss" },
-                        { label: "Risk Level", field: "riskLevel" },
-                      ].map(col => (
-                        <th 
-                          key={col.label} 
-                          onClick={() => {
-                            if (sortField === col.field) {
-                              setSortDirection(prev => prev === "asc" ? "desc" : "asc");
-                            } else {
-                              setSortField(col.field);
-                              setSortDirection("desc");
-                            }
-                          }}
-                          className="py-3 px-4 font-bold uppercase tracking-wider text-[9px] cursor-pointer hover:text-white transition-colors"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>{col.label}</span>
-                            <ArrowUpDown className="w-3 h-3 text-white/20" />
-                          </div>
-                        </th>
-                      ))}
-                      <th className="py-3 px-4 font-bold uppercase tracking-wider text-[9px] text-cyan-400">NOVA Summary</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {filteredHoldings.map((h) => {
-                      const gain = h.profitLoss >= 0;
-                      return (
-                        <tr key={h.symbol} className="hover:bg-white/[0.01] transition-all text-left">
-                          <td className="py-3.5 px-4 font-bold text-white font-sans max-w-[150px] truncate">{h.name}</td>
-                          <td className="py-3.5 px-4 font-black text-cyan-300">{h.symbol}</td>
-                          <td className="py-3.5 px-4 text-white">₹{h.currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 1 })}</td>
-                          <td className="py-3.5 px-4 text-white/60">₹{h.avgBuyPrice.toLocaleString("en-IN", { minimumFractionDigits: 1 })}</td>
-                          <td className="py-3.5 px-4 text-white">{h.shares}</td>
-                          <td className="py-3.5 px-4 text-white/50">₹{h.costValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                          <td className="py-3.5 px-4 font-bold text-white">₹{h.currentValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
-                          <td className={`py-3.5 px-4 font-bold ${gain ? "text-emerald-400" : "text-rose-400"}`}>
-                            <div className="flex flex-col">
-                              <span>{gain ? "+" : ""}₹{h.profitLoss.toLocaleString("en-IN", { maximumFractionDigits: 1 })}</span>
-                              <span className="text-[9px]">{gain ? "+" : ""}{h.profitLossPct.toFixed(1)}%</span>
+              dashboardTab === "cards" ? (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+                >
+                  {filteredHoldings.map((h) => (
+                    <PortfolioStockCard key={h.symbol} holding={h} />
+                  ))}
+                  {filteredHoldings.length === 0 && (
+                    <div className="py-12 text-center text-xs text-white/30 italic font-sans col-span-full">
+                      No holding component matched the filter settings.
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                /* TAB CONTENT: TABLE / LEDGER VIEW */
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="overflow-x-auto"
+                >
+                  <table className="w-full text-left border-collapse font-mono text-[11px]">
+                    <thead>
+                      <tr className="border-b border-white/5 text-white/45">
+                        {[
+                          { label: "Company", field: "name" },
+                          { label: "Symbol", field: "symbol" },
+                          { label: "Current Price", field: "currentPrice" },
+                          { label: "Avg Buy Price", field: "avgBuyPrice" },
+                          { label: "Quantity", field: "shares" },
+                          { label: "Total Cost", field: "costValue" },
+                          { label: "Current Value", field: "currentValue" },
+                          { label: "Profit / Loss", field: "profitLoss" },
+                          { label: "Risk Level", field: "riskLevel" },
+                        ].map(col => (
+                          <th 
+                            key={col.label} 
+                            onClick={() => {
+                              if (sortField === col.field) {
+                                setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+                              } else {
+                                setSortField(col.field);
+                                setSortDirection("desc");
+                              }
+                            }}
+                            className="py-3 px-4 font-bold uppercase tracking-wider text-[9px] cursor-pointer hover:text-white transition-colors"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>{col.label}</span>
+                              <ArrowUpDown className="w-3 h-3 text-white/20" />
                             </div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className={`text-[9px] px-1.5 py-0.2 rounded border font-bold uppercase ${h.riskLevel === "Low" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : h.riskLevel === "High" ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"}`}>
-                              {h.riskLevel}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-[10px] text-white/50 max-w-[220px] truncate font-sans italic" title={h.aiSummary}>
-                            {h.aiSummary}
+                          </th>
+                        ))}
+                        <th className="py-3 px-4 font-bold uppercase tracking-wider text-[9px] text-cyan-400">NOVA Summary</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredHoldings.map((h) => {
+                        const gain = h.profitLoss >= 0;
+                        return (
+                          <tr key={h.symbol} className="hover:bg-white/[0.01] transition-all text-left">
+                            <td className="py-3.5 px-4 font-bold text-white font-sans max-w-[150px] truncate">{h.name}</td>
+                            <td className="py-3.5 px-4 font-black text-cyan-300">{h.symbol}</td>
+                            <td className="py-3.5 px-4 text-white">₹{h.currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 1 })}</td>
+                            <td className="py-3.5 px-4 text-white/60">₹{h.avgBuyPrice.toLocaleString("en-IN", { minimumFractionDigits: 1 })}</td>
+                            <td className="py-3.5 px-4 text-white">{h.shares}</td>
+                            <td className="py-3.5 px-4 text-white/50">₹{h.costValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                            <td className="py-3.5 px-4 font-bold text-white">₹{h.currentValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</td>
+                            <td className={`py-3.5 px-4 font-bold ${gain ? "text-emerald-400" : "text-rose-400"}`}>
+                              <div className="flex flex-col">
+                                <span>{gain ? "+" : ""}₹{h.profitLoss.toLocaleString("en-IN", { maximumFractionDigits: 1 })}</span>
+                                <span className="text-[9px]">{gain ? "+" : ""}{h.profitLossPct.toFixed(1)}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded border font-bold uppercase ${h.riskLevel === "Low" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : h.riskLevel === "High" ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"}`}>
+                                {h.riskLevel}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-[10px] text-white/50 max-w-[220px] truncate font-sans italic" title={h.aiSummary}>
+                              {h.aiSummary}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {filteredHoldings.length === 0 && (
+                        <tr>
+                          <td colSpan={10} className="py-10 text-center text-xs text-white/30 italic font-sans">
+                            No holdings found matching search criteria.
                           </td>
                         </tr>
-                      );
-                    })}
-                    {filteredHoldings.length === 0 && (
-                      <tr>
-                        <td colSpan={10} className="py-10 text-center text-xs text-white/30 italic font-sans">
-                          No holdings found matching search criteria.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </motion.div>
+                      )}
+                    </tbody>
+                  </table>
+                </motion.div>
+              )
             )}
           </div>
         </motion.div>

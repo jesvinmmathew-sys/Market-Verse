@@ -872,85 +872,97 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                     <div>
                       <div className="flex items-center justify-between border-b border-white/5 pb-3">
                         <h4 className="text-sm font-bold text-white tracking-wide">Live Simulated Portfolio</h4>
-                        <span className={`text-xs font-bold font-mono ${portfolioGain >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                          {portfolioGain >= 0 ? "▲" : "▼"} {portfolioGain >= 0 ? "+" : ""}{portfolioGain.toLocaleString("en-US", { maximumFractionDigits: 2 })} ({portfolioGainPct.toFixed(2)}%)
+                        <span className={`text-xs font-bold font-mono ${portfolio.length === 0 ? "text-slate-400" : (portfolioGain >= 0 ? "text-emerald-400" : "text-rose-400")}`}>
+                          {portfolio.length === 0 ? "●" : (portfolioGain >= 0 ? "▲" : "▼")} {portfolio.length === 0 ? "₹0.00 (0.00%)" : `${portfolioGain >= 0 ? "+" : ""}${portfolioGain.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${portfolioGainPct.toFixed(2)}%)`}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 py-3" id="portfolio-header-metrics">
                         <div>
-                          <span className="text-[9px] text-white/40 uppercase block font-mono">Current Valuation</span>
-                          <span className="text-lg font-bold font-mono text-white">₹{portfolioValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                          <span className="text-[9px] text-white/40 uppercase block font-mono">
+                            {portfolio.length === 0 ? "Available Margin" : "Current Valuation"}
+                          </span>
+                          <span className="text-lg font-bold font-mono text-white">
+                            ₹{portfolio.length === 0 ? userBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : portfolioValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                          </span>
                         </div>
                         <div>
                           <span className="text-[9px] text-white/40 uppercase block font-mono">Investment Cost</span>
-                          <span className="text-sm font-bold font-mono text-white/70">₹{portfolioCost.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                          <span className="text-sm font-bold font-mono text-white/70">
+                            ₹{portfolio.length === 0 ? "0.00" : portfolioCost.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                          </span>
                         </div>
                       </div>
 
                       <div className="space-y-2 mt-2" id="portfolio-items-list">
-                        {portfolio.map((item) => {
-                          const itemGain = (item.currentPrice - item.avgBuyPrice) * item.shares;
-                          const isUp = itemGain >= 0;
+                        {portfolio.length === 0 ? (
+                          <div className="py-8 text-center text-white/35 text-xs font-sans space-y-2 border border-dashed border-white/5 rounded-lg bg-white/[0.01]" id="portfolio-empty-state">
+                            <Briefcase className="w-5 h-5 mx-auto text-slate-500 opacity-60" />
+                            <p className="font-medium text-slate-400">No open positions.</p>
+                            <p className="text-[10px] text-slate-500 max-w-[200px] mx-auto leading-normal">Use the Trade Terminal to place your first virtual order.</p>
+                          </div>
+                        ) : (
+                          portfolio.map((item) => {
+                            const itemGain = (item.currentPrice - item.avgBuyPrice) * item.shares;
+                            const isUp = itemGain >= 0;
+                            const matchedStock = stocks.find(s => s.symbol === item.symbol) || {
+                              symbol: item.symbol,
+                              name: item.name,
+                              price: item.currentPrice,
+                              change: 0,
+                              percentChange: 0,
+                              volume: "0",
+                              marketCap: "0",
+                              type: item.type,
+                              dayHigh: item.currentPrice,
+                              dayLow: item.currentPrice,
+                              high52: item.currentPrice,
+                              low52: item.currentPrice,
+                              history: []
+                            };
 
-                          // Match to full stock details for the trade modal
-                          const matchedStock = stocks.find(s => s.symbol === item.symbol) || {
-                            symbol: item.symbol,
-                            name: item.name,
-                            price: item.currentPrice,
-                            change: 0,
-                            percentChange: 0,
-                            volume: "0",
-                            marketCap: "0",
-                            type: item.type,
-                            dayHigh: item.currentPrice,
-                            dayLow: item.currentPrice,
-                            high52: item.currentPrice,
-                            low52: item.currentPrice,
-                            history: []
-                          };
-
-                          return (
-                            <div key={item.symbol} className="flex flex-col p-2.5 rounded bg-white/[0.02] border border-white/5 space-y-2">
-                              <div className="flex items-center justify-between text-xs">
-                                <div>
-                                  <span className="font-bold text-white block">{item.symbol}</span>
-                                  <span className="text-[10px] text-white/40 font-mono">{item.shares} shares @ Avg ₹{item.avgBuyPrice.toLocaleString()}</span>
+                            return (
+                              <div key={item.symbol} className="flex flex-col p-2.5 rounded bg-white/[0.02] border border-white/5 space-y-2">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div>
+                                    <span className="font-bold text-white block">{item.symbol}</span>
+                                    <span className="text-[10px] text-white/40 font-mono">{item.shares} shares @ Avg ₹{item.avgBuyPrice.toLocaleString()}</span>
+                                  </div>
+                                  <div className="text-right font-mono">
+                                    <span className="font-semibold block text-white">₹{(item.shares * item.currentPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                    <span className={`text-[10px] ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                                      {isUp ? "+" : ""}{itemGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="text-right font-mono">
-                                  <span className="font-semibold block text-white">₹{(item.shares * item.currentPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                                  <span className={`text-[10px] ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-                                    {isUp ? "+" : ""}{itemGain.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                                  </span>
+                                <div className="flex gap-1.5 pt-1.5 border-t border-white/5 justify-end">
+                                  <button
+                                    onClick={() => {
+                                      if (checkGuestGate()) return;
+                                      setTradeStock(matchedStock as Stock);
+                                      setTradeType("buy");
+                                      setTradeShares(10);
+                                    }}
+                                    className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/30 hover:border-emerald-500/40 cursor-pointer transition-all"
+                                  >
+                                    BUY MORE
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (checkGuestGate()) return;
+                                      setTradeStock(matchedStock as Stock);
+                                      setTradeType("sell");
+                                      setTradeShares(Math.min(item.shares, 10));
+                                    }}
+                                    className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/30 hover:border-rose-500/40 cursor-pointer transition-all"
+                                  >
+                                    SELL SHARES
+                                  </button>
                                 </div>
                               </div>
-                              <div className="flex gap-1.5 pt-1.5 border-t border-white/5 justify-end">
-                                <button
-                                  onClick={() => {
-                                    if (checkGuestGate()) return;
-                                    setTradeStock(matchedStock as Stock);
-                                    setTradeType("buy");
-                                    setTradeShares(10);
-                                  }}
-                                  className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/30 hover:border-emerald-500/40 cursor-pointer transition-all"
-                                >
-                                  BUY MORE
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (checkGuestGate()) return;
-                                    setTradeStock(matchedStock as Stock);
-                                    setTradeType("sell");
-                                    setTradeShares(Math.min(item.shares, 10));
-                                  }}
-                                  className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/30 hover:border-rose-500/40 cursor-pointer transition-all"
-                                >
-                                  SELL SHARES
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -969,9 +981,22 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                     </div>
 
                     {watchlist.length === 0 ? (
-                      <div className="py-12 text-center text-white/30 text-xs font-mono space-y-2" id="watchlist-empty-state">
-                        <Bookmark className="w-5 h-5 mx-auto opacity-50" />
-                        <p>No symbols followed yet. Visit Indian Markets or Forex tabs to add active symbols.</p>
+                      <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-white/10 rounded-2xl bg-white/[0.02] space-y-3" id="watchlist-empty-state">
+                        <Bookmark className="w-8 h-8 text-slate-500 mb-1" />
+                        <p className="text-sm font-semibold text-slate-350 font-sans">Your Watchlist is Empty</p>
+                        <p className="text-[11px] text-slate-500 max-w-[280px] font-sans">Search Indian equities or F&O contracts to monitor real-time movements.</p>
+                        <button 
+                          onClick={() => {
+                            const el = document.getElementById("stock-search-input");
+                            if (el) {
+                              el.scrollIntoView({ behavior: "smooth", block: "center" });
+                              el.focus();
+                            }
+                          }} 
+                          className="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 text-xs font-semibold hover:bg-cyan-500/30 transition-all cursor-pointer border border-cyan-500/25 font-sans"
+                        >
+                          + Add First Symbol
+                        </button>
                       </div>
                     ) : (
                       <div className="space-y-2" id="watchlist-items">
@@ -1253,6 +1278,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   {/* Dynamic Custom Ticker Input for searching/adding unknown stocks */}
                   <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-lg border border-white/5">
                     <input 
+                      id="stock-search-input"
                       type="text"
                       placeholder="Symbol (e.g. ZOMATO)"
                       value={stockSearchQuery}
