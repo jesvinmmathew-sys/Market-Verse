@@ -365,6 +365,13 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   // Simulated live portfolio state
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => TradingService.getPortfolio());
 
+  // Watchlist quick search & Sandbox Modal variables
+  const [watchlistSearch, setWatchlistSearch] = useState("");
+  const [isSandboxConfigOpen, setIsSandboxConfigOpen] = useState(false);
+  const [sandboxCapital, setSandboxCapital] = useState<string>("1000000");
+  const [sandboxLeverage, setSandboxLeverage] = useState<number>(() => TradingService.getLeverage());
+  const [sandboxCurrency, setSandboxCurrency] = useState<string>(() => TradingService.getCurrency());
+
   // Buying/Selling simulated popup
   const [tradeStock, setTradeStock] = useState<Stock | null>(null);
   const [tradeShares, setTradeShares] = useState<number>(10);
@@ -658,6 +665,14 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
     setTradeStock(null);
   };
 
+  const formatCurrency = (val: number): string => {
+    const currency = TradingService.getCurrency();
+    if (currency === "USD") {
+      return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return "₹" + val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const portfolioValue = portfolio.reduce((acc, item) => acc + (item.shares * item.currentPrice), 0);
   const portfolioCost = portfolio.reduce((acc, item) => acc + (item.shares * item.avgBuyPrice), 0);
   const portfolioGain = portfolioValue - portfolioCost;
@@ -871,35 +886,67 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                   >
                     <div>
                       <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                        <h4 className="text-sm font-bold text-white tracking-wide">Live Simulated Portfolio</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white tracking-wide font-sans">Live Simulated Portfolio</h4>
+                          <button
+                            onClick={() => {
+                              if (checkGuestGate()) return;
+                              setSandboxCapital(TradingService.getCash().toString());
+                              setSandboxLeverage(TradingService.getLeverage());
+                              setSandboxCurrency(TradingService.getCurrency());
+                              setIsSandboxConfigOpen(true);
+                            }}
+                            className="p-1 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer border border-white/5"
+                            title="Configure Sandbox / Reset Account"
+                          >
+                            <Sliders className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <span className={`text-xs font-bold font-mono ${portfolio.length === 0 ? "text-slate-400" : (portfolioGain >= 0 ? "text-emerald-400" : "text-rose-400")}`}>
-                          {portfolio.length === 0 ? "●" : (portfolioGain >= 0 ? "▲" : "▼")} {portfolio.length === 0 ? "₹0.00 (0.00%)" : `${portfolioGain >= 0 ? "+" : ""}${portfolioGain.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${portfolioGainPct.toFixed(2)}%)`}
+                          {portfolio.length === 0 ? "●" : (portfolioGain >= 0 ? "▲" : "▼")} {portfolio.length === 0 ? `${TradingService.getCurrency() === "USD" ? "$0.00" : "₹0.00"} (0.00%)` : `${portfolioGain >= 0 ? "+" : ""}${formatCurrency(portfolioGain)} (${portfolioGainPct.toFixed(2)}%)`}
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 py-3" id="portfolio-header-metrics">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3" id="portfolio-header-metrics">
                         <div>
-                          <span className="text-[9px] text-white/40 uppercase block font-mono">
-                            {portfolio.length === 0 ? "Available Margin" : "Current Valuation"}
+                          <span className="inline-block text-[8px] bg-cyan-500/10 text-cyan-400 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-cyan-500/15 mb-1 font-sans">
+                            VIRTUAL DEMO MARGIN
                           </span>
-                          <span className="text-lg font-bold font-mono text-white">
-                            ₹{portfolio.length === 0 ? userBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : portfolioValue.toLocaleString("en-US", { maximumFractionDigits: 2 })}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-base font-black font-mono text-white leading-none">
+                              {formatCurrency(userBalance)}
+                            </span>
+                            <span className="text-[8px] font-bold bg-white/5 border border-white/10 text-slate-350 px-1 py-0.5 rounded font-mono shrink-0">
+                              {TradingService.getLeverage()}x Margin Enabled
+                            </span>
+                          </div>
                         </div>
                         <div>
-                          <span className="text-[9px] text-white/40 uppercase block font-mono">Investment Cost</span>
-                          <span className="text-sm font-bold font-mono text-white/70">
-                            ₹{portfolio.length === 0 ? "0.00" : portfolioCost.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                          <span className="text-[9px] text-white/40 uppercase block font-mono">Investment Value</span>
+                          <span className="text-sm font-bold font-mono text-white/70 block">
+                            {formatCurrency(portfolioValue)}
                           </span>
                         </div>
                       </div>
 
                       <div className="space-y-2 mt-2" id="portfolio-items-list">
                         {portfolio.length === 0 ? (
-                          <div className="py-8 text-center text-white/35 text-xs font-sans space-y-2 border border-dashed border-white/5 rounded-lg bg-white/[0.01]" id="portfolio-empty-state">
+                          <div className="py-8 text-center text-white/35 text-xs font-sans space-y-3 border border-dashed border-white/5 rounded-lg bg-white/[0.01]" id="portfolio-empty-state">
                             <Briefcase className="w-5 h-5 mx-auto text-slate-500 opacity-60" />
-                            <p className="font-medium text-slate-400">No open positions.</p>
+                            <p className="font-semibold text-slate-350">No open positions.</p>
                             <p className="text-[10px] text-slate-500 max-w-[200px] mx-auto leading-normal">Use the Trade Terminal to place your first virtual order.</p>
+                            <button
+                              onClick={() => {
+                                const el = document.getElementById("stock-search-input");
+                                if (el) {
+                                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                  el.focus();
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-xs font-bold hover:bg-cyan-400 transition-all cursor-pointer shadow-md shadow-cyan-500/10 font-sans"
+                            >
+                              + Place Virtual Trade
+                            </button>
                           </div>
                         ) : (
                           portfolio.map((item) => {
@@ -967,24 +1014,74 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                     </div>
                   </motion.div>
                 )}
-
-                {/* Interactive Watchlist Grid */}
                 {showWatchlistWidget && (
                   <motion.div 
                     layout
                     className="liquid-glass rounded-xl p-5 border border-white/5 text-left flex flex-col justify-between"
                     id="widget-watchlist-grid"
                   >
-                    <div className="border-b border-white/5 pb-3 mb-3 flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-white tracking-wide">Live Active Watchlist</h4>
-                      <span className="text-[10px] text-white/30 font-mono">{watchlist.length} items followed</span>
+                    <div className="border-b border-white/5 pb-3 mb-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white tracking-wide font-sans">Live Active Watchlist</h4>
+                        <span className="text-[10px] text-white/30 font-mono">{watchlist.length} items followed</span>
+                      </div>
+                      
+                      {/* Watchlist Quick Search & Add */}
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Quick search & add NSE/BSE..."
+                          value={watchlistSearch}
+                          onChange={(e) => setWatchlistSearch(e.target.value)}
+                          className="w-full bg-white/[0.04] border border-white/5 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/40 font-sans"
+                        />
+                        {watchlistSearch && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#0a0e17] border border-white/10 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-white/5 text-xs text-white">
+                            {stocks
+                              .filter(
+                                (s) =>
+                                  s.symbol.toLowerCase().includes(watchlistSearch.toLowerCase()) ||
+                                  s.name.toLowerCase().includes(watchlistSearch.toLowerCase())
+                              )
+                              .map((stk) => {
+                                const isWatching = watchlist.includes(stk.symbol);
+                                return (
+                                  <div
+                                    key={stk.symbol}
+                                    onClick={() => {
+                                      onToggleWatchlist(stk.symbol);
+                                      setWatchlistSearch("");
+                                    }}
+                                    className="flex items-center justify-between px-3 py-2 hover:bg-white/[0.04] cursor-pointer"
+                                  >
+                                    <div className="text-left">
+                                      <span className="font-bold text-white block">{stk.symbol}</span>
+                                      <span className="text-[10px] text-white/40 truncate max-w-[180px] block">{stk.name}</span>
+                                    </div>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${isWatching ? "bg-rose-500/10 text-rose-455" : "bg-cyan-500/10 text-cyan-400"}`}>
+                                      {isWatching ? "Remove" : "+ Add"}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            {stocks.filter(
+                              (s) =>
+                                s.symbol.toLowerCase().includes(watchlistSearch.toLowerCase()) ||
+                                s.name.toLowerCase().includes(watchlistSearch.toLowerCase())
+                            ).length === 0 && (
+                              <div className="p-3 text-center text-slate-500">No matching symbols found.</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {watchlist.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-white/10 rounded-2xl bg-white/[0.02] space-y-3" id="watchlist-empty-state">
                         <Bookmark className="w-8 h-8 text-slate-500 mb-1" />
-                        <p className="text-sm font-semibold text-slate-350 font-sans">Your Watchlist is Empty</p>
-                        <p className="text-[11px] text-slate-500 max-w-[280px] font-sans">Search Indian equities or F&O contracts to monitor real-time movements.</p>
+                        <p className="text-sm font-semibold text-slate-355 font-sans">Your Watchlist is Empty</p>
+                        <p className="text-[11px] text-slate-550 max-w-[280px] font-sans">Search Indian equities or F&O contracts to monitor real-time movements.</p>
                         <button 
                           onClick={() => {
                             const el = document.getElementById("stock-search-input");
@@ -1007,16 +1104,28 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
                               key={w.symbol}
                               onClick={() => onNavigate(`/stock/${w.symbol.toLowerCase()}`)}
                               whileTap={{ scale: 0.98 }}
-                              className="flex flex-col p-2.5 rounded bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer text-xs space-y-2 animate-none"
+                              className="group flex flex-col p-2.5 rounded bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer text-xs space-y-2 animate-none"
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-start justify-between relative">
                                 <div className="text-left">
-                                  <span className="font-bold text-white block">{w.symbol}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-white block">{w.symbol}</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onToggleWatchlist(w.symbol);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-rose-400 cursor-pointer border-none bg-transparent"
+                                      title="Remove from Watchlist"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                   <span className="text-[10px] text-white/40 truncate block max-w-[150px]">{w.name}</span>
                                 </div>
                                 <div className="text-right font-mono">
-                                  <span className="font-semibold block">
-                                    ₹{w.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="font-semibold block text-white">
+                                    {formatCurrency(w.price)}
                                   </span>
                                   <span className={`text-[10px] ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
                                     {isUp ? "▲ +" : "▼ "}{w.percentChange}%
@@ -1889,6 +1998,147 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* 11. VIRTUAL ACCOUNT SETUP MODAL */}
+      <AnimatePresence>
+        {isSandboxConfigOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md liquid-glass border border-white/10 rounded-2xl p-6 text-left space-y-6 relative text-white"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setIsSandboxConfigOpen(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all cursor-pointer border-none"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-1 text-left">
+                <span className="text-[9px] uppercase font-bold tracking-widest text-cyan-400 font-mono">Sandbox Tuning Room</span>
+                <h3 className="text-xl font-bold text-white tracking-tight font-sans">Virtual Account Setup</h3>
+                <p className="text-[11px] text-slate-400">Configure simulated parameters, seed margin, and target trading leverage.</p>
+              </div>
+
+              {/* Form Config */}
+              <div className="space-y-4">
+                {/* Seed Capital Pickers */}
+                <div className="space-y-2 text-left">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">
+                    Starting Virtual Capital
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[50000, 100000, 500000, 1000000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setSandboxCapital(preset.toString())}
+                        className={`py-1.5 rounded-lg text-xs font-semibold cursor-pointer border transition-all font-mono ${
+                          sandboxCapital === preset.toString()
+                            ? "bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/10"
+                            : "bg-white/[0.04] border-white/5 hover:bg-white/[0.08] text-white"
+                        }`}
+                      >
+                        {sandboxCurrency === "USD" ? `$${preset >= 1000000 ? `${preset / 1000000}M` : `${preset / 1000}K`}` : `₹${preset >= 100000 ? `${preset / 100000}L` : `${preset / 1000}K`}`}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative mt-2">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-mono font-bold">
+                      {sandboxCurrency === "USD" ? "$" : "₹"}
+                    </span>
+                    <input
+                      type="number"
+                      placeholder="Custom Input (e.g. 2500000)"
+                      value={sandboxCapital}
+                      onChange={(e) => setSandboxCapital(e.target.value)}
+                      className="w-full bg-white/[0.06] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-xs font-mono rounded-xl pl-8 pr-4 py-2.5"
+                    />
+                  </div>
+                </div>
+
+                {/* Leverage Picker */}
+                <div className="space-y-2 text-left">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">
+                    Intraday Leverage Multiplier
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { val: 1, label: "1x (Cash)" },
+                      { val: 2, label: "2x" },
+                      { val: 5, label: "5x (Intraday)" },
+                      { val: 10, label: "10x (F&O)" }
+                    ].map((lev) => (
+                      <button
+                        key={lev.val}
+                        type="button"
+                        onClick={() => setSandboxLeverage(lev.val)}
+                        className={`py-1.5 px-1 rounded-lg text-[10px] font-semibold cursor-pointer border transition-all text-center leading-tight ${
+                          sandboxLeverage === lev.val
+                            ? "bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/10"
+                            : "bg-white/[0.04] border-white/5 hover:bg-white/[0.08] text-white"
+                        }`}
+                      >
+                        {lev.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Currency format */}
+                <div className="space-y-2 text-left">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">
+                    Currency Format & Number System
+                  </label>
+                  <select
+                    value={sandboxCurrency}
+                    onChange={(e) => setSandboxCurrency(e.target.value)}
+                    className="w-full bg-white/[0.06] border border-white/10 text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-xs rounded-xl px-3 py-2.5 cursor-pointer font-sans"
+                  >
+                    <option value="INR" className="bg-[#0e1117]">INR (₹) • Lakhs / Crores System</option>
+                    <option value="USD" className="bg-[#0e1117]">USD ($) • Millions / Billions System</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 border-t border-white/5 flex gap-3">
+                <button
+                  onClick={() => setIsSandboxConfigOpen(false)}
+                  className="w-1/2 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border border-white/5 text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const cap = parseFloat(sandboxCapital);
+                    if (isNaN(cap) || cap <= 0) {
+                      alert("Please enter a valid capital balance.");
+                      return;
+                    }
+                    TradingService.setCash(cap);
+                    TradingService.setLeverage(sandboxLeverage);
+                    TradingService.setCurrency(sandboxCurrency);
+                    TradingService.setPortfolio([]);
+                    setIsSandboxConfigOpen(false);
+                  }}
+                  className="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-cyan-500/10 cursor-pointer text-center border-none"
+                >
+                  Save & Reset Sandbox
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

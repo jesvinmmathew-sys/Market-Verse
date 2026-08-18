@@ -14,11 +14,38 @@ const getUserId = (): string => {
 
 const getPortfolioKey = () => `marketverse_portfolio_${getUserId()}`;
 const getCashKey = () => `marketverse_cash_${getUserId()}`;
+const getLeverageKey = () => `marketverse_leverage_${getUserId()}`;
+const getCurrencyKey = () => `marketverse_currency_${getUserId()}`;
 
 const INITIAL_PORTFOLIO: PortfolioItem[] = [];
 const INITIAL_CASH = 1000000; // Starting with ₹10,00,000 cash balance
 
 export const TradingService = {
+  getLeverage(): number {
+    const key = getLeverageKey();
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      return isNaN(parsed) ? 1 : parsed;
+    }
+    return 1; // Default 1x
+  },
+
+  setLeverage(leverage: number) {
+    localStorage.setItem(getLeverageKey(), leverage.toString());
+    this.notifyChange();
+  },
+
+  getCurrency(): string {
+    const key = getCurrencyKey();
+    return localStorage.getItem(key) || "INR";
+  },
+
+  setCurrency(currency: string) {
+    localStorage.setItem(getCurrencyKey(), currency);
+    this.notifyChange();
+  },
+
   getPortfolio(): PortfolioItem[] {
     const key = getPortfolioKey();
     const stored = localStorage.getItem(key);
@@ -57,6 +84,8 @@ export const TradingService = {
   resetAccount() {
     localStorage.setItem(getPortfolioKey(), JSON.stringify(INITIAL_PORTFOLIO));
     localStorage.setItem(getCashKey(), INITIAL_CASH.toString());
+    localStorage.setItem(getLeverageKey(), "1");
+    localStorage.setItem(getCurrencyKey(), "INR");
     this.notifyChange();
   },
 
@@ -100,11 +129,13 @@ export const TradingService = {
     const price = stock.price;
     const totalCost = price * amount;
     const currentCash = this.getCash();
+    const leverage = this.getLeverage();
+    const requiredMargin = totalCost / leverage;
 
-    if (currentCash < totalCost) {
+    if (currentCash < requiredMargin) {
       return {
         success: false,
-        message: `Insufficient simulated funds. Required: ₹${totalCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}, Available: ₹${currentCash.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+        message: `Insufficient simulated margin. Required Margin: ₹${requiredMargin.toLocaleString(undefined, { maximumFractionDigits: 2 })} (with ${leverage}x leverage), Available Cash: ₹${currentCash.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
       };
     }
 
