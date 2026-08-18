@@ -11,6 +11,7 @@ import {
   CheckCircle2, 
   Layers 
 } from "lucide-react";
+import { formatINR } from "../../utils/formatters";
 
 interface HoldingItem {
   symbol: string;
@@ -140,10 +141,10 @@ export const PortfolioStockCard: React.FC<PortfolioStockCardProps> = ({ holding 
           <span className="text-white/30 block text-[8px] uppercase tracking-wider mb-0.5">Asset Allocation</span>
           <div className="space-y-0.5">
             <span className="text-white font-bold block text-xs sm:text-sm">
-              ₹{holding.currentValue.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              {formatINR(holding.currentValue)}
             </span>
             <span className="text-[9.5px] text-white/45 block">
-              {holding.shares} shares @ ₹{holding.avgBuyPrice}
+              {holding.shares} shares @ {formatINR(holding.avgBuyPrice)}
             </span>
           </div>
         </div>
@@ -153,7 +154,7 @@ export const PortfolioStockCard: React.FC<PortfolioStockCardProps> = ({ holding 
           <div>
             <span className="text-white/30 block text-[8px] uppercase tracking-wider mb-0.5">Live Valuation</span>
             <span className="text-white font-bold block text-xs sm:text-sm">
-              ₹{holding.currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 1 })}
+              {formatINR(holding.currentPrice)}
             </span>
           </div>
           <span className={`text-[9.5px] font-bold flex items-center gap-0.5 justify-end ${holding.percentChange >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
@@ -168,7 +169,7 @@ export const PortfolioStockCard: React.FC<PortfolioStockCardProps> = ({ holding 
         <div>
           <span className="text-white/30 block text-[8px] uppercase tracking-wider mb-1 font-mono">Profit & Loss</span>
           <span className={`font-mono font-black text-[13px] sm:text-[14px] leading-tight block ${isProfitable ? "text-emerald-400" : "text-rose-400"}`}>
-            {isProfitable ? "+" : ""}₹{holding.profitLoss.toLocaleString("en-IN", { maximumFractionDigits: 1 })}
+            {isProfitable ? "+" : ""}{formatINR(holding.profitLoss)}
           </span>
           <span className={`text-[10px] font-mono font-bold block ${isProfitable ? "text-emerald-400/80" : "text-rose-400/80"}`}>
             {isProfitable ? "+" : ""}{holding.profitLossPct.toFixed(1)}% ROI

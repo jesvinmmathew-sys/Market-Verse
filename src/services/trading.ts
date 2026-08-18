@@ -16,6 +16,7 @@ const getPortfolioKey = () => `marketverse_portfolio_${getUserId()}`;
 const getCashKey = () => `marketverse_cash_${getUserId()}`;
 const getLeverageKey = () => `marketverse_leverage_${getUserId()}`;
 const getCurrencyKey = () => `marketverse_currency_${getUserId()}`;
+const getSandboxInitKey = () => `marketverse_sandbox_init_${getUserId()}`;
 
 const INITIAL_PORTFOLIO: PortfolioItem[] = [];
 const INITIAL_CASH = 1000000; // Starting with ₹10,00,000 cash balance
@@ -81,11 +82,22 @@ export const TradingService = {
     this.notifyChange();
   },
 
+  isSandboxInitialized(): boolean {
+    const key = getSandboxInitKey();
+    return localStorage.getItem(key) === "true";
+  },
+
+  setSandboxInitialized(initialized: boolean) {
+    localStorage.setItem(getSandboxInitKey(), initialized ? "true" : "false");
+    this.notifyChange();
+  },
+
   resetAccount() {
     localStorage.setItem(getPortfolioKey(), JSON.stringify(INITIAL_PORTFOLIO));
     localStorage.setItem(getCashKey(), INITIAL_CASH.toString());
     localStorage.setItem(getLeverageKey(), "1");
     localStorage.setItem(getCurrencyKey(), "INR");
+    localStorage.setItem(getSandboxInitKey(), "false");
     this.notifyChange();
   },
 
