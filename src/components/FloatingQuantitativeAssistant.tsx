@@ -1,9 +1,14 @@
+/**
+ * @file FloatingQuantitativeAssistant.tsx
+ * @author Jesvin M Mathew
+ * @description Floating quantitative analyst assistant chatbot widget.
+ */
 import React, { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, X, RefreshCw, MessageSquare, Bot, Database, TrendingUp, TrendingDown, Activity, ChevronRight, BarChart2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { marketVerseAI } from "../services/marketVerseAI";
+import { marketVerseAnalytics } from "../services/marketVerseAnalytics";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
-import { NovaLogo } from "./NovaLogo";
+import { QuantitativeLogo } from "./QuantitativeLogo";
 
 interface Message {
   id: string;
@@ -43,7 +48,7 @@ interface StockAnalysisCardData {
   resistance: number;
 }
 
-interface FloatingAIAssistantProps {
+interface FloatingQuantitativeAssistantProps {
   currentRoute: string;
 }
 
@@ -300,7 +305,7 @@ const StockIntelligenceCard: React.FC<{ card: StockAnalysisCardData }> = ({ card
   );
 };
 
-export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ currentRoute }) => {
+export const FloatingQuantitativeAssistant: React.FC<FloatingQuantitativeAssistantProps> = ({ currentRoute }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -331,7 +336,7 @@ export const FloatingAIAssistant: React.FC<FloatingAIAssistantProps> = ({ curren
         ]);
         setIsLoading(true);
         try {
-          const chatReply = await marketVerseAI.chatWithMarketAI(`Analyze ${activeStock}`, []);
+          const chatReply = await marketVerseAnalytics.chatWithMarketAI(`Analyze ${activeStock}`, []);
           const stockCardData = await fetchFullStockAnalysis(activeStock);
           
           setMessages([
@@ -494,7 +499,7 @@ Try asking me:
       }
 
       // Parallelize: Chat request & full stock card data if stock is detected
-      const chatPromise = marketVerseAI.chatWithMarketAI(contextualQuestion, serverHistory);
+      const chatPromise = marketVerseAnalytics.chatWithMarketAI(contextualQuestion, serverHistory);
       const stockCardPromise = stockDetected ? fetchFullStockAnalysis(stockDetected.symbol) : Promise.resolve(null);
 
       const [chatReply, stockCardData] = await Promise.all([chatPromise, stockCardPromise]);
@@ -690,7 +695,7 @@ Try asking me:
                 <div className="flex items-center gap-2.5">
                   <div className="relative">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#3d81e3] to-cyan-500 flex items-center justify-center text-white relative shadow-lg">
-                      <NovaLogo className="w-6 h-6" />
+                      <QuantitativeLogo className="w-6 h-6" />
                     </div>
                     {/* Pulsing online indicator */}
                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-[#0a0c10]" />
@@ -869,7 +874,7 @@ Try asking me:
             <span className="absolute -inset-1 rounded-full border border-cyan-400/40 animate-ping pointer-events-none" style={{ animationDuration: '2.5s' }} />
 
             <div className="relative z-10 flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11">
-              <NovaLogo variant="balloon" className="w-full h-full group-hover:rotate-6 transition-transform duration-300" />
+              <QuantitativeLogo variant="balloon" className="w-full h-full group-hover:rotate-6 transition-transform duration-300" />
             </div>
           </motion.button>
         )}

@@ -23,7 +23,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Stock, StockHistoryItem, PortfolioItem, NewsItem } from "../types";
 import { marketApi } from "../services/marketApi";
-import { aiApi, AIAnalysisResult } from "../services/aiApi";
+import { quantitativeApi, AIAnalysisResult } from "../services/quantitativeApi";
 import { TradingService } from "../services/trading";
 import { newsApi } from "../services/newsApi";
 
@@ -322,7 +322,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
       
       // Trigger AI analysis based on new timeframe/history
       setLoadingAI(true);
-      const analysis = await aiApi.analyzeStock(symbol, match.price, history);
+      const analysis = await quantitativeApi.analyzeStock(symbol, match.price, history);
       setAiAnalysis(analysis);
       setLoadingAI(false);
     } catch (err) {

@@ -1,5 +1,9 @@
-// MarketVerse AI Stock Market Intelligence Agent Service (Client Wrapper)
-import { marketVerseAI, callGeminiDirectly } from "./marketVerseAI";
+/**
+ * @file marketAnalytics.ts
+ * @author Jesvin M Mathew
+ * @description Market analysis engine wrapper for quantitative analytics and comparison tasks.
+ */
+import { marketVerseAnalytics, callGeminiDirectly } from "./marketVerseAnalytics";
 
 export interface AIAnalysisResponse {
   sentiment: "Bullish" | "Bearish" | "Neutral";
@@ -37,20 +41,20 @@ export interface MarketSummaryResponse {
   keyDrivers: string[];
 }
 
-export const aiAgent = {
+export const marketAnalytics = {
   /**
    * Complete, professional analysis of a single Indian stock.
    * Feeds on live price, indicators, trend, news, and sector context.
    */
   async analyzeStock(symbol: string): Promise<AIAnalysisResponse> {
-    return marketVerseAI.analyzeStock(symbol);
+    return marketVerseAnalytics.analyzeStock(symbol);
   },
 
   /**
    * Natural language chat assistant (ChatGPT-like) connected to real-time market contexts.
    */
   async answerMarketQuestion(question: string, history: { role: "user" | "model"; text: string }[] = []): Promise<string> {
-    return marketVerseAI.chatWithMarketAI(question, history);
+    return marketVerseAnalytics.chatWithMarketAI(question, history);
   },
 
   /**

@@ -1,8 +1,13 @@
+/**
+ * @file HomepageQuantitativeChat.tsx
+ * @author Jesvin M Mathew
+ * @description In-landing chat terminal displaying simulated quantitative intelligence responses.
+ */
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Loader2, ArrowRight, RefreshCw, Database } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { marketVerseAI } from "../services/marketVerseAI";
-import { NovaLogo } from "./NovaLogo";
+import { marketVerseAnalytics } from "../services/marketVerseAnalytics";
+import { QuantitativeLogo } from "./QuantitativeLogo";
 
 interface Message {
   id: string;
@@ -10,7 +15,7 @@ interface Message {
   text: string;
 }
 
-export const HomepageAIChat: React.FC = () => {
+export const HomepageQuantitativeChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "initial-1",
@@ -71,7 +76,7 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
         text: m.text
       }));
 
-      const responseText = await marketVerseAI.chatWithMarketAI(textToSend.trim(), serverHistory);
+      const responseText = await marketVerseAnalytics.chatWithMarketAI(textToSend.trim(), serverHistory);
       
       const aiMsg: Message = {
         id: `msg-${Date.now()}-model`,
@@ -196,7 +201,7 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-[#0a0c10]/70 relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-[#0B2551] flex items-center justify-center text-cyan-200 shadow-lg">
-            <NovaLogo className="w-6 h-6" />
+            <QuantitativeLogo className="w-6 h-6" />
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">

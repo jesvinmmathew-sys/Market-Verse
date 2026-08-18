@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { MarketVerseLanding, LogoMark } from "./components/AuraLanding";
 import { MarketTerminal } from "./components/MarketTerminal";
 import { StockDetail } from "./components/StockDetail";
-import { FloatingAIAssistant } from "./components/FloatingAIAssistant";
-import { FullScreenAIWorkspace } from "./components/FullScreenAIWorkspace";
+import { FloatingQuantitativeAssistant } from "./components/FloatingQuantitativeAssistant";
+import { QuantitativeEngine } from "./components/QuantitativeEngine";
 import { MarketRadar } from "./components/MarketRadar";
 import { CustomCursor } from "./components/CustomCursor";
 import PortfolioAnalyzer from "./components/PortfolioAnalyzer";
@@ -813,7 +813,7 @@ export default function App() {
             ) : isProfileRoute ? (
               <ProfileSettings onNavigate={navigate} onAuthSuccess={setUser} onLogout={handleSignOut} user={user} />
             ) : isAIRoute ? (
-              <FullScreenAIWorkspace onNavigate={navigate} />
+              <QuantitativeEngine onNavigate={navigate} />
             ) : isPortfolioRoute ? (
               <div className="max-w-7xl mx-auto px-6 py-10">
                 <PortfolioAnalyzer onNavigate={navigate} />
@@ -843,7 +843,7 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </div>
-      {route !== "/ai" && route !== "/auth" && <FloatingAIAssistant currentRoute={route} />}
+      {route !== "/ai" && route !== "/auth" && <FloatingQuantitativeAssistant currentRoute={route} />}
       <CustomCursor />
 
       {/* ========================================================= */}

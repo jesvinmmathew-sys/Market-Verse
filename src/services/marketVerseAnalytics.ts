@@ -1,4 +1,8 @@
-// MarketVerse AI - Premium Indian Stock Market Intelligence Agent (Client Service)
+/**
+ * @file marketVerseAnalytics.ts
+ * @author Jesvin M Mathew
+ * @description Market analysis aggregation engine and client connector hooks.
+ */
 import { INDIAN_STOCK_UNIVERSE } from "./indianStocksDb";
 
 export interface AIAnalysisResponse {
@@ -100,11 +104,11 @@ export const generateGeneralMarketAnalysis = (): string => {
     "*Disclaimer: Compiled directly from the quantitative local market intelligence dataset. Educational analysis only, not financial advice.*";
 };
 
-import { queryNovaAI, callGeminiDirectly } from "./aiApi";
+import { queryQuantitativeEngine, callGeminiDirectly } from "./quantitativeApi";
 
-export { queryNovaAI, callGeminiDirectly };
+export { queryQuantitativeEngine, callGeminiDirectly };
 
-export const marketVerseAI = {
+export const marketVerseAnalytics = {
   /**
    * Complete natural language chat with conversation memory support.
    */
@@ -122,7 +126,7 @@ export const marketVerseAI = {
       throw new Error("Server /api/ai/chat returned status " + response.status);
     } catch (error) {
       console.error("AI API Error (chatWithMarketAI):", error);
-      return queryNovaAI(question, history);
+      return queryQuantitativeEngine(question, history);
     }
   },
 
@@ -186,7 +190,7 @@ export const marketVerseAI = {
           "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
 
         const prompt = quoteText + "\nAnalyze the technicals, risk, and price targets for " + symbol + ".";
-        const rawResult = await queryNovaAI(prompt, []);
+        const rawResult = await queryQuantitativeEngine(prompt, []);
         
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedJsonStr);

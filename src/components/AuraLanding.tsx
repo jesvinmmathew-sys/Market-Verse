@@ -28,8 +28,8 @@ import {
   GlowingBullModel, 
   GlowingBearModel 
 } from "./VisualAssets";
-import { HomepageAIChat } from "./HomepageAIChat";
-import { NovaLogo } from "./NovaLogo";
+import { HomepageQuantitativeChat } from "./HomepageQuantitativeChat";
+import { QuantitativeLogo } from "./QuantitativeLogo";
 
 // Inlined Abstract Curve Mark (Logo)
 export const LogoMark: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
@@ -592,7 +592,7 @@ export const MarketVerseLanding: React.FC<{
             {/* Logo area with futuristic glow */}
             <div className="md:col-span-4 flex flex-col items-center justify-center relative">
               <div className="absolute w-36 h-36 bg-cyan-400/10 rounded-full blur-2xl animate-ping" style={{ animationDuration: "4s" }} />
-              <NovaLogo className="w-32 h-32" />
+              <QuantitativeLogo className="w-32 h-32" />
             </div>
             
             {/* Texts area */}
@@ -785,7 +785,7 @@ export const MarketVerseLanding: React.FC<{
           
           {/* Stateful Interactive AI Chat */}
           <div id="homepage-interactive-ai-chat" className="w-full max-w-full overflow-hidden">
-            <HomepageAIChat />
+            <HomepageQuantitativeChat />
           </div>
 
           {/* AI Info details */}

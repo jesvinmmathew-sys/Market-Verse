@@ -1,3 +1,8 @@
+/**
+ * @file QuantitativeEngine.tsx
+ * @author Jesvin M Mathew
+ * @description Real-time Indian equity sentiment index & simulated execution pipeline.
+ */
 import React, { useState, useRef, useEffect } from "react";
 
 const nanoid = () => "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
@@ -26,9 +31,9 @@ import {
   TrendingUp as TrendingUpIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { marketVerseAI, queryNovaAI } from "../services/marketVerseAI";
+import { marketVerseAnalytics, queryQuantitativeEngine } from "../services/marketVerseAnalytics";
 import { INDIAN_STOCK_UNIVERSE } from "../services/indianStocksDb";
-import { NovaLogo } from "./NovaLogo";
+import { QuantitativeLogo } from "./QuantitativeLogo";
 
 // Gemini dynamic wave canvas component
 interface GeminiWaveCanvasProps {
@@ -229,7 +234,7 @@ interface ChatSession {
   messages: Message[];
 }
 
-interface FullScreenAIWorkspaceProps {
+interface QuantitativeEngineProps {
   onNavigate: (path: string) => void;
 }
 
@@ -433,7 +438,7 @@ const StockIntelligenceCard: React.FC<{ card: StockAnalysisCardData }> = ({ card
   );
 };
 
-export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ onNavigate }) => {
+export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNavigate }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [inputValue, setInputValue] = useState("");
@@ -689,7 +694,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
       }));
 
       // Direct service backend call
-      const chatPromise = queryNovaAI(textToSend.trim(), serverHistory);
+      const chatPromise = queryQuantitativeEngine(textToSend.trim(), serverHistory);
       const stockCardPromise = stockDetected ? fetchFullStockAnalysis(stockDetected.symbol) : Promise.resolve(null);
 
       const [chatReply, stockCardData] = await Promise.all([chatPromise, stockCardPromise]);
@@ -1084,7 +1089,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                         <div key={msg.id} className="flex gap-4 items-start w-full group">
                           {/* Small Nova Icon */}
                           <div className="w-7 h-7 rounded-full bg-[#0B0F19] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 shadow-md">
-                            <NovaLogo className="w-full h-full" />
+                            <QuantitativeLogo className="w-full h-full" />
                           </div>
                           
                           <div className="flex-1 min-w-0 space-y-2 text-left">
@@ -1167,7 +1172,7 @@ export const FullScreenAIWorkspace: React.FC<FullScreenAIWorkspaceProps> = ({ on
                       <div className="absolute inset-2 rounded-full border border-white/5 bg-white/[0.01] shadow-[0_0_40px_rgba(255,255,255,0.03)]" />
                       {/* Official Nova AI Emblem */}
                       <div className="relative w-28 h-28 flex items-center justify-center rounded-full bg-[#06080F]/90 backdrop-blur-md border border-white/10 shadow-2xl p-3.5 overflow-hidden">
-                        <NovaLogo className="w-full h-full" />
+                        <QuantitativeLogo className="w-full h-full" />
                       </div>
                     </div>
 

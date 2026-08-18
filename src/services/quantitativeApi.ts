@@ -1,5 +1,10 @@
+/**
+ * @file quantitativeApi.ts
+ * @author Jesvin M Mathew
+ * @description Quantitative analysis pipeline API and local client interfaces.
+ */
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { generateLocalInstitutionalAnalysis } from "./marketVerseAI";
+import { generateLocalInstitutionalAnalysis } from "./marketVerseAnalytics";
 
 export interface AIAnalysisResult {
   sentiment: "Bullish" | "Bearish" | "Neutral";
@@ -23,7 +28,7 @@ export interface AIAnalysisResult {
   isDemo?: boolean;
 }
 
-export async function queryNovaAI(
+export async function queryQuantitativeEngine(
   prompt: string,
   history: Array<{ role: string; text: string }> = []
 ): Promise<string> {
@@ -101,10 +106,10 @@ export const callGeminiDirectly = async (
   systemInstruction?: string,
   model: string = "gemini-1.5-flash"
 ): Promise<string> => {
-  return queryNovaAI(prompt, history);
+  return queryQuantitativeEngine(prompt, history);
 };
 
-export const aiApi = {
+export const quantitativeApi = {
   isLive(): boolean {
     return true; // Proxy backend handles status dynamically
   },
@@ -135,7 +140,7 @@ export const aiApi = {
       }
       throw new Error("Server /api/ai/analyze-stock returned status " + response.status);
     } catch (e) {
-      console.error("AI API Error (aiApi.analyzeStock, falling back to direct client call):", e);
+      console.error("Quantitative API Error (quantitativeApi.analyzeStock, falling back to direct client call):", e);
       
       try {
         const systemPrompt = "You are a premium senior quantitative stock market analyst specializing in the Indian Stock Market. You must analyze the stock " + symbol + " and return a JSON object ONLY matching this schema:\n" +
@@ -165,7 +170,7 @@ export const aiApi = {
         const rsi = lastElement?.rsi || 50;
         const contextPrompt = "Current price: ₹" + price + ", RSI: " + rsi.toFixed(1) + ".\nAnalyze " + symbol + " technically.";
 
-        const rawResult = await queryNovaAI(contextPrompt, []);
+        const rawResult = await queryQuantitativeEngine(contextPrompt, []);
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         const data = JSON.parse(cleanedJsonStr);
         
@@ -183,7 +188,7 @@ export const aiApi = {
           isDemo: false
         };
       } catch (directErr: any) {
-        console.error("Direct Gemini API Client-Side Fallback Error (aiApi.analyzeStock):", directErr);
+        console.error("Direct Gemini API Client-Side Fallback Error (quantitativeApi.analyzeStock):", directErr);
         
         // Return local high-fidelity structured analysis fallback
         const lastElement = history[history.length - 1];

@@ -1,12 +1,17 @@
+/**
+ * @file QuantitativeLogo.tsx
+ * @author Jesvin M Mathew
+ * @description Logo visual branding element for Quantitative Intelligence Engine.
+ */
 import React from "react";
 
-interface NovaLogoProps {
+interface QuantitativeLogoProps {
   className?: string;
   size?: number;
   variant?: "default" | "balloon";
 }
 
-export const NovaLogo: React.FC<NovaLogoProps> = ({ className = "w-8 h-8", size, variant = "default" }) => {
+export const QuantitativeLogo: React.FC<QuantitativeLogoProps> = ({ className = "w-8 h-8", size, variant = "default" }) => {
   const sizeStyle = size ? { width: size, height: size } : {};
   const isBalloon = variant === "balloon";
 
