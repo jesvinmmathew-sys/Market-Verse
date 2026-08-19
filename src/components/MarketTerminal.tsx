@@ -781,13 +781,13 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
               {/* Top Row: AI summary block */}
               <div className="liquid-glass rounded-xl p-5 border border-white/5 bg-[#0B0F19]/60 flex items-start gap-4 text-left" id="dashboard-ai-summary-widget">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-[#0B2551] flex items-center justify-center text-cyan-200 shrink-0">
-                  <Sparkles className="w-5 h-5 fill-cyan-400/20 animate-pulse" />
+                  <Activity className="w-5 h-5 text-cyan-400 animate-pulse" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="text-xs font-bold text-cyan-300 font-mono uppercase tracking-widest">AI Daily Market intelligence</h3>
+                    <h3 className="text-xs font-bold text-cyan-300 font-mono uppercase tracking-widest">ALPHA REGIME SCANNER</h3>
                     <span className="text-[8px] px-1.5 py-0.2 rounded border border-cyan-500/15 bg-cyan-500/5 text-cyan-400 font-mono tracking-widest uppercase">
-                      AI Grounded
+                      ALGO REGIME
                     </span>
                   </div>
                   {loadingSummary ? (
