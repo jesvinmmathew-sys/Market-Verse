@@ -136,6 +136,15 @@ const PRESET_AVATARS = [
     setIsLoading(true);
     try {
       await authSecurityService.updateProfileName(fullName.trim());
+      
+      const { data: { user: updatedUser } } = await supabase.auth.getUser();
+      if (updatedUser) {
+        localStorage.setItem("supabase_user", JSON.stringify(updatedUser));
+        if (onAuthSuccess) {
+          onAuthSuccess(updatedUser);
+        }
+      }
+      
       showStatus('success', 'Full name updated successfully.');
     } catch (err: any) {
       showStatus('error', err.message || 'Name update failed.');
@@ -158,11 +167,12 @@ const PRESET_AVATARS = [
       if (error) throw error;
       setAvatarUrl(url);
       
-      const userStored = localStorage.getItem("supabase_user");
-      if (userStored) {
-        const parsed = JSON.parse(userStored);
-        parsed.user_metadata = { ...parsed.user_metadata, avatar_url: url };
-        localStorage.setItem("supabase_user", JSON.stringify(parsed));
+      const { data: { user: updatedUser } } = await supabase.auth.getUser();
+      if (updatedUser) {
+        localStorage.setItem("supabase_user", JSON.stringify(updatedUser));
+        if (onAuthSuccess) {
+          onAuthSuccess(updatedUser);
+        }
       }
       
       showStatus('success', url ? 'Profile picture updated successfully.' : 'Profile picture removed.');
@@ -178,18 +188,58 @@ const PRESET_AVATARS = [
     if (!file) return;
     setIsLoading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user?.id || 'public'}/${Date.now()}.${fileExt}`;
-      const { data, error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, {
-        upsert: true
-      });
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      await handleAvatarSelect(publicUrl);
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64String = event.target?.result as string;
+        if (!base64String) {
+          showStatus('error', 'Could not parse file.');
+          setIsLoading(false);
+          return;
+        }
+        
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 256;
+          const MAX_HEIGHT = 256;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          try {
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            await handleAvatarSelect(compressedBase64);
+          } catch (err: any) {
+            showStatus('error', err.message || 'Image processing failed.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        img.onerror = () => {
+          showStatus('error', 'Invalid image file.');
+          setIsLoading(false);
+        };
+        img.src = base64String;
+      };
+      reader.readAsDataURL(file);
     } catch (err: any) {
-      showStatus('error', err.message || 'Image upload failed. Make sure Supabase avatars bucket is active.');
-    } finally {
+      showStatus('error', err.message || 'Image upload failed.');
       setIsLoading(false);
     }
   };
@@ -310,15 +360,7 @@ const PRESET_AVATARS = [
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
       <div className="w-full max-w-4xl h-[620px] bg-slate-950/90 border border-white/10 rounded-2xl shadow-2xl flex overflow-hidden text-white relative font-sans">
         
-        {/* Toast Status Banner */}
-        {statusMessage && (
-          <div className={`absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 z-[100] shadow-2xl ${
-            statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' : 'bg-rose-500/10 border-rose-500/25 text-rose-400'
-          }`}>
-            {statusMessage.text}
-          </div>
-        )}
-
+        
         {/* Close Modal Trigger */}
         <button 
           onClick={onClose}
@@ -389,8 +431,16 @@ const PRESET_AVATARS = [
         </div>
 
         {/* Right Content Viewport */}
-        <div className="flex-1 p-6 overflow-y-auto bg-slate-900/30 text-left">
+        <div className="flex-1 p-6 overflow-y-auto bg-slate-900/30 text-left relative">
           
+          {/* Dedicated Status message banner in normal flow */}
+          {statusMessage && (
+            <div className={`mb-4 px-4 py-2.5 rounded-xl text-xs font-bold border ${
+              statusMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' : 'bg-rose-500/10 border-rose-500/25 text-rose-400'
+            }`}>
+              {statusMessage.text}
+            </div>
+          )}
           {/* Tab 1: Profile & Identity */}
           {activeTab === 'profile' && (
             <div className="space-y-4">
@@ -495,17 +545,14 @@ const PRESET_AVATARS = [
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5 text-[10px] font-mono">
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between">
                   <div>
-                    <span className="text-slate-500 block">Supabase Client ID</span>
-                    <span className="text-white block select-all truncate">{user?.id}</span>
+                    <span className="text-slate-500 block text-[10px]">Account Clearance Level</span>
+                    <span className="text-cyan-400 text-xs font-bold font-mono tracking-wide">LEVEL 4 QUANT TRADER</span>
                   </div>
-                  <div>
-                    <span className="text-slate-500 block">Created On</span>
-                    <span className="text-white block">
-                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
+                  <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[9px] font-bold font-mono tracking-widest uppercase">
+                    Institutional Member
+                  </span>
                 </div>
               </div>
             </div>
