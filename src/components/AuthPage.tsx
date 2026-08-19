@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
 import { Mail, Lock, Loader2, AlertTriangle, CheckCircle, ArrowLeft, User } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { authSecurityService } from "../services/authSecurityService";
 
 interface AuthPageProps {
   onNavigate: (path: string) => void;
@@ -21,6 +22,12 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
   const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Recovery overlay variables
+  const [showRecoveryView, setShowRecoveryView] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
+  const [isRecoveryLoading, setIsRecoveryLoading] = useState(false);
 
   const handleResendEmail = async () => {
     if (!verificationEmail) return;
@@ -66,6 +73,21 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
       console.error('Google Sign In Error:', err.message);
       setError(err?.message || "OAuth redirect failed.");
       setLoading(false);
+    }
+  };
+
+  const handleTriggerRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) return;
+    setIsRecoveryLoading(true);
+    setRecoveryMessage(null);
+    try {
+      const res = await authSecurityService.sendPasswordReset(recoveryEmail.trim());
+      setRecoveryMessage(res.message);
+    } catch (err: any) {
+      setRecoveryMessage("Error: " + (err.message || "Failed to dispatch recovery email."));
+    } finally {
+      setIsRecoveryLoading(false);
     }
   };
 
@@ -189,7 +211,72 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
       <div className="w-full md:w-[40%] h-[55vh] md:h-screen bg-[#080c14]/90 backdrop-blur-md border-l border-white/10 flex flex-col justify-center items-center px-6 sm:px-12 lg:px-16 relative text-left text-white" id="auth-right-minimal">
         {/* Inner centered form container with explicit dark theme text default */}
         <div className="flex flex-col justify-center max-w-md w-full mx-auto py-8 text-white">
-          {verificationEmail ? (
+          {showRecoveryView ? (
+            /* Password Recovery View */
+            <div>
+              <div className="mb-6">
+                <button 
+                  onClick={() => { setShowRecoveryView(false); setRecoveryMessage(null); }} 
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors mb-4 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5"/> Back to Sign In
+                </button>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400 block mb-1 font-sans">
+                  Recover Credentials
+                </span>
+                <h1 className="text-2xl font-bold text-white tracking-tight font-sans">
+                  Password Recovery
+                </h1>
+              </div>
+
+              <form onSubmit={handleTriggerRecovery} className="space-y-5">
+                <p className="text-xs text-slate-400 leading-normal">
+                  Enter your email address to receive a secure password recovery link.
+                </p>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" htmlFor="recovery-email-input">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      id="recovery-email-input"
+                      type="email"
+                      placeholder="name@domain.com"
+                      required
+                      value={recoveryEmail}
+                      onChange={(e) => setRecoveryEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all text-sm font-sans"
+                    />
+                  </div>
+                </div>
+
+                {recoveryMessage && (
+                  <p className="text-xs text-emerald-400 leading-normal">
+                    {recoveryMessage}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isRecoveryLoading}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/10 cursor-pointer disabled:opacity-50"
+                >
+                  {isRecoveryLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending link...</span>
+                    </>
+                  ) : (
+                    <span>Send Recovery Link</span>
+                  )}
+                </button>
+              </form>
+            </div>
+          ) : verificationEmail ? (
             /* Verification Screen */
             <div>
               <div className="mb-6 text-center">
@@ -395,9 +482,20 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
 
                 {/* Password input field */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5" htmlFor="password-input">
-                    Password
-                  </label>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400" htmlFor="password-input">
+                      Password
+                    </label>
+                    {!isSignUp && (
+                      <button 
+                        type="button"
+                        onClick={() => setShowRecoveryView(true)}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        Forgot Password?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Lock className="w-4 h-4" />
