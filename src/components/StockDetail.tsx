@@ -161,6 +161,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
   isInWatchlist 
 }) => {
   const [stock, setStock] = useState<Stock | null>(null);
+  const tvContainerRef = useRef<HTMLDivElement>(null);
   const [timeframe, setTimeframe] = useState<"1m" | "5m" | "15m" | "1h" | "1D">("1D");
   const [chartType, setChartType] = useState<"candle" | "line">("candle");
   
@@ -337,54 +338,49 @@ export const StockDetail: React.FC<StockDetailProps> = ({
     loadData();
   }, [loadData]);
 
-  // Embedded TradingView widget script injection and initialization
+  // Embedded TradingView Advanced Chart Widget using script injection
   useEffect(() => {
-    const scriptId = 'tradingview-widget-script';
-    let script = document.getElementById(scriptId);
+    if (!tvContainerRef.current) return;
 
-    const initTVWidget = () => {
-      if (typeof window !== 'undefined' && (window as any).TradingView) {
-        let tvSymbol = `NSE:${symbol || 'RELIANCE'}`;
-        if (symbol === 'EURUSD' || symbol === 'USDINR') {
-          tvSymbol = `FX_IDC:${symbol}`;
-        }
-        new (window as any).TradingView.widget({
-          autosize: true,
-          symbol: tvSymbol,
-          interval: "D",
-          timezone: "Asia/Kolkata",
-          theme: "dark",
-          style: "1",
-          locale: "in",
-          toolbar_bg: "#131722",
-          enable_publishing: false,
-          allow_symbol_change: false,
-          container_id: "tradingview_chart_container",
-          hide_side_toolbar: false,
-          studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"]
-        });
-      }
-    };
+    // Clear any existing children to prevent duplicate embeds
+    tvContainerRef.current.innerHTML = '';
 
-    if (!script) {
-      script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://s3.tradingview.com/tv.js';
-      script.async = true;
-      script.onload = initTVWidget;
-      document.head.appendChild(script);
-    } else {
-      if ((window as any).TradingView) {
-        initTVWidget();
-      } else {
-        script.addEventListener('load', initTVWidget);
-      }
+    const widgetContainer = document.createElement('div');
+    widgetContainer.className = 'tradingview-widget-container__widget';
+    widgetContainer.style.height = '100%';
+    widgetContainer.style.width = '100%';
+    tvContainerRef.current.appendChild(widgetContainer);
+
+    let tvSymbol = `NSE:${symbol || 'ICICIBANK'}`;
+    if (symbol === 'EURUSD' || symbol === 'USDINR') {
+      tvSymbol = `FX_IDC:${symbol}`;
     }
 
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.type = 'text/javascript';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: tvSymbol,
+      interval: "D",
+      timezone: "Asia/Kolkata",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      calendar: false,
+      hide_top_toolbar: false,
+      hide_side_toolbar: false,
+      support_host: "https://www.tradingview.com"
+    });
+
+    tvContainerRef.current.appendChild(script);
+
     return () => {
-      const container = document.getElementById('tradingview_chart_container');
-      if (container) {
-        container.innerHTML = '';
+      if (tvContainerRef.current) {
+        tvContainerRef.current.innerHTML = '';
       }
     };
   }, [symbol]);
@@ -566,7 +562,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
         
         {/* CHART PORTION (8 cols) */}
         <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
-          <div id="tradingview_chart_container" className="h-[560px] w-full rounded-xl overflow-hidden bg-[#131722] border border-white/5 shadow-md" />
+          <div ref={tvContainerRef} className="h-[560px] w-full rounded-xl overflow-hidden bg-[#131722] border border-white/5 shadow-md" />
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}
