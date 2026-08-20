@@ -337,6 +337,58 @@ export const StockDetail: React.FC<StockDetailProps> = ({
     loadData();
   }, [loadData]);
 
+  // Embedded TradingView widget script injection and initialization
+  useEffect(() => {
+    const scriptId = 'tradingview-widget-script';
+    let script = document.getElementById(scriptId);
+
+    const initTVWidget = () => {
+      if (typeof window !== 'undefined' && (window as any).TradingView) {
+        let tvSymbol = `NSE:${symbol || 'RELIANCE'}`;
+        if (symbol === 'EURUSD' || symbol === 'USDINR') {
+          tvSymbol = `FX_IDC:${symbol}`;
+        }
+        new (window as any).TradingView.widget({
+          autosize: true,
+          symbol: tvSymbol,
+          interval: "D",
+          timezone: "Asia/Kolkata",
+          theme: "dark",
+          style: "1",
+          locale: "in",
+          toolbar_bg: "#131722",
+          enable_publishing: false,
+          allow_symbol_change: false,
+          container_id: "tradingview_chart_container",
+          hide_side_toolbar: false,
+          studies: ["RSI@tv-basicstudies", "MASimple@tv-basicstudies"]
+        });
+      }
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.async = true;
+      script.onload = initTVWidget;
+      document.head.appendChild(script);
+    } else {
+      if ((window as any).TradingView) {
+        initTVWidget();
+      } else {
+        script.addEventListener('load', initTVWidget);
+      }
+    }
+
+    return () => {
+      const container = document.getElementById('tradingview_chart_container');
+      if (container) {
+        container.innerHTML = '';
+      }
+    };
+  }, [symbol]);
+
   if (!stock) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-white/50" id="stock-detail-loading">
@@ -448,109 +500,23 @@ export const StockDetail: React.FC<StockDetailProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-white">{stock.name}</h1>
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/5 text-white/50">{stock.symbol}</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">NSE</span>
               
-              {/* High-fidelity Data Connection Status Indicator */}
-              {stock.dataStatus === "LIVE" ? (
-                <span className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 flex items-center gap-1 uppercase">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE DATA
-                </span>
-              ) : stock.dataStatus === "DELAYED" ? (
-                <span className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center gap-1 uppercase">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  DELAYED DATA
-                </span>
-              ) : (
-                <span className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 flex items-center gap-1 uppercase">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  DEMO DATA
-                </span>
-              )}
+              <span className={`text-[9px] font-bold tracking-wider px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 flex items-center gap-1 uppercase`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                LIVE DATA
+              </span>
             </div>
             
-            {/* Standard displays: Data Source, Last Updated, Data Status */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[11px] text-white/50 font-sans">
-              <div className="flex items-center gap-1">
-                <span className="text-white/30 uppercase tracking-wider text-[9px] font-bold">Data Source:</span>
-                <span className="text-white/80 font-mono font-medium">{stock.source || stock.debug?.provider || "Simulation Live Feed Fallback"}</span>
-              </div>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <div className="flex items-center gap-1">
-                <span className="text-white/30 uppercase tracking-wider text-[9px] font-bold">Last Updated:</span>
-                <span className="text-white/80 font-mono font-medium">
-                  {stock.timestamp ? new Date(stock.timestamp).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }) : "Just now"}
-                </span>
-              </div>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <div className="flex items-center gap-1">
-                <span className="text-white/30 uppercase tracking-wider text-[9px] font-bold">Data Status:</span>
-                <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  stock.dataStatus === "LIVE" ? "text-emerald-400 bg-emerald-500/10" :
-                  stock.dataStatus === "DELAYED" ? "text-amber-400 bg-amber-500/10" :
-                  "text-cyan-400 bg-cyan-500/10"
-                }`}>
-                  {stock.dataStatus || "DEMO"}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 mt-1 text-[11px] text-white/55 font-sans">
+              <span>Feed: TradingView Real-Time</span>
+              <span>•</span>
+              <span>Exchange: NSE</span>
             </div>
-
-            {/* Price Discrepancy warning alert */}
-            {stock.priceDiscrepancy && (
-              <div className="mt-2.5 bg-rose-500/10 border border-rose-500/30 p-3 rounded-lg flex items-start gap-2.5 text-rose-400 text-xs">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <div className="text-left">
-                  <span className="font-bold block">Price discrepancy detected</span>
-                  <span className="text-rose-400/80 text-[10px]">
-                    The difference between provider prices is greater than 2%. Standard public data may suffer from delayed synchronizations.
-                  </span>
-                  {stock.debug?.comparedPrices && (
-                    <div className="mt-1.5 flex flex-wrap gap-2 text-[9px] font-mono">
-                      {Object.entries(stock.debug.comparedPrices).map(([p, price]) => (
-                        <span key={p} className="bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-500/10">
-                          {p}: ₹{typeof price === "number" ? price.toFixed(2) : price}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Last Updated Counter */}
-          <div className="text-[10px] font-mono text-white/40 flex flex-col items-end mr-1">
-            <span>Last Updated:</span>
-            <span className="text-white/60 font-semibold">{secondsAgo === 0 ? "Just now" : `${secondsAgo}s ago`}</span>
-          </div>
-
-          {/* Refresh Action */}
-          <button
-            onClick={() => loadData(true)}
-            disabled={isRefreshing}
-            className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-white/70 hover:text-white cursor-pointer hover:bg-white/10 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-            title="Refresh Stock price data from live feed"
-            id="btn-refresh-market-data"
-          >
-            <Activity className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`} />
-            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
-          </button>
-
-          {/* Developer Mode Toggle */}
-          <button
-            onClick={() => setDevMode(!devMode)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors cursor-pointer ${
-              devMode 
-                ? "bg-[#3D81E3]/20 border-[#3D81E3]/40 text-[#5F9FFF]" 
-                : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-            }`}
-            title="Toggle Developer Mode to inspect data sources and raw API payloads"
-            id="btn-toggle-dev-mode"
-          >
-            DEV MODE: {devMode ? "ON" : "OFF"}
-          </button>
-
           {/* Watchlist toggle */}
           <button 
             onClick={() => onToggleWatchlist(stock.symbol)}
@@ -566,45 +532,6 @@ export const StockDetail: React.FC<StockDetailProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Developer Mode Live Market Debug Panel */}
-      {devMode && (
-        <div className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/5 space-y-3" id="dev-mode-debug-panel">
-          <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
-            <h3 className="text-xs font-bold tracking-wider text-[#5F9FFF] uppercase flex items-center gap-1.5 font-mono">
-              <Zap className="w-3.5 h-3.5 animate-pulse" />
-              Terminal Developer Mode: Live Market Data Debugger
-            </h3>
-            <span className="text-[9px] font-mono bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded uppercase">
-              Connection Verified
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs font-mono">
-            <div>
-              <span className="text-white/40">Market Data Source:</span>
-              <p className="text-emerald-400 font-semibold mt-0.5">{stock.debug?.provider || stock.source || "Yahoo Finance Indian Market Provider"}</p>
-            </div>
-            <div>
-              <span className="text-white/40">Timestamp of Returned Data:</span>
-              <p className="text-amber-400 mt-0.5">{stock.debug?.timestamp || stock.timestamp || lastFetched.toISOString()}</p>
-            </div>
-            <div>
-              <span className="text-white/40">Symbol Sent:</span>
-              <p className="text-purple-400 mt-0.5">{stock.debug?.symbolSent || stock.symbol}</p>
-            </div>
-            <div>
-              <span className="text-white/40">Data Exchange:</span>
-              <p className="text-[#3D81E3] mt-0.5">{stock.exchange || "NSE"}</p>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <span className="text-xs font-mono text-white/40">Raw API Response Payload:</span>
-            <pre className="p-3 rounded bg-black/50 text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-48 border border-white/5 scrollbar-thin">
-              {JSON.stringify(stock.debug?.rawResponse || { note: "Using premium live provider stream.", price: stock.price, change: stock.change, percentChange: stock.percentChange, volume: stock.volume }, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
 
       {/* Main Quote Card */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl border border-white/5 bg-black/30" id="quote-metrics-bar">
@@ -638,282 +565,8 @@ export const StockDetail: React.FC<StockDetailProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="chart-workspace-container">
         
         {/* CHART PORTION (8 cols) */}
-        <div className="lg:col-span-8 space-y-4 flex flex-col justify-between" id="chart-panel">
-          
-          {/* Controls Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-lg border border-white/5 bg-black/20" id="chart-controls">
-            
-            {/* Timeframes */}
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-md" id="timeframe-toggles">
-              {(["1m", "5m", "15m", "1h", "1D"] as const).map((tf) => (
-                <button 
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-3 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                    timeframe === tf ? "bg-white/10 text-white" : "text-white/40 hover:text-white"
-                  }`}
-                  id={`tf-${tf.toLowerCase()}`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
-
-            {/* Chart Type (Candle vs Line) */}
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-md" id="chart-type-toggles">
-              <button 
-                onClick={() => setChartType("candle")}
-                className={`px-2.5 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                  chartType === "candle" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"
-                }`}
-                id="btn-chart-candle"
-              >
-                CANDLE
-              </button>
-              <button 
-                onClick={() => setChartType("line")}
-                className={`px-2.5 py-1 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                  chartType === "line" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"
-                }`}
-                id="btn-chart-line"
-              >
-                LINE
-              </button>
-            </div>
-
-            {/* Technical Overlay toggles */}
-            <div className="flex flex-wrap items-center gap-2" id="indicator-layers">
-              <button 
-                onClick={() => setShowMA(!showMA)}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold border cursor-pointer transition-all ${
-                  showMA ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/40" : "bg-white/5 text-white/40 border-white/5 hover:text-white"
-                }`}
-                id="btn-toggle-sma"
-              >
-                SMA (14)
-              </button>
-              <button 
-                onClick={() => setShowBB(!showBB)}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold border cursor-pointer transition-all ${
-                  showBB ? "bg-purple-500/20 text-purple-300 border-purple-500/40" : "bg-white/5 text-white/40 border-white/5 hover:text-white"
-                }`}
-                id="btn-toggle-bb"
-              >
-                BBANDS
-              </button>
-              <button 
-                onClick={() => setShowRSI(!showRSI)}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold border cursor-pointer transition-all ${
-                  showRSI ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" : "bg-white/5 text-white/40 border-white/5 hover:text-white"
-                }`}
-                id="btn-toggle-rsi"
-              >
-                RSI
-              </button>
-              <button 
-                onClick={() => setShowMACD(!showMACD)}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold border cursor-pointer transition-all ${
-                  showMACD ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40" : "bg-white/5 text-white/40 border-white/5 hover:text-white"
-                }`}
-                id="btn-toggle-macd"
-              >
-                MACD
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Chart Container */}
-          <div className="relative rounded-xl border border-white/5 bg-[#0a0a0c] p-4 flex-1 select-none" id="primary-chart-stage">
-            
-            {/* Live Hover Legend Data */}
-            <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-4 text-[10px] font-mono" id="chart-data-legend">
-              <span className="text-white/40">TIME: <strong className="text-white">{currentHover.time}</strong></span>
-              <span className="text-white/40">OPEN: <strong className="text-white">{currentHover.open}</strong></span>
-              <span className="text-white/40">HIGH: <strong className="text-emerald-400">{currentHover.high}</strong></span>
-              <span className="text-white/40">LOW: <strong className="text-rose-400">{currentHover.low}</strong></span>
-              <span className="text-white/40">CLOSE: <strong className="text-white">{currentHover.close}</strong></span>
-              {showMA && <span className="text-yellow-400">SMA(14): <strong>{currentHover.ma}</strong></span>}
-            </div>
-
-            {/* Custom SVG Drawing */}
-            <svg 
-              width="100%" 
-              height={height} 
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              viewBox={`0 0 ${width} ${height}`}
-              className="w-full cursor-crosshair overflow-visible"
-              id="svg-drawing-stage"
-            >
-              {/* Horizontal grid guide lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-                const price = chartMin + chartRange * ratio;
-                const y = getY(price);
-                return (
-                  <g key={ratio} opacity={0.15}>
-                    <line x1="40" y1={y} x2={width - 40} y2={y} stroke="#fff" strokeWidth="0.5" strokeDasharray="3 3" />
-                    <text x={width - 35} y={y + 3} fill="#fff" fontSize="9" fontFamily="monospace" textAnchor="start">
-                      {price.toLocaleString(undefined, { maximumFractionDigits: isForex ? 3 : 1 })}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Bollinger Bands Shaded Area */}
-              {showBB && bbAreaPath && (
-                <path d={bbAreaPath} fill="rgba(168, 85, 247, 0.04)" />
-              )}
-
-              {/* Bollinger Bands Lines */}
-              {showBB && (
-                <>
-                  <path d={bbUpperPath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                  <path d={bbLowerPath} fill="none" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                </>
-              )}
-
-              {/* Chart line if active */}
-              {chartType === "line" && (
-                <>
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(61, 129, 227, 0.3)" />
-                      <stop offset="100%" stopColor="rgba(61, 129, 227, 0.0)" />
-                    </linearGradient>
-                  </defs>
-                  <path d={areaPath} fill="url(#chartGradient)" />
-                  <path d={linePath} fill="none" stroke="#3D81E3" strokeWidth="2" />
-                </>
-              )}
-
-              {/* Candlesticks Drawing */}
-              {chartType === "candle" && history.map((h, i) => {
-                const x = getX(i);
-                const openY = getY(h.open);
-                const closeY = getY(h.close);
-                const highY = getY(h.high);
-                const lowY = getY(h.low);
-
-                const isGreen = h.close >= h.open;
-                const candleColor = isGreen ? "#10B981" : "#EF4444";
-                const bodyHeight = Math.max(1.5, Math.abs(closeY - openY));
-                const bodyY = Math.min(openY, closeY);
-                const candleWidth = Math.max(2, Math.min(10, (width - 80) / history.length * 0.7));
-
-                return (
-                  <g key={i}>
-                    {/* Shadow wick */}
-                    <line x1={x} y1={highY} x2={x} y2={lowY} stroke={candleColor} strokeWidth="1" />
-                    {/* Real body */}
-                    <rect 
-                      x={x - candleWidth / 2} 
-                      y={bodyY} 
-                      width={candleWidth} 
-                      height={bodyHeight} 
-                      fill={candleColor} 
-                    />
-                  </g>
-                );
-              })}
-
-              {/* Moving Average Line overlay */}
-              {showMA && maPath && (
-                <path d={maPath} fill="none" stroke="#EAB308" strokeWidth="1.5" />
-              )}
-
-              {/* Crosshair indicator */}
-              {hoverIdx !== null && (
-                <g>
-                  <line x1={getX(hoverIdx)} y1="10" x2={getX(hoverIdx)} y2={height - 30} stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="40" y1={getY(currentHover.close)} x2={width - 40} y2={getY(currentHover.close)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <circle cx={getX(hoverIdx)} cy={getY(currentHover.close)} r="4" fill="#3D81E3" stroke="#fff" strokeWidth="1.5" />
-                </g>
-              )}
-            </svg>
-          </div>
-
-          {/* Sub-Panel: RSI (14) indicator */}
-          {showRSI && (
-            <div className="rounded-xl border border-white/5 bg-[#0a0a0c] p-4 text-left relative h-32" id="rsi-chart-panel">
-              <div className="absolute top-2 left-4 text-[10px] font-mono text-cyan-300">RSI (14)</div>
-              <svg width="100%" height="80" className="w-full mt-4" id="rsi-svg">
-                {/* Guides */}
-                <line x1="40" y1="15" x2={width - 40} y2="15" stroke="rgba(239, 68, 68, 0.25)" strokeWidth="0.5" strokeDasharray="3 3" />
-                <text x={width - 35} y="18" fill="rgba(239,68,68,0.5)" fontSize="8" fontFamily="monospace">70</text>
-                
-                <line x1="40" y1="55" x2={width - 40} y2="55" stroke="rgba(34, 197, 94, 0.25)" strokeWidth="0.5" strokeDasharray="3 3" />
-                <text x={width - 35} y="58" fill="rgba(34,197,94,0.5)" fontSize="8" fontFamily="monospace">30</text>
-
-                {/* RSI Line */}
-                <path 
-                  d={history.map((h, i) => {
-                    const rsiVal = h.rsi !== undefined ? h.rsi : 50;
-                    // map 0-100 scale to 0-80 height
-                    const y = 80 - 10 - (rsiVal / 100) * 60;
-                    return `${i === 0 ? "M" : "L"} ${getX(i)} ${y}`;
-                  }).join(" ")}
-                  fill="none"
-                  stroke="#06B6D4"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </div>
-          )}
-
-          {/* Sub-Panel: MACD indicator */}
-          {showMACD && (
-            <div className="rounded-xl border border-white/5 bg-[#0a0a0c] p-4 text-left relative h-32" id="macd-chart-panel">
-              <div className="absolute top-2 left-4 text-[10px] font-mono text-indigo-300">MACD (12, 26, 9)</div>
-              <svg width="100%" height="80" className="w-full mt-4" id="macd-svg">
-                {/* Zero line */}
-                <line x1="40" y1="40" x2={width - 40} y2="40" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
-                
-                {/* MACD Histogram bars */}
-                {history.map((h, i) => {
-                  const histVal = h.macd?.hist || 0;
-                  const x = getX(i);
-                  const yZero = 40;
-                  const yHist = 40 - histVal * 5; // amplify multiplier
-                  const isPositive = histVal >= 0;
-                  return (
-                    <line 
-                      key={i}
-                      x1={x} 
-                      y1={yZero} 
-                      x2={x} 
-                      y2={yHist} 
-                      stroke={isPositive ? "rgba(16, 185, 129, 0.45)" : "rgba(239, 68, 68, 0.45)"} 
-                      strokeWidth="2.5" 
-                    />
-                  );
-                })}
-
-                {/* MACD main line */}
-                <path 
-                  d={history.map((h, i) => {
-                    const macdVal = h.macd?.macd || 0;
-                    const y = 40 - macdVal * 5;
-                    return `${i === 0 ? "M" : "L"} ${getX(i)} ${y}`;
-                  }).join(" ")}
-                  fill="none"
-                  stroke="#4F46E5"
-                  strokeWidth="1"
-                />
-
-                {/* MACD Signal line */}
-                <path 
-                  d={history.map((h, i) => {
-                    const sigVal = h.macd?.signal || 0;
-                    const y = 40 - sigVal * 5;
-                    return `${i === 0 ? "M" : "L"} ${getX(i)} ${y}`;
-                  }).join(" ")}
-                  fill="none"
-                  stroke="#EC4899"
-                  strokeWidth="1"
-                />
-              </svg>
-            </div>
-          )}
+        <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
+          <div id="tradingview_chart_container" className="h-[560px] w-full rounded-xl overflow-hidden bg-[#131722] border border-white/5 shadow-md" />
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}
@@ -1002,15 +655,15 @@ export const StockDetail: React.FC<StockDetailProps> = ({
               </div>
 
               {/* Quantity Preset Quick Tags */}
-              <div className="flex gap-1.5 pt-1">
+              <div className="grid grid-cols-4 gap-1.5 pt-1.5">
                 {[10, 50, 100, 500].map((qty) => (
                   <button
                     key={qty}
                     onClick={() => setTradeShares(qty)}
-                    className={`flex-1 py-1 rounded text-[9px] font-mono font-bold border transition-colors cursor-pointer ${
+                    className={`py-1 rounded text-[9px] font-mono font-bold border transition-colors cursor-pointer ${
                       tradeShares === qty 
-                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40" 
-                        : "bg-white/5 text-white/50 border-white/5 hover:bg-white/10 hover:text-white"
+                        ? "bg-[#2962FF]/20 text-[#5F9FFF] border-[#2962FF]/40 shadow-sm" 
+                        : "bg-white/5 text-white/55 border-white/5 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     {qty}
