@@ -335,11 +335,16 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
   user
 }) => {
   const checkGuestGate = () => {
+    /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+    return false; // Bypass guest restrictions for demo pitch
+    /*
     if (!user) {
       window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
       return true;
     }
     return false;
+    */
+    /* -------------------------------------------------------- */
   };
 
   const [stocks, setStocks] = useState<Stock[]>([]);

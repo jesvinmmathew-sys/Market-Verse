@@ -688,11 +688,15 @@ export const StockDetail: React.FC<StockDetailProps> = ({
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button
                 onClick={async () => {
+                  /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+                  /*
                   const userStored = localStorage.getItem("supabase_user");
                   if (!userStored) {
                     window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
                     return;
                   }
+                  */
+                  /* -------------------------------------------------------- */
                   setTradeStatus(null);
                   const res = await TradingService.buyStock(symbol, tradeShares);
                   setTradeStatus(res);
@@ -707,11 +711,15 @@ export const StockDetail: React.FC<StockDetailProps> = ({
               </button>
               <button
                 onClick={async () => {
+                  /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+                  /*
                   const userStored = localStorage.getItem("supabase_user");
                   if (!userStored) {
                     window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
                     return;
                   }
+                  */
+                  /* -------------------------------------------------------- */
                   setTradeStatus(null);
                   const res = await TradingService.sellStock(symbol, tradeShares);
                   setTradeStatus(res);

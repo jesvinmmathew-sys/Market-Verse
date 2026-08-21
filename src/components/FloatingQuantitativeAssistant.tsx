@@ -423,6 +423,8 @@ Try asking me:
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return;
 
+    /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+    /*
     const userStored = localStorage.getItem("supabase_user");
     if (!userStored) {
       const storedCount = parseInt(localStorage.getItem("marketverse_trial_prompts") || "0");
@@ -432,6 +434,8 @@ Try asking me:
       }
       localStorage.setItem("marketverse_trial_prompts", String(storedCount + 1));
     }
+    */
+    /* -------------------------------------------------------- */
 
     // Detect if a stock is mentioned
     const stockDetected = detectStockInText(textToSend);
@@ -855,12 +859,16 @@ Try asking me:
         {!isOpen && (
           <motion.button
             onClick={() => {
+              /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+              /*
               const userStored = localStorage.getItem("supabase_user");
               if (!userStored) {
                 window.dispatchEvent(new CustomEvent("marketverse_trigger_gate"));
                 return;
               }
+              */
               setIsOpen(!isOpen);
+              /* -------------------------------------------------------- */
             }}
             className="pointer-events-auto w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-black shadow-2xl cursor-pointer relative group flex items-center justify-center border border-neutral-200/50"
             style={{

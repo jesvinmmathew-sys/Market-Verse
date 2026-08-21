@@ -54,9 +54,13 @@ export default function App() {
         path === "/ai" || 
         path === "/dashboard" || 
         path === "/stocks";
+      /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+      /*
       if (!hasUser && isProtectedRoute) {
         return "/auth";
       }
+      */
+      /* -------------------------------------------------------- */
     } catch (_) {}
     return path;
   });
@@ -267,6 +271,8 @@ export default function App() {
         path === "/ai" || 
         path === "/dashboard" || 
         path === "/stocks";
+      /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+      /*
       if (!user && isProtectedRoute) {
         setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
         window.history.replaceState(null, "", "/auth");
@@ -274,6 +280,9 @@ export default function App() {
       } else {
         setRoute(path);
       }
+      */
+      setRoute(path);
+      /* -------------------------------------------------------- */
     };
     window.addEventListener("popstate", handlePopState);
 
@@ -287,11 +296,15 @@ export default function App() {
       path === "/ai" || 
       path === "/dashboard" || 
       path === "/stocks";
+    /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+    /*
     if (!user && isProtectedRoute) {
       setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
       window.history.replaceState(null, "", "/auth");
       setRoute("/auth");
     }
+    */
+    /* -------------------------------------------------------- */
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
@@ -308,6 +321,8 @@ export default function App() {
       path === "/dashboard" || 
       path === "/stocks";
 
+    /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+    /*
     if (!user && isProtectedRoute) {
       setAuthHeadline("Sign In Required • Unlock Full MarketVerse Terminal");
       window.history.pushState(null, "", "/auth");
@@ -317,6 +332,8 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    */
+    /* -------------------------------------------------------- */
 
     if (path !== "/auth") {
       setAuthHeadline(null);

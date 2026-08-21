@@ -49,6 +49,8 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return;
 
+    /* --- TEMPORARY PITCH DEMO MODE: RESTRICTIONS DISABLED --- */
+    /*
     const userStored = localStorage.getItem("supabase_user");
     if (!userStored) {
       const storedCount = parseInt(localStorage.getItem("marketverse_trial_prompts") || "0");
@@ -58,6 +60,8 @@ I have direct, real-time context on live NSE/BSE indexes, sector averages, stock
       }
       localStorage.setItem("marketverse_trial_prompts", String(storedCount + 1));
     }
+    */
+    /* -------------------------------------------------------- */
 
     const userMsg: Message = {
       id: `msg-${Date.now()}-user`,
