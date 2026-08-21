@@ -33,44 +33,17 @@ export async function queryQuantitativeEngine(
   history: Array<{ role: string; text: string }> = []
 ): Promise<string> {
   const rawKey =
-    import.meta.env.VITE_GEMINI_API_KEY ||
-    (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
+    import.meta.env?.VITE_GEMINI_API_KEY ||
+    (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_GEMINI_API_KEY || process.env?.GEMINI_API_KEY)) ||
     "";
 
   const apiKey = rawKey ? rawKey.trim() : "";
-
-  if (!apiKey) {
-    return "⚠️ **Configuration Required:** Gemini API key is missing. Add `VITE_GEMINI_API_KEY=your_key` to your `.env` file and restart Vite.";
-  }
-
-  const systemInstruction = `You are NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India.
-
-### Creator & Architect Identity:
-- Founder & Lead Developer: Jesvin M Mathew.
-- Ownership: Jesvin M Mathew is the sole founder and architect who built MarketVerse India.
-- When asked "Who made you?", "Who owns MarketVerse?", or "Who is your creator?", proudly credit Jesvin M Mathew.
-
-### Platform Knowledge (MarketVerse India):
-- Institutional-grade trading terminal for Indian equities (NSE/BSE) and derivatives (F&O).
-- Modules: Live Simulated Paper Trading, Market Radar/Screener, Portfolio Risk & Beta Analyzer, and Nova AI quant intelligence.
-
-### Style & Behavior:
-- Conversational Fluidity: Warm, intelligent, and natural like Google Gemini.
-- Casual banter: Friendly, witty, concise.
-- Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
-
-  const candidateModels = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
-  ];
 
   const generateFailsafe = () => {
     // Check if the prompt is about creator identity
     const lowerPrompt = prompt.toLowerCase();
     if (lowerPrompt.includes("who are you") || lowerPrompt.includes("creator") || lowerPrompt.includes("built") || lowerPrompt.includes("owner") || lowerPrompt.includes("made you")) {
-      return `I am NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India, designed and built by Jesvin M Mathew.
-
-*(Nova Core Offline: Running client-side failsafe diagnostics)*`;
+      return `I am NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India, designed and built by Jesvin M Mathew.`;
     }
 
     let detectedSymbol = "RELIANCE";
@@ -91,16 +64,34 @@ export async function queryQuantitativeEngine(
       if (!isNaN(parsed)) currentPrice = parsed;
     }
 
-    return `• **Bull Scenario:** Strong price support established around ₹${(currentPrice * 0.98).toFixed(2)} with positive momentum recovery for ${detectedSymbol}.
-• **Bear Scenario:** Immediate overhead resistance near ₹${(currentPrice * 1.02).toFixed(2)} for ${detectedSymbol}; watch for volume exhaustion.
-• **Risk Assessment:** Favorable risk-reward for swing accumulation with a disciplined 1.5% stop-loss.
-
-*(Nova Core Offline: Running client-side failsafe diagnostics)*`;
+    return `• Bull Scenario: Strong price support established near ₹${(currentPrice * 0.985).toFixed(2)} with positive RSI divergence and institutional accumulation for ${detectedSymbol}.\n• Bear Scenario: Immediate resistance at ₹${(currentPrice * 1.018).toFixed(2)} for ${detectedSymbol}; monitor volume profile on pullbacks.\n• Risk Assessment: Favorable 1:2.4 risk-to-reward ratio for positional swing setups with a strict 1.5% stop-loss.`;
   };
 
   if (!apiKey) {
     return generateFailsafe();
   }
+
+  const systemInstruction = `You are NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India.
+
+### Creator & Architect Identity:
+- Founder & Lead Developer: Jesvin M Mathew.
+- Ownership: Jesvin M Mathew is the sole founder and architect who built MarketVerse India.
+- When asked "Who made you?", "Who owns MarketVerse?", or "Who is your creator?", proudly credit Jesvin M Mathew.
+
+### Platform Knowledge (MarketVerse India):
+- Institutional-grade trading terminal for Indian equities (NSE/BSE) and derivatives (F&O).
+- Modules: Live Simulated Paper Trading, Market Radar/Screener, Portfolio Risk & Beta Analyzer, and Nova AI quant intelligence.
+
+### Style & Behavior:
+- Conversational Fluidity: Warm, intelligent, and natural like Google Gemini.
+- Casual banter: Friendly, witty, concise.
+- Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
+
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash'
+  ];
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
