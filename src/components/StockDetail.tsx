@@ -346,14 +346,19 @@ export const StockDetail: React.FC<StockDetailProps> = ({
     tvContainerRef.current.innerHTML = '';
 
     const widgetContainer = document.createElement('div');
+    widgetContainer.id = 'tradingview_chart_container';
     widgetContainer.className = 'tradingview-widget-container__widget';
     widgetContainer.style.height = '100%';
     widgetContainer.style.width = '100%';
     tvContainerRef.current.appendChild(widgetContainer);
 
-    let tvSymbol = `NSE:${symbol || 'ICICIBANK'}`;
-    if (symbol === 'EURUSD' || symbol === 'USDINR') {
-      tvSymbol = `FX_IDC:${symbol}`;
+    let tvSymbol = symbol;
+    if (!tvSymbol.includes(':')) {
+      if (symbol === 'EURUSD' || symbol === 'USDINR') {
+        tvSymbol = `FX_IDC:${symbol}`;
+      } else {
+        tvSymbol = `NSE:${symbol || 'ICICIBANK'}`;
+      }
     }
 
     const script = document.createElement('script');
@@ -363,17 +368,18 @@ export const StockDetail: React.FC<StockDetailProps> = ({
     script.innerHTML = JSON.stringify({
       autosize: true,
       symbol: tvSymbol,
-      interval: "D",
-      timezone: "Asia/Kolkata",
-      theme: "dark",
-      style: "1",
-      locale: "en",
+      interval: 'D',
+      timezone: 'Asia/Kolkata',
+      theme: 'dark',
+      style: '1',
+      locale: 'en',
       enable_publishing: false,
       allow_symbol_change: true,
       calendar: false,
-      hide_top_toolbar: false,
+      support_host: 'https://www.tradingview.com',
       hide_side_toolbar: false,
-      support_host: "https://www.tradingview.com"
+      studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies'],
+      container_id: 'tradingview_chart_container',
     });
 
     tvContainerRef.current.appendChild(script);
@@ -562,7 +568,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
         
         {/* CHART PORTION (8 cols) */}
         <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
-          <div ref={tvContainerRef} className="h-[560px] w-full rounded-xl overflow-hidden bg-[#131722] border border-white/5 shadow-md" />
+          <div ref={tvContainerRef} className="tradingview-widget-container w-full rounded-xl overflow-hidden border border-white/5 bg-[#131722] shadow-md" style={{ height: '560px', minHeight: '500px', width: '100%' }} />
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}
