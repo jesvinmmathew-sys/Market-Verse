@@ -40,9 +40,15 @@ export async function queryQuantitativeEngine(
   const apiKey = rawKey ? rawKey.trim() : "";
 
   const generateFailsafe = () => {
+    const lower = prompt.toLowerCase().trim();
+    
+    // Greeting check
+    if (lower.includes("hi") || lower.includes("hello") || lower.includes("hey")) {
+      return "Hello! I am **Nova AI**, your MarketVerse trade copilot. You can ask me to analyze any NSE/BSE stock (e.g., *'Analyze ICICIBANK'*), explain technical indicators, or review your portfolio risk metrics.";
+    }
+
     // Check if the prompt is about creator identity
-    const lowerPrompt = prompt.toLowerCase();
-    if (lowerPrompt.includes("who are you") || lowerPrompt.includes("creator") || lowerPrompt.includes("built") || lowerPrompt.includes("owner") || lowerPrompt.includes("made you")) {
+    if (lower.includes("who are you") || lower.includes("creator") || lower.includes("built") || lower.includes("owner") || lower.includes("made you")) {
       return `I am NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India, designed and built by Jesvin M Mathew.`;
     }
 
@@ -71,21 +77,7 @@ export async function queryQuantitativeEngine(
     return generateFailsafe();
   }
 
-  const systemInstruction = `You are NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India.
-
-### Creator & Architect Identity:
-- Founder & Lead Developer: Jesvin M Mathew.
-- Ownership: Jesvin M Mathew is the sole founder and architect who built MarketVerse India.
-- When asked "Who made you?", "Who owns MarketVerse?", or "Who is your creator?", proudly credit Jesvin M Mathew.
-
-### Platform Knowledge (MarketVerse India):
-- Institutional-grade trading terminal for Indian equities (NSE/BSE) and derivatives (F&O).
-- Modules: Live Simulated Paper Trading, Market Radar/Screener, Portfolio Risk & Beta Analyzer, and Nova AI quant intelligence.
-
-### Style & Behavior:
-- Conversational Fluidity: Warm, intelligent, and natural like Google Gemini.
-- Casual banter: Friendly, witty, concise.
-- Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
+  const systemInstruction = "You are Nova AI, the financial intelligence and trade copilot for MarketVerse India. You provide concise, institutional-grade market commentary on NSE/BSE equities, risk management, and technical/fundamental concepts. If greeted, respond warmly and guide the user on how you can analyze stocks, portfolio risk, or market indicators. Always keep answers scannable and professional.";
 
   const candidateModels = [
     'gemini-2.5-flash',
