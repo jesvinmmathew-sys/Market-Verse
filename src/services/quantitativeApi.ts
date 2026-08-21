@@ -42,42 +42,55 @@ export async function queryQuantitativeEngine(
   const generateFailsafe = () => {
     const lower = prompt.toLowerCase().trim();
     
-    // Greeting check
-    if (lower.includes("hi") || lower.includes("hello") || lower.includes("hey")) {
-      return "Hello! I am **Nova AI**, your MarketVerse trade copilot. You can ask me to analyze any NSE/BSE stock (e.g., *'Analyze ICICIBANK'*), explain technical indicators, or review your portfolio risk metrics.";
+    // A. Platform Query ("What is MarketVerse?")
+    if (lower.includes("marketverse") || lower.includes("market verse") || lower.includes("this platform") || lower.includes("about you")) {
+      return `**MarketVerse India** is a next-generation financial intelligence and paper-trading terminal built for Indian equity markets (NSE/BSE).\n\n**Core Capabilities:**\n• **Interactive Charting**: Real-time TradingView candlestick analysis with institutional indicators.\n• **Simulated Trading**: Test strategies with a virtual ₹10,00,000 paper-trading wallet and live virtual P&L.\n• **Portfolio Risk Engine**: Real-time HHI concentration audits and sector-exposure stress testing.\n• **Nova AI Copilot**: Instant contextual bull/bear theses and technical market commentary.`;
     }
 
-    // Check if the prompt is about creator identity
-    if (lower.includes("who are you") || lower.includes("creator") || lower.includes("built") || lower.includes("owner") || lower.includes("made you")) {
-      return `I am NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India, designed and built by Jesvin M Mathew.`;
+    // B. Greetings
+    if (/^(hi|hello|hey|greetings|who are you)\b/i.test(lower)) {
+      return "Hello! I am **Nova AI**, your MarketVerse trade copilot. Ask me about any NSE/BSE stock (e.g., *'Analyze RELIANCE'*), technical indicators (e.g., *'Explain RSI divergence'*), or how our portfolio health engine works.";
     }
 
-    let detectedSymbol = "RELIANCE";
-    const symbolMatch = prompt.toUpperCase().match(/\b([A-Z]{3,10})\b/);
-    if (symbolMatch && symbolMatch[1] !== "RSI") {
-      detectedSymbol = symbolMatch[1];
+    // C. General Finance / Educational Concepts
+    if (lower.includes("hhi") || lower.includes("concentration")) {
+      return "**Herfindahl-Hirschman Index (HHI)** is a quantitative metric used by MarketVerse to measure portfolio concentration. An HHI score below 1,500 indicates a well-diversified portfolio, 1,500–2,500 indicates moderate concentration, and above 2,500 flags high single-stock or sector risk.";
     }
+
+    if (lower.includes("rsi") || lower.includes("relative strength")) {
+      return "**RSI (Relative Strength Index)** measures momentum on a scale of 0 to 100. Levels above 70 typically signal overbought conditions (potential pullback), while levels below 30 suggest oversold zones (potential accumulation).";
+    }
+
+    // D. Stock Analysis Intent (Only extract if explicitly mentioning a real stock or ticker)
+    const stockMatch = prompt.match(/\b(RELIANCE|TCS|HDFCBANK|INFY|ICICIBANK|TATAMOTORS|SBIN|ITC|BHARTIARTL|NIFTY|BANKNIFTY)\b/i);
+    const symbol = stockMatch ? stockMatch[0].toUpperCase() : "NIFTY 50";
     
-    let currentPrice = 2950.00;
-    if (detectedSymbol === "MRF") currentPrice = 125000.00;
-    else if (detectedSymbol === "TCS") currentPrice = 3850.00;
-    else if (detectedSymbol === "INFY") currentPrice = 1530.00;
+    let price = 24500;
+    if (symbol === "RELIANCE") price = 2950;
+    else if (symbol === "TCS") price = 3850;
+    else if (symbol === "INFY") price = 1530;
+    else if (symbol === "MRF") price = 125000;
 
     // Try to extract price from prompt e.g. "Current price: ₹2950"
     const priceMatch = prompt.match(/(?:price|at|₹|Rs\.?)\s*([\d,]+(?:\.\d+)?)/i);
     if (priceMatch) {
       const parsed = parseFloat(priceMatch[1].replace(/,/g, ''));
-      if (!isNaN(parsed)) currentPrice = parsed;
+      if (!isNaN(parsed)) price = parsed;
     }
 
-    return `• Bull Scenario: Strong price support established near ₹${(currentPrice * 0.985).toFixed(2)} with positive RSI divergence and institutional accumulation for ${detectedSymbol}.\n• Bear Scenario: Immediate resistance at ₹${(currentPrice * 1.018).toFixed(2)} for ${detectedSymbol}; monitor volume profile on pullbacks.\n• Risk Assessment: Favorable 1:2.4 risk-to-reward ratio for positional swing setups with a strict 1.5% stop-loss.`;
+    return `• **Bull Scenario**: Strong support base observed near ₹${(price * 0.985).toFixed(2)} for **${symbol}** with positive accumulation.\n• **Bear Scenario**: Immediate overhead resistance at ₹${(price * 1.018).toFixed(2)}; monitor volume on pullbacks.\n• **Risk Assessment**: Favorable 1:2.2 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`;
   };
 
   if (!apiKey) {
     return generateFailsafe();
   }
 
-  const systemInstruction = "You are Nova AI, the financial intelligence and trade copilot for MarketVerse India. You provide concise, institutional-grade market commentary on NSE/BSE equities, risk management, and technical/fundamental concepts. If greeted, respond warmly and guide the user on how you can analyze stocks, portfolio risk, or market indicators. Always keep answers scannable and professional.";
+  const systemInstruction = `You are Nova AI, the intelligent trade copilot and financial analyst for MarketVerse India.
+- MarketVerse is an all-in-one financial intelligence and paper-trading terminal for Indian equities (NSE/BSE).
+- Key features include: real-time TradingView technical charting, zero-risk paper trading with a virtual ₹10,00,000 wallet, portfolio risk diagnostics using Modern Portfolio Theory and Herfindahl-Hirschman Index (HHI) concentration scores, and Nova AI trade intelligence.
+- If the user asks about MarketVerse, explain its mission, features, and how it helps retail traders manage risk before deploying real capital.
+- For stock analysis queries, provide structured Bull/Bear scenarios with support/resistance levels.
+- For general finance questions, provide concise, educational, and institutional-grade explanations.`;
 
   const candidateModels = [
     'gemini-2.5-flash',
