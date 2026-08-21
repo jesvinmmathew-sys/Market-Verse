@@ -60,43 +60,48 @@ export async function queryQuantitativeEngine(
 - Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
 
   const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-1.5-flash-latest'
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro'
   ];
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  let lastErrorMsg = '';
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    let lastErrorMsg = '';
 
-  for (const modelName of candidateModels) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: systemInstruction
-      });
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemInstruction
+        });
 
-      const chat = model.startChat({
-        history: history
-          .filter(msg => msg.text && msg.text.trim() !== '')
-          .map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.text }]
-          }))
-      });
+        const chat = model.startChat({
+          history: history
+            .filter(msg => msg.text && msg.text.trim() !== '')
+            .map(msg => ({
+              role: msg.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: msg.text }]
+            }))
+        });
 
-      const result = await chat.sendMessage(prompt);
-      const responseText = result.response.text();
-      if (responseText) {
-        return responseText;
+        const result = await chat.sendMessage(prompt);
+        const responseText = result.response.text();
+        if (responseText) {
+          return responseText;
+        }
+      } catch (err: any) {
+        console.warn(`[Nova AI] ${modelName} failed:`, err?.message || err);
+        lastErrorMsg = err?.message || String(err);
+        continue;
       }
-    } catch (err: any) {
-      console.warn(`[Nova AI] ${modelName} failed:`, err?.message || err);
-      lastErrorMsg = err?.message || String(err);
-      continue;
     }
-  }
 
-  return `⚠️ **API Error:** ${lastErrorMsg || 'Unable to connect to Gemini models. Check your API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).'}`;
+    return `⚠️ **API Error:** ${lastErrorMsg || 'Unable to connect to Gemini models. Check your API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).'}`;
+  } catch (outerErr: any) {
+    console.error("[Nova AI] Quantitative Engine crashed during model querying:", outerErr);
+    return `⚠️ **Quantitative Engine Error:** An unexpected error occurred: ${outerErr?.message || String(outerErr)}. Please check your network and configuration.`;
+  }
 }
 
 // Keep callGeminiDirectly for compatibility with existing code
