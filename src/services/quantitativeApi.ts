@@ -28,115 +28,31 @@ export interface AIAnalysisResult {
   isDemo?: boolean;
 }
 
+import { askNovaAI } from "./novaAi";
+
 export async function queryQuantitativeEngine(
   prompt: string,
   history: Array<{ role: string; text: string }> = []
 ): Promise<string> {
-  const rawKey =
-    import.meta.env?.VITE_GEMINI_API_KEY ||
-    (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_GEMINI_API_KEY || process.env?.GEMINI_API_KEY)) ||
-    "";
-
-  const apiKey = rawKey ? rawKey.trim() : "";
-
-  const generateFailsafe = () => {
-    const lower = prompt.toLowerCase().trim();
-    
-    // A. Platform Query ("What is MarketVerse?")
-    if (lower.includes("marketverse") || lower.includes("market verse") || lower.includes("this platform") || lower.includes("about you")) {
-      return `**MarketVerse India** is a next-generation financial intelligence and paper-trading terminal built for Indian equity markets (NSE/BSE).\n\n**Core Capabilities:**\n• **Interactive Charting**: Real-time TradingView candlestick analysis with institutional indicators.\n• **Simulated Trading**: Test strategies with a virtual ₹10,00,000 paper-trading wallet and live virtual P&L.\n• **Portfolio Risk Engine**: Real-time HHI concentration audits and sector-exposure stress testing.\n• **Nova AI Copilot**: Instant contextual bull/bear theses and technical market commentary.`;
-    }
-
-    // B. Greetings
-    if (/^(hi|hello|hey|greetings|who are you)\b/i.test(lower)) {
-      return "Hello! I am **Nova AI**, your MarketVerse trade copilot. Ask me about any NSE/BSE stock (e.g., *'Analyze RELIANCE'*), technical indicators (e.g., *'Explain RSI divergence'*), or how our portfolio health engine works.";
-    }
-
-    // C. General Finance / Educational Concepts
-    if (lower.includes("hhi") || lower.includes("concentration")) {
-      return "**Herfindahl-Hirschman Index (HHI)** is a quantitative metric used by MarketVerse to measure portfolio concentration. An HHI score below 1,500 indicates a well-diversified portfolio, 1,500–2,500 indicates moderate concentration, and above 2,500 flags high single-stock or sector risk.";
-    }
-
-    if (lower.includes("rsi") || lower.includes("relative strength")) {
-      return "**RSI (Relative Strength Index)** measures momentum on a scale of 0 to 100. Levels above 70 typically signal overbought conditions (potential pullback), while levels below 30 suggest oversold zones (potential accumulation).";
-    }
-
-    // D. Stock Analysis Intent (Only extract if explicitly mentioning a real stock or ticker)
-    const stockMatch = prompt.match(/\b(RELIANCE|TCS|HDFCBANK|INFY|ICICIBANK|TATAMOTORS|SBIN|ITC|BHARTIARTL|NIFTY|BANKNIFTY)\b/i);
-    const symbol = stockMatch ? stockMatch[0].toUpperCase() : "NIFTY 50";
-    
-    let price = 24500;
+  let symbol = "NIFTY 50";
+  let price = 24500;
+  
+  const stockMatch = prompt.match(/\b(RELIANCE|TCS|HDFCBANK|INFY|ICICIBANK|TATAMOTORS|SBIN|ITC|BHARTIARTL|NIFTY|BANKNIFTY)\b/i);
+  if (stockMatch) {
+    symbol = stockMatch[0].toUpperCase();
     if (symbol === "RELIANCE") price = 2950;
     else if (symbol === "TCS") price = 3850;
     else if (symbol === "INFY") price = 1530;
     else if (symbol === "MRF") price = 125000;
-
-    // Try to extract price from prompt e.g. "Current price: ₹2950"
-    const priceMatch = prompt.match(/(?:price|at|₹|Rs\.?)\s*([\d,]+(?:\.\d+)?)/i);
-    if (priceMatch) {
-      const parsed = parseFloat(priceMatch[1].replace(/,/g, ''));
-      if (!isNaN(parsed)) price = parsed;
-    }
-
-    return `• **Bull Scenario**: Strong support base observed near ₹${(price * 0.985).toFixed(2)} for **${symbol}** with positive accumulation.\n• **Bear Scenario**: Immediate overhead resistance at ₹${(price * 1.018).toFixed(2)}; monitor volume on pullbacks.\n• **Risk Assessment**: Favorable 1:2.2 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`;
-  };
-
-  if (!apiKey) {
-    return generateFailsafe();
   }
 
-  const systemInstruction = `You are Nova AI, the intelligent trade copilot and financial analyst for MarketVerse India.
-- MarketVerse is an all-in-one financial intelligence and paper-trading terminal for Indian equities (NSE/BSE).
-- Key features include: real-time TradingView technical charting, zero-risk paper trading with a virtual ₹10,00,000 wallet, portfolio risk diagnostics using Modern Portfolio Theory and Herfindahl-Hirschman Index (HHI) concentration scores, and Nova AI trade intelligence.
-- If the user asks about MarketVerse, explain its mission, features, and how it helps retail traders manage risk before deploying real capital.
-- For stock analysis queries, provide structured Bull/Bear scenarios with support/resistance levels.
-- For general finance questions, provide concise, educational, and institutional-grade explanations.`;
-
-  const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
-  ];
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    let lastErrorMsg = '';
-
-    for (const modelName of candidateModels) {
-      try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemInstruction
-        });
-
-        const chat = model.startChat({
-          history: history
-            .filter(msg => msg.text && msg.text.trim() !== '')
-            .map(msg => ({
-              role: msg.role === 'assistant' ? 'model' : 'user',
-              parts: [{ text: msg.text }]
-            }))
-        });
-
-        const result = await chat.sendMessage(prompt);
-        const responseText = result.response.text();
-        if (responseText) {
-          return responseText;
-        }
-      } catch (err: any) {
-        console.warn(`[Nova AI] ${modelName} failed:`, err?.message || err);
-        lastErrorMsg = err?.message || String(err);
-        continue;
-      }
-    }
-
-    // Instead of throwing an error or showing API Error, return the local failsafe
-    console.warn(`[Nova AI] All models failed. Error details: ${lastErrorMsg}. Falling back to client-side failsafe.`);
-    return generateFailsafe();
-  } catch (outerErr: any) {
-    console.error("[Nova AI] Quantitative Engine crashed during model querying, falling back to failsafe:", outerErr);
-    return generateFailsafe();
+  const priceMatch = prompt.match(/(?:price|at|₹|Rs\.?)\s*([\d,]+(?:\.\d+)?)/i);
+  if (priceMatch) {
+    const parsed = parseFloat(priceMatch[1].replace(/,/g, ''));
+    if (!isNaN(parsed)) price = parsed;
   }
+
+  return askNovaAI(prompt, { symbol, price });
 }
 
 // Keep callGeminiDirectly for compatibility with existing code
