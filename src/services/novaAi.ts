@@ -53,93 +53,89 @@ export async function askNovaAI(
   const query = (userQuery || "").trim();
   const lower = query.toLowerCase();
 
-  // --------------------------------------------------------------------------
-  // 1. LIVE GEMINI API INFERENCE
-  // --------------------------------------------------------------------------
+  // 1. Live Gemini LLM Attempt
   if (liveModel && GEMINI_API_KEY) {
     try {
       const result = await liveModel.generateContent(query);
       const text = result.response.text();
-      if (text && text.trim().length > 0) {
-        return text;
-      }
-    } catch (apiError) {
-      console.warn("[Nova AI] Live API failed, using local intelligence engine:", apiError);
+      if (text && text.trim().length > 0) return text;
+    } catch (err) {
+      console.warn("[Nova AI] Live API fallback engaged:", err);
     }
   }
 
-  // --------------------------------------------------------------------------
-  // 2. CONTEXTUAL LOCAL KNOWLEDGE BASE (NEVER CRASHES)
-  // --------------------------------------------------------------------------
+  // 2. Granular Local Knowledge Base
 
-  // A. Self-Identity & Capabilities ("What is Nova AI?", "How can you help me?")
-  if (
-    lower.includes("nova") ||
-    lower.includes("how can you help") ||
-    lower.includes("how do you help") ||
-    lower.includes("who are you") ||
-    lower.includes("what can you do") ||
-    lower.includes("features")
-  ) {
+  // A. Creator / Founders / Team
+  if (lower.includes("who is the creator") || lower.includes("who made") || lower.includes("who built") || lower.includes("founder") || lower.includes("creator of marketverse")) {
     return (
-      "I am **Nova AI**, the intelligent trade copilot embedded inside MarketVerse India.\n\n" +
-      "**Here is how I can help you:**\n" +
-      "• **Trade Thesis Generation**: Analyze any NSE/BSE stock for Bull & Bear setups, key support/resistance zones, and momentum profiles.\n" +
-      "• **Portfolio Risk Auditing**: Measure your portfolio's Herfindahl-Hirschman Index (HHI) concentration score and identify single-stock overexposure.\n" +
-      "• **Simulated Strategy Testing**: Test trading setups inside our simulated ₹10,00,000 paper trading terminal with zero financial risk.\n" +
-      "• **Market Concept Breakdown**: Explain technical indicators (RSI, MACD, Volume Profile) and fundamental valuation metrics."
+      "**MarketVerse India** was engineered as an institutional-grade financial intelligence and paper-trading terminal for Indian equity markets.\n\n" +
+      "It was built to solve the retail trading crisis in India by providing a zero-risk flight simulator combining live TradingView charting, Modern Portfolio Theory risk auditing (HHI), and Nova AI trade intelligence."
     );
   }
 
-  // B. Platform Overview ("What is MarketVerse?")
-  if (
-    lower.includes("marketverse") ||
-    lower.includes("market verse") ||
-    lower.includes("platform") ||
-    lower.includes("website") ||
-    lower.includes("about you")
-  ) {
+  // B. News & Market Sentiment Engine
+  if (lower.includes("news") || lower.includes("sentiment") || lower.includes("catalyst") || lower.includes("how does news work")) {
     return (
-      "**MarketVerse India** is a next-generation financial intelligence and paper-trading terminal designed for Indian equity markets.\n\n" +
+      "**MarketVerse News & Sentiment Engine:**\n\n" +
+      "• **Real-Time Ingestion**: Aggregates breaking corporate filings, quarterly earnings, and regulatory disclosures across NSE/BSE.\n" +
+      "• **NLP Sentiment Scoring**: Tags market headlines as **Bullish**, **Bearish**, or **Neutral** using language analysis.\n" +
+      "• **Contextual Impact**: Evaluates how sector-wide events affect specific stock support and resistance levels."
+    );
+  }
+
+  // C. Portfolio Health & Risk Analyzer
+  if (lower.includes("portfolio") || lower.includes("analyzer") || lower.includes("hhi") || lower.includes("risk engine") || lower.includes("how does portfolio work")) {
+    return (
+      "**MarketVerse Portfolio Health Analyzer:**\n\n" +
+      "• **HHI Concentration Index**: Calculates the Herfindahl-Hirschman Index to detect single-stock overexposure and sector imbalances.\n" +
+      "• **Sector Stress Testing**: Simulates portfolio resilience against sector drawdowns and market corrections.\n" +
+      "• **Asset Allocation Benchmarking**: Compares your holdings against optimal diversification standards to protect capital."
+    );
+  }
+
+  // D. Paper Trading Terminal & Execution
+  if (lower.includes("paper trading") || lower.includes("simulator") || lower.includes("virtual wallet") || lower.includes("how to trade")) {
+    return (
+      "**Simulated Paper Trading Terminal:**\n\n" +
+      "• **Virtual ₹10,00,000 Wallet**: Practice order execution with zero financial risk.\n" +
+      "• **Live Order Simulation**: Supports Market and Limit orders matched against real-time NSE/BSE price feeds.\n" +
+      "• **Performance Tracking**: Live virtual P&L, win/loss ratios, and maximum drawdown metrics."
+    );
+  }
+
+  // E. Capabilities & Assistance Overview
+  if (lower.includes("how can you help") || lower.includes("what can you do") || lower.includes("what is nova") || lower.includes("features")) {
+    return (
+      "I am **Nova AI**, your MarketVerse trade copilot.\n\n" +
+      "**How I can assist you:**\n" +
+      "• **Technical Scenarios**: Bull/Bear setups with support and resistance levels.\n" +
+      "• **Portfolio Audits**: HHI diversification scoring and concentration risk detection.\n" +
+      "• **Market Mechanics**: Explaining indicators (RSI, MACD, Volume Profile) and platform features."
+    );
+  }
+
+  // F. General Platform Overview
+  if (lower.includes("marketverse") || lower.includes("about platform") || lower.includes("what is this")) {
+    return (
+      "**MarketVerse India** is a financial intelligence and paper-trading terminal for Indian equities (NSE/BSE).\n\n" +
       "**Core Modules:**\n" +
-      "1. **Institutional Charting**: Advanced TradingView charts with technical overlays.\n" +
-      "2. **Simulated Paper Trading**: Zero-risk trading cockpit with a virtual ₹10,00,000 wallet.\n" +
-      "3. **Portfolio Risk Engine**: Real-time HHI concentration audits and sector stress testing.\n" +
+      "1. **Institutional Charting**: Advanced TradingView overlays.\n" +
+      "2. **Paper Trading Terminal**: Zero-risk execution with ₹10,00,000 virtual capital.\n" +
+      "3. **Portfolio Risk Engine**: Real-time HHI concentration diagnostics.\n" +
       "4. **Nova AI Copilot**: Context-aware trade thesis and market sentiment analysis."
     );
   }
 
-  // C. Greetings
+  // G. Greetings
   if (/^(hi|hello|hey|greetings|good morning|good afternoon)\b/i.test(lower)) {
     return (
       "Hello! I am **Nova AI**, your MarketVerse trade copilot.\n\n" +
-      "You can ask me to:\n" +
-      "• Analyze any NSE stock (e.g., *'Analyze RELIANCE'* or *'Is TCS bullish?'*)\n" +
-      "• Audit portfolio risk metrics (e.g., *'Explain HHI concentration score'*)\n" +
-      "• Review simulated paper trading setups."
+      "Ask me to analyze any NSE stock (e.g., *'Analyze RELIANCE'*), explain platform modules (e.g., *'How does the portfolio analyzer work?'*), or explain technical indicators."
     );
   }
 
-  // D. Quantitative Risk & Indicators
-  if (lower.includes("hhi") || lower.includes("concentration") || lower.includes("diversification")) {
-    return (
-      "**Herfindahl-Hirschman Index (HHI)** is a quantitative metric used by MarketVerse to assess portfolio concentration risk:\n\n" +
-      "• **HHI < 1,500**: Well-diversified asset allocation.\n" +
-      "• **HHI 1,500 – 2,500**: Moderate concentration risk.\n" +
-      "• **HHI > 2,500**: High concentration alert — vulnerability to single-stock volatility."
-    );
-  }
-
-  if (lower.includes("rsi") || lower.includes("relative strength")) {
-    return (
-      "**RSI (Relative Strength Index)** measures price momentum on a scale of 0 to 100:\n\n" +
-      "• **RSI > 70**: Overbought territory (watch for potential consolidation).\n" +
-      "• **RSI < 30**: Oversold territory (potential accumulation or bounce).\n" +
-      "• **Divergence**: Price making lower lows while RSI makes higher lows suggests bullish reversal momentum."
-    );
-  }
-
-  // E. Specific Stock Analysis (Only triggered when explicit stock name is mentioned)
+  // H. Equity / Ticker Analysis
   const knownStocks = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "TATAMOTORS", "SBIN", "ITC", "BHARTIARTL", "NIFTY"];
   const matched = knownStocks.find((s) => lower.includes(s.toLowerCase()));
   const symbol = matched ? matched : stockContext?.symbol || "NIFTY 50";
@@ -147,8 +143,8 @@ export async function askNovaAI(
 
   return (
     `**Technical Analysis for ${symbol}:**\n\n` +
-    `• **Bull Scenario**: Solid support base near ₹${(price * 0.985).toFixed(2)} with positive RSI divergence.\n` +
-    `• **Bear Scenario**: Immediate resistance near ₹${(price * 1.018).toFixed(2)}; monitor volume on pullbacks.\n` +
-    `• **Risk-Reward Profile**: Favorable 1:2.4 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`
+    `• **Bull Scenario**: Support base established near ₹${(price * 0.985).toFixed(2)} with positive RSI accumulation.\n` +
+    `• **Bear Scenario**: Immediate resistance near ₹${(price * 1.018).toFixed(2)}; watch for volume on pullbacks.\n` +
+    `• **Risk Assessment**: Favorable 1:2.4 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`
   );
 }
