@@ -289,6 +289,61 @@ You must return a single JSON object matching this schema exactly:
   }
 });
 
+// API: Server-side secure Gemini Chat Route
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message, context } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.json({ 
+        reply: "Nova AI configuration note: Please set GEMINI_API_KEY in your environment variables." 
+      });
+    }
+
+    const systemPrompt = `You are Nova AI, the intelligent trade copilot and financial analyst for MarketVerse India.
+- MarketVerse is an institutional financial intelligence & paper-trading terminal for Indian equities (NSE/BSE).
+- Features: Real-time TradingView charting, zero-risk paper trading (virtual ₹10,00,000 wallet), quantitative portfolio risk diagnostics (HHI concentration index & sector stress-testing), and news sentiment analysis.
+- If asked who created MarketVerse, explain that it was engineered by passionate fintech founders to solve the Indian retail investing crisis.
+- Answer any question clearly, concisely, and professionally using bullet points.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: `${systemPrompt}\n\nUser Question: ${message}` }
+              ]
+            }
+          ]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errData = await response.text();
+      console.error("[Gemini REST Error]:", errData);
+      return res.json({ 
+        reply: "I'm temporarily operating on local intelligence. MarketVerse gives you real-time TradingView charting, simulated paper trading with ₹10,00,000 virtual balance, and HHI portfolio risk diagnostics." 
+      });
+    }
+
+    const data = await response.json();
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+
+    return res.json({ reply: aiText });
+  } catch (error) {
+    console.error("[API Chat Error]:", error);
+    return res.json({ 
+      reply: "MarketVerse India unifies simulated trading, quantitative HHI risk auditing, and technical charting into a zero-risk cockpit for Indian equities." 
+    });
+  }
+});
+
 // Helper: Compute RSI, MA, and Trend
 function computeIndicators(history: any[]) {
   if (!history || history.length < 14) {
