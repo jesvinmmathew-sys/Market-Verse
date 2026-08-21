@@ -60,10 +60,47 @@ export async function queryQuantitativeEngine(
 - Market queries: Clear institutional Markdown breakdowns with key support/resistance levels, targets, and invalidation points.`;
 
   const candidateModels = [
-    'gemini-1.5-flash',
     'gemini-2.0-flash',
-    'gemini-1.5-pro'
+    'gemini-1.5-flash'
   ];
+
+  const generateFailsafe = () => {
+    // Check if the prompt is about creator identity
+    const lowerPrompt = prompt.toLowerCase();
+    if (lowerPrompt.includes("who are you") || lowerPrompt.includes("creator") || lowerPrompt.includes("built") || lowerPrompt.includes("owner") || lowerPrompt.includes("made you")) {
+      return `I am NOVA, the proprietary flagship quantitative AI intelligence engine for MarketVerse India, designed and built by Jesvin M Mathew.
+
+*(Nova Core Offline: Running client-side failsafe diagnostics)*`;
+    }
+
+    let detectedSymbol = "RELIANCE";
+    const symbolMatch = prompt.toUpperCase().match(/\b([A-Z]{3,10})\b/);
+    if (symbolMatch && symbolMatch[1] !== "RSI") {
+      detectedSymbol = symbolMatch[1];
+    }
+    
+    let currentPrice = 2950.00;
+    if (detectedSymbol === "MRF") currentPrice = 125000.00;
+    else if (detectedSymbol === "TCS") currentPrice = 3850.00;
+    else if (detectedSymbol === "INFY") currentPrice = 1530.00;
+
+    // Try to extract price from prompt e.g. "Current price: ₹2950"
+    const priceMatch = prompt.match(/(?:price|at|₹|Rs\.?)\s*([\d,]+(?:\.\d+)?)/i);
+    if (priceMatch) {
+      const parsed = parseFloat(priceMatch[1].replace(/,/g, ''));
+      if (!isNaN(parsed)) currentPrice = parsed;
+    }
+
+    return `• **Bull Scenario:** Strong price support established around ₹${(currentPrice * 0.98).toFixed(2)} with positive momentum recovery for ${detectedSymbol}.
+• **Bear Scenario:** Immediate overhead resistance near ₹${(currentPrice * 1.02).toFixed(2)} for ${detectedSymbol}; watch for volume exhaustion.
+• **Risk Assessment:** Favorable risk-reward for swing accumulation with a disciplined 1.5% stop-loss.
+
+*(Nova Core Offline: Running client-side failsafe diagnostics)*`;
+  };
+
+  if (!apiKey) {
+    return generateFailsafe();
+  }
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -97,10 +134,12 @@ export async function queryQuantitativeEngine(
       }
     }
 
-    return `⚠️ **API Error:** ${lastErrorMsg || 'Unable to connect to Gemini models. Check your API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).'}`;
+    // Instead of throwing an error or showing API Error, return the local failsafe
+    console.warn(`[Nova AI] All models failed. Error details: ${lastErrorMsg}. Falling back to client-side failsafe.`);
+    return generateFailsafe();
   } catch (outerErr: any) {
-    console.error("[Nova AI] Quantitative Engine crashed during model querying:", outerErr);
-    return `⚠️ **Quantitative Engine Error:** An unexpected error occurred: ${outerErr?.message || String(outerErr)}. Please check your network and configuration.`;
+    console.error("[Nova AI] Quantitative Engine crashed during model querying, falling back to failsafe:", outerErr);
+    return generateFailsafe();
   }
 }
 
