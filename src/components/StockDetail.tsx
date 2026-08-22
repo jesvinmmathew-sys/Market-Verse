@@ -26,6 +26,7 @@ import { marketApi } from "../services/marketApi";
 import { quantitativeApi, AIAnalysisResult } from "../services/quantitativeApi";
 import { TradingService } from "../services/trading";
 import { newsApi } from "../services/newsApi";
+import TradingViewChart from "./TradingViewChart";
 
 const LOCAL_STOCK_NEWS: Record<string, { title: string; source: string; time: string; sentiment: "Bullish" | "Bearish" | "Neutral"; explanation: string }[]> = {
   RELIANCE: [
@@ -161,7 +162,6 @@ export const StockDetail: React.FC<StockDetailProps> = ({
   isInWatchlist 
 }) => {
   const [stock, setStock] = useState<Stock | null>(null);
-  const tvContainerRef = useRef<HTMLDivElement>(null);
   const [timeframe, setTimeframe] = useState<"1m" | "5m" | "15m" | "1h" | "1D">("1D");
   const [chartType, setChartType] = useState<"candle" | "line">("candle");
   
@@ -337,59 +337,6 @@ export const StockDetail: React.FC<StockDetailProps> = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // Embedded TradingView Advanced Chart Widget using script injection
-  useEffect(() => {
-    if (!tvContainerRef.current) return;
-
-    // Clear any existing children to prevent duplicate embeds
-    tvContainerRef.current.innerHTML = '';
-
-    const widgetContainer = document.createElement('div');
-    widgetContainer.id = 'tradingview_chart_container';
-    widgetContainer.className = 'tradingview-widget-container__widget';
-    widgetContainer.style.height = '100%';
-    widgetContainer.style.width = '100%';
-    tvContainerRef.current.appendChild(widgetContainer);
-
-    let tvSymbol = symbol;
-    if (!tvSymbol.includes(':')) {
-      if (symbol === 'EURUSD' || symbol === 'USDINR') {
-        tvSymbol = `FX_IDC:${symbol}`;
-      } else {
-        tvSymbol = `NSE:${symbol || 'ICICIBANK'}`;
-      }
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    script.type = 'text/javascript';
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: tvSymbol,
-      interval: 'D',
-      timezone: 'Asia/Kolkata',
-      theme: 'dark',
-      style: '1',
-      locale: 'en',
-      enable_publishing: false,
-      allow_symbol_change: true,
-      calendar: false,
-      support_host: 'https://www.tradingview.com',
-      hide_side_toolbar: false,
-      studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies'],
-      container_id: 'tradingview_chart_container',
-    });
-
-    tvContainerRef.current.appendChild(script);
-
-    return () => {
-      if (tvContainerRef.current) {
-        tvContainerRef.current.innerHTML = '';
-      }
-    };
-  }, [symbol]);
 
   if (!stock) {
     return (
@@ -568,7 +515,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
         
         {/* CHART PORTION (8 cols) */}
         <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
-          <div ref={tvContainerRef} className="tradingview-widget-container w-full rounded-xl overflow-hidden border border-white/5 bg-[#131722] shadow-md" style={{ height: '560px', minHeight: '500px', width: '100%' }} />
+          <TradingViewChart symbol={symbol} height={560} />
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}
