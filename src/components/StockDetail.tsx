@@ -511,11 +511,14 @@ export const StockDetail: React.FC<StockDetailProps> = ({
       </div>
 
       {/* Workspace: Chart and AI Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="chart-workspace-container">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start" id="chart-workspace-container">
         
         {/* CHART PORTION (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
-          <TradingViewWidget symbol={symbol} />
+        <div className="lg:col-span-8 flex flex-col gap-4" id="chart-panel">
+          {/* Clean, locked-height Chart Container */}
+          <div className="w-full h-[580px] min-h-[580px] max-h-[580px] rounded-xl overflow-hidden border border-white/5 bg-[#131722] shadow-lg">
+            <TradingViewWidget symbol={symbol} />
+          </div>
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}

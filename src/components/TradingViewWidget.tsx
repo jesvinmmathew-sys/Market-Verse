@@ -66,8 +66,8 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({
   return (
     <div
       ref={containerRef}
-      className="tradingview-widget-container w-full rounded-xl overflow-hidden border border-slate-800 bg-[#0d131f]"
-      style={{ height: '560px', width: '100%' }}
+      className="tradingview-widget-container w-full"
+      style={{ height: '100%', width: '100%' }}
     />
   );
 };
