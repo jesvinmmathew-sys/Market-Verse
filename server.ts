@@ -292,54 +292,95 @@ You must return a single JSON object matching this schema exactly:
 // API: Server-side secure Gemini Chat Route
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, context } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    const { message } = req.body;
+    const apiKey = 
+      process.env.GEMINI_API_KEY || 
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
+      process.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.json({ 
-        reply: "Nova AI configuration note: Please set GEMINI_API_KEY in your environment variables." 
+      console.error("[Nova AI] GEMINI_API_KEY is not defined in environment variables.");
+      return res.json({
+        reply: "Nova AI is running in demo mode. Please configure `GEMINI_API_KEY` in Vercel settings to enable unrestricted live multi-turn reasoning."
       });
     }
 
-    const systemPrompt = `You are Nova AI, the intelligent trade copilot and financial analyst for MarketVerse India.
-- MarketVerse is an institutional financial intelligence & paper-trading terminal for Indian equities (NSE/BSE).
-- Features: Real-time TradingView charting, zero-risk paper trading (virtual ₹10,00,000 wallet), quantitative portfolio risk diagnostics (HHI concentration index & sector stress-testing), and news sentiment analysis.
-- If asked who created MarketVerse, explain that it was engineered by passionate fintech founders to solve the Indian retail investing crisis.
-- Answer any question clearly, concisely, and professionally using bullet points.`;
+    const systemPrompt = `You are Nova AI, the institutional financial analyst and trade copilot for MarketVerse India.
+- Mission: Empower Indian retail investors with institutional-grade risk diagnostics and trade intelligence for NSE/BSE equities.
+- Core Capabilities:
+  1. Automated Portfolio Health: Herfindahl-Hirschman Index (HHI) concentration scoring and sector stress testing.
+  2. Paper Trading Terminal: Zero-risk simulated execution with a virtual ₹10,00,000 wallet and live P&L tracking.
+  3. Interactive Technicals: Full TradingView charting integration.
+  4. Real-Time Scenario Auditing: Actionable Bull/Bear trade setups with support, resistance, and disciplined stop-loss levels.
+- Guidelines:
+  - If asked who created MarketVerse, explain it was engineered to solve the retail trading crisis in India.
+  - If asked about platform features (News, Portfolio Analyzer, Paper Trading), give concise, structured bullet points.
+  - If asked general conversation or finance questions, answer accurately and professionally.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: `${systemPrompt}\n\nUser Question: ${message}` }
+    // Try primary modern model: gemini-2.5-flash, fallback to gemini-2.0-flash
+    const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    let aiText = "";
+    let lastError = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: `${systemPrompt}\n\nUser Question: ${message}` }
+                  ]
+                }
               ]
-            }
-          ]
-        })
-      }
-    );
+            })
+          }
+        );
 
-    if (!response.ok) {
-      const errData = await response.text();
-      console.error("[Gemini REST Error]:", errData);
-      return res.json({ 
-        reply: "I'm temporarily operating on local intelligence. MarketVerse gives you real-time TradingView charting, simulated paper trading with ₹10,00,000 virtual balance, and HHI portfolio risk diagnostics." 
+        if (response.ok) {
+          const data = await response.json();
+          aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          if (aiText) break;
+        } else {
+          const errDetail = await response.text();
+          console.warn(`[Nova AI] ${modelName} returned status ${response.status}:`, errDetail);
+          lastError = errDetail;
+        }
+      } catch (fetchErr) {
+        lastError = fetchErr;
+      }
+    }
+
+    if (aiText) {
+      return res.json({ reply: aiText });
+    }
+
+    // Dynamic Context-Aware Fallback (prevents repeating the exact same canned sentence)
+    const lower = (message || "").toLowerCase();
+    if (lower.includes("what is marketverse") || lower.includes("about marketverse")) {
+      return res.json({
+        reply: "**MarketVerse India** is an institutional-grade financial intelligence and paper-trading terminal for NSE/BSE equities.\n\n• **Zero-Risk Simulation**: Virtual ₹10,00,000 wallet for strategy validation.\n• **Risk Diagnostics**: Quantitative HHI concentration audits and Modern Portfolio Theory analytics.\n• **Live Charts**: Real-time TradingView technical overlays."
       });
     }
 
-    const data = await response.json();
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+    if (lower.includes("who created") || lower.includes("who built") || lower.includes("founder")) {
+      return res.json({
+        reply: "**MarketVerse India** was engineered as a high-performance flight simulator for Indian retail traders, bridging the gap between raw technical analysis and quantitative risk management."
+      });
+    }
 
-    return res.json({ reply: aiText });
+    return res.json({
+      reply: `Hello! I am **Nova AI**. You can ask me to analyze any NSE/BSE equity (e.g., *'Analyze RELIANCE'*), audit portfolio concentration with HHI, or explain technical indicators.`
+    });
+
   } catch (error) {
-    console.error("[API Chat Error]:", error);
-    return res.json({ 
-      reply: "MarketVerse India unifies simulated trading, quantitative HHI risk auditing, and technical charting into a zero-risk cockpit for Indian equities." 
+    console.error("[Nova AI Server Error]:", error);
+    return res.json({
+      reply: "MarketVerse India provides institutional-grade paper trading, live TradingView charting, and automated portfolio risk scoring."
     });
   }
 });
