@@ -1,21 +1,22 @@
 import React, { useEffect, useRef, memo } from 'react';
 
-interface TradingViewChartProps {
-  symbol?: string;
+interface TradingViewWidgetProps {
+  symbol?: string; // e.g., "ICICIBANK" or "NSE:ICICIBANK"
   theme?: 'dark' | 'light';
-  height?: number | string;
 }
 
-const TradingViewChart: React.FC<TradingViewChartProps> = ({
-  symbol = 'NSE:NIFTY',
+const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({
+  symbol = 'ICICIBANK',
   theme = 'dark',
-  height = 580,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Normalize Indian stock symbols
-    let cleanSymbol = (symbol || 'NIFTY').trim().toUpperCase();
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Normalize Indian Stock Symbol
+    let cleanSymbol = symbol.trim().toUpperCase();
     if (!cleanSymbol.includes(':')) {
       if (cleanSymbol === 'EURUSD' || cleanSymbol === 'USDINR') {
         cleanSymbol = `FX_IDC:${cleanSymbol}`;
@@ -24,10 +25,6 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       }
     }
 
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 2. Clear old widget elements before mounting to avoid DOM race conditions
     container.innerHTML = '';
 
     const widgetDiv = document.createElement('div');
@@ -37,7 +34,6 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     widgetDiv.style.width = '100%';
     container.appendChild(widgetDiv);
 
-    // 3. Create and append external embed script
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     script.type = 'text/javascript';
@@ -51,16 +47,10 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       style: '1',
       locale: 'in',
       enable_publishing: false,
-      allow_symbol_change: true,
+      allow_symbol_change: false,
       calendar: false,
       support_host: 'https://www.tradingview.com',
       hide_side_toolbar: false,
-      withdateranges: true,
-      save_image: false,
-      studies: [
-        'RSI@tv-basicstudies',
-        'MASimple@tv-basicstudies'
-      ],
       container_id: 'tv_chart_container'
     });
 
@@ -74,14 +64,12 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   }, [symbol, theme]);
 
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-slate-800 bg-[#0d131f] shadow-2xl">
-      <div
-        ref={containerRef}
-        className="tradingview-widget-container w-full"
-        style={{ height: typeof height === 'number' ? `${height}px` : height, minHeight: '520px', width: '100%' }}
-      />
-    </div>
+    <div
+      ref={containerRef}
+      className="tradingview-widget-container w-full rounded-xl overflow-hidden border border-slate-800 bg-[#0d131f]"
+      style={{ height: '560px', width: '100%' }}
+    />
   );
 };
 
-export default memo(TradingViewChart);
+export default memo(TradingViewWidget);

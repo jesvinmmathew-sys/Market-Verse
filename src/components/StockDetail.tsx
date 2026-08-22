@@ -26,7 +26,7 @@ import { marketApi } from "../services/marketApi";
 import { quantitativeApi, AIAnalysisResult } from "../services/quantitativeApi";
 import { TradingService } from "../services/trading";
 import { newsApi } from "../services/newsApi";
-import TradingViewChart from "./TradingViewChart";
+import TradingViewWidget from "./TradingViewWidget";
 
 const LOCAL_STOCK_NEWS: Record<string, { title: string; source: string; time: string; sentiment: "Bullish" | "Bearish" | "Neutral"; explanation: string }[]> = {
   RELIANCE: [
@@ -515,7 +515,7 @@ export const StockDetail: React.FC<StockDetailProps> = ({
         
         {/* CHART PORTION (8 cols) */}
         <div className="lg:col-span-8 flex flex-col justify-between" id="chart-panel">
-          <TradingViewChart symbol={symbol} height={560} />
+          <TradingViewWidget symbol={symbol} />
         </div>
 
         {/* AI PANEL PORTION (4 cols) */}
