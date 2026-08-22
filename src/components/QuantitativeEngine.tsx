@@ -699,11 +699,70 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
 
       const [chatReply, stockCardData] = await Promise.all([chatPromise, stockCardPromise]);
 
+      let finalText = chatReply;
+      let finalCard: StockAnalysisCardData | undefined = stockCardData || undefined;
+
+      try {
+        const parsed = JSON.parse(chatReply);
+        if (parsed && parsed.type === "STOCK_CARD") {
+          finalText = ""; // Suppress greeting text
+          const isBullish = parsed.bullishProb >= parsed.bearishProb;
+          finalCard = {
+            symbol: parsed.symbol,
+            name: parsed.companyName,
+            price: parsed.price,
+            change: parsed.change,
+            percentChange: parsed.changePercent,
+            volume: parsed.volume,
+            dayHigh: parsed.high,
+            dayLow: parsed.low,
+            sentiment: isBullish ? "Bullish" : "Bearish",
+            confidence: isBullish ? parsed.bullishProb : parsed.bearishProb,
+            risk: parsed.riskProfile.includes("HIGH") ? "High" : parsed.riskProfile.includes("LOW") ? "Low" : "Medium",
+            riskPercentage: parsed.volatilityIndex,
+            safetyScore: 100 - parsed.volatilityIndex,
+            briefNote: parsed.analystNotes.slice(0, 100) + "...",
+            strategyExplanation: parsed.analystNotes,
+            reasons: [
+              `Support identified at ₹${parsed.support}.`,
+              `Resistance registered at ₹${parsed.resistance}.`
+            ],
+            possibleScenarios: {
+              shortTerm: "Technical ranges suggest short-term consolidative momentum.",
+              mediumTerm: "Subject to broader sectoral breakouts and index movements."
+            },
+            keyIndicators: {
+              rsi: 50,
+              macd: "Neutral crossovers trading near base parameters.",
+              movingAverages: `Support levels hold at ₹${parsed.support}`,
+              trend: isBullish ? "Bullish" : "Bearish"
+            },
+            support: parseFloat(parsed.support),
+            resistance: parseFloat(parsed.resistance)
+          };
+        }
+      } catch (e) {
+        // Not JSON, normal text flow
+        if (finalCard && chatReply) {
+          const isCannedGreeting = chatReply.toLowerCase().includes("hello!") || 
+                                   chatReply.toLowerCase().includes("nova ai configuration note") ||
+                                   chatReply.toLowerCase().includes("nova ai is running in demo mode") ||
+                                   chatReply.toLowerCase().includes("i am nova ai");
+          if (!isCannedGreeting) {
+            finalCard.strategyExplanation = chatReply;
+            finalCard.briefNote = "AI Technical analysis has compiled core indicators:";
+            finalText = ""; // Clear so it only renders the card
+          } else {
+            finalText = ""; // Clear fallback greetings
+          }
+        }
+      }
+
       const aiMsg: Message = {
         id: `msg-${Date.now()}-model`,
         role: "model",
-        text: chatReply,
-        stockCard: stockCardData || undefined
+        text: finalText,
+        stockCard: finalCard
       };
 
       const finalSession: ChatSession = {
@@ -727,6 +786,7 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
       let stockCardData: StockAnalysisCardData | undefined = undefined;
 
       if (stockDetected) {
+        fallbackText = ""; // Clear fallback greeting when card is present
         const basePrice = stockDetected.price || 400;
         const mockChange = parseFloat(((Math.random() - 0.45) * 12).toFixed(2));
         const mockPercent = parseFloat(((mockChange / basePrice) * 100).toFixed(2));
@@ -1093,10 +1153,11 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
                           </div>
                           
                           <div className="flex-1 min-w-0 space-y-2 text-left">
-                            {/* Clean response text without heavy border boxes */}
-                            <div className="text-xs text-white/95 leading-relaxed font-sans">
-                              {formatText(msg.text)}
-                            </div>
+                            {msg.text && (
+                              <div className="text-xs text-white/95 leading-relaxed font-sans">
+                                {formatText(msg.text)}
+                              </div>
+                            )}
 
                             {msg.stockCard && (
                               <div className="w-full max-w-2xl mt-3 animate-fade-in">

@@ -43,6 +43,36 @@ if (GEMINI_API_KEY) {
   }
 }
 
+const knownStocks = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "TATAMOTORS", "SBIN", "ITC", "BHARTIARTL", "NIFTY"];
+
+// Ensure stock responses return dedicated structured analysis data without fallback greeting strings
+export function formatStockAnalysisResponse(symbol: string, stockData: any, aiThesis?: string) {
+  const defaultNotes = `• Key Momentum: Consolidating near key pivot zones with balanced institutional volume.\n` +
+    `• Strategy: Watch for a breakout above ₹${(stockData.price * 1.015).toFixed(2)} with disciplined risk management.`;
+
+  return {
+    type: 'STOCK_CARD',
+    symbol: symbol.toUpperCase(),
+    companyName: stockData.name || `${symbol.toUpperCase()} Ltd`,
+    price: stockData.price,
+    change: stockData.change || 0,
+    changePercent: stockData.changePercent || 0,
+    open: stockData.open || stockData.price,
+    high: stockData.high || stockData.price * 1.01,
+    low: stockData.low || stockData.price * 0.99,
+    volume: stockData.volume || '1.2M',
+    bullishProb: stockData.bullishProb || 65,
+    bearishProb: stockData.bearishProb || 35,
+    riskProfile: stockData.riskProfile || 'MEDIUM RISK',
+    volatilityIndex: stockData.volatilityIndex || 45,
+    support: (stockData.price * 0.985).toFixed(2),
+    resistance: (stockData.price * 1.025).toFixed(2),
+    analystNotes: aiThesis && aiThesis.trim().length > 0 ? aiThesis : defaultNotes,
+    // Do NOT include the generic "Hello! I am Nova AI" greeting text here
+    textMessage: null
+  };
+}
+
 /**
  * Main query handler: Attempts live secure server-side API, fallback to SDK, and then local fallback
  */
@@ -65,6 +95,23 @@ export async function askNovaAI(
     if (response.ok) {
       const data = await response.json();
       if (data.reply && data.reply.trim().length > 0) {
+        // If a stock is matched, format as a STOCK_CARD directly
+        const matched = knownStocks.find((s) => lower.includes(s.toLowerCase()));
+        if (matched) {
+          const quoteResponse = await fetch(`/api/market/quote?symbol=${matched}`).catch(() => null);
+          const quoteData = quoteResponse && quoteResponse.ok ? await quoteResponse.json().catch(() => null) : null;
+          const stockData = {
+            name: quoteData?.name || `${matched} India`,
+            price: quoteData?.price || 1500,
+            change: quoteData?.change || 0,
+            changePercent: quoteData?.percentChange || 0,
+            volume: quoteData?.volume || "1.2M",
+            open: quoteData?.open,
+            high: quoteData?.dayHigh,
+            low: quoteData?.dayLow,
+          };
+          return JSON.stringify(formatStockAnalysisResponse(matched, stockData, data.reply));
+        }
         return data.reply;
       }
     }
@@ -80,6 +127,23 @@ export async function askNovaAI(
       const result = await liveModel.generateContent(query);
       const text = result.response.text();
       if (text && text.trim().length > 0) {
+        // If a stock is matched, format as a STOCK_CARD directly
+        const matched = knownStocks.find((s) => lower.includes(s.toLowerCase()));
+        if (matched) {
+          const quoteResponse = await fetch(`/api/market/quote?symbol=${matched}`).catch(() => null);
+          const quoteData = quoteResponse && quoteResponse.ok ? await quoteResponse.json().catch(() => null) : null;
+          const stockData = {
+            name: quoteData?.name || `${matched} India`,
+            price: quoteData?.price || 1500,
+            change: quoteData?.change || 0,
+            changePercent: quoteData?.percentChange || 0,
+            volume: quoteData?.volume || "1.2M",
+            open: quoteData?.open,
+            high: quoteData?.dayHigh,
+            low: quoteData?.dayLow,
+          };
+          return JSON.stringify(formatStockAnalysisResponse(matched, stockData, text));
+        }
         return text;
       }
     } catch (apiError) {
@@ -199,15 +263,32 @@ export async function askNovaAI(
   }
 
   // I. Specific Stock Analysis (Only triggered when explicit stock name is mentioned)
-  const knownStocks = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "TATAMOTORS", "SBIN", "ITC", "BHARTIARTL", "NIFTY"];
   const matched = knownStocks.find((s) => lower.includes(s.toLowerCase()));
-  const symbol = matched ? matched : stockContext?.symbol || "NIFTY 50";
-  const price = stockContext?.price || (symbol === "NIFTY 50" ? 24500 : 2850);
+  if (matched) {
+    const symbol = matched;
+    let price = stockContext?.price || (symbol === "NIFTY" ? 24500 : 2850);
+    const mockChange = parseFloat(((Math.random() - 0.45) * 12).toFixed(2));
+    const mockPercent = parseFloat(((mockChange / price) * 100).toFixed(2));
+    const stockData = {
+      name: `${symbol} India`,
+      price: price,
+      change: mockChange,
+      changePercent: mockPercent,
+      volume: "1.2M",
+      open: price - mockChange,
+      high: price * 1.012,
+      low: price * 0.988,
+    };
+    
+    const localThesis = 
+      `• **Bull Scenario**: Solid support base near ₹${(price * 0.985).toFixed(2)} with positive RSI divergence.\n` +
+      `• **Bear Scenario**: Immediate resistance near ₹${(price * 1.018).toFixed(2)}; monitor volume on pullbacks.\n` +
+      `• **Risk-Reward Profile**: Favorable 1:2.4 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`;
+      
+    return JSON.stringify(formatStockAnalysisResponse(symbol, stockData, localThesis));
+  }
 
   return (
-    `**Technical Analysis for ${symbol}:**\n\n` +
-    `• **Bull Scenario**: Solid support base near ₹${(price * 0.985).toFixed(2)} with positive RSI divergence.\n` +
-    `• **Bear Scenario**: Immediate resistance near ₹${(price * 1.018).toFixed(2)}; monitor volume on pullbacks.\n` +
-    `• **Risk-Reward Profile**: Favorable 1:2.4 risk-to-reward ratio for swing setups with a strict 1.5% stop-loss.`
+    `Hello! I am **Nova AI**. You can ask me to analyze any NSE/BSE equity (e.g., *'Analyze RELIANCE'*), audit portfolio concentration with HHI, or explain technical indicators.`
   );
 }

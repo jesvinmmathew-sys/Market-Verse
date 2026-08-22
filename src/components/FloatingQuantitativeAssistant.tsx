@@ -508,11 +508,70 @@ Try asking me:
 
       const [chatReply, stockCardData] = await Promise.all([chatPromise, stockCardPromise]);
 
+      let finalText = chatReply;
+      let finalCard: StockAnalysisCardData | undefined = stockCardData || undefined;
+
+      try {
+        const parsed = JSON.parse(chatReply);
+        if (parsed && parsed.type === "STOCK_CARD") {
+          finalText = ""; // Suppress greeting text
+          const isBullish = parsed.bullishProb >= parsed.bearishProb;
+          finalCard = {
+            symbol: parsed.symbol,
+            name: parsed.companyName,
+            price: parsed.price,
+            change: parsed.change,
+            percentChange: parsed.changePercent,
+            volume: parsed.volume,
+            dayHigh: parsed.high,
+            dayLow: parsed.low,
+            sentiment: isBullish ? "Bullish" : "Bearish",
+            confidence: isBullish ? parsed.bullishProb : parsed.bearishProb,
+            risk: parsed.riskProfile.includes("HIGH") ? "High" : parsed.riskProfile.includes("LOW") ? "Low" : "Medium",
+            riskPercentage: parsed.volatilityIndex,
+            safetyScore: 100 - parsed.volatilityIndex,
+            briefNote: parsed.analystNotes.slice(0, 100) + "...",
+            strategyExplanation: parsed.analystNotes,
+            reasons: [
+              `Support identified at ₹${parsed.support}.`,
+              `Resistance registered at ₹${parsed.resistance}.`
+            ],
+            possibleScenarios: {
+              shortTerm: "Technical ranges suggest short-term consolidative momentum.",
+              mediumTerm: "Subject to broader sectoral breakouts and index movements."
+            },
+            keyIndicators: {
+              rsi: 50,
+              macd: "Neutral crossovers trading near base parameters.",
+              movingAverages: `Support levels hold at ₹${parsed.support}`,
+              trend: isBullish ? "Bullish" : "Bearish"
+            },
+            support: parseFloat(parsed.support),
+            resistance: parseFloat(parsed.resistance)
+          };
+        }
+      } catch (e) {
+        // Not JSON, normal text flow
+        if (finalCard && chatReply) {
+          const isCannedGreeting = chatReply.toLowerCase().includes("hello!") || 
+                                   chatReply.toLowerCase().includes("nova ai configuration note") ||
+                                   chatReply.toLowerCase().includes("nova ai is running in demo mode") ||
+                                   chatReply.toLowerCase().includes("i am nova ai");
+          if (!isCannedGreeting) {
+            finalCard.strategyExplanation = chatReply;
+            finalCard.briefNote = "AI Technical analysis has compiled core indicators:";
+            finalText = ""; // Clear so it only renders the card
+          } else {
+            finalText = ""; // Clear fallback greetings
+          }
+        }
+      }
+
       const aiMsg: Message = {
         id: `msg-${Date.now()}-model`,
         role: "model",
-        text: chatReply,
-        stockCard: stockCardData || undefined
+        text: finalText,
+        stockCard: finalCard
       };
 
       setMessages(prev => [...prev, aiMsg]);
@@ -520,15 +579,11 @@ Try asking me:
       console.error(err);
       
       // Fallback response with heuristic stock card if rate-limited or error occurs
-      let fallbackText = `⚠️ **AI analysis temporarily unavailable. Showing technical market analysis.**
-
-I encountered a temporary api rate-limit with my primary model servers. 
-
-However, my technical analysis pipeline registers normal trading ranges. Educational analysis, not financial advice.`;
-
+      let fallbackText = `⚠️ **AI analysis temporarily unavailable. Showing technical market analysis.**\n\nI encountered a temporary api rate-limit with my primary model servers.\n\nHowever, my technical analysis pipeline registers normal trading ranges. Educational analysis, not financial advice.`;
       let stockCardData: StockAnalysisCardData | undefined = undefined;
 
       if (stockDetected) {
+        fallbackText = ""; // Clear fallback greeting when card is present
         // Build simulated high-quality mock data for immediate smooth experience
         const basePrice = stockDetected.price || 500;
         const mockChange = parseFloat(((Math.random() - 0.45) * 15).toFixed(2));
@@ -751,18 +806,20 @@ Try asking me:
               >
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                    <div
-                      className={`max-w-[90%] rounded-2xl px-4 py-3 text-xs shadow-xl border relative overflow-hidden ${
-                        msg.role === "user"
-                          ? "bg-gradient-to-br from-[#3D81E3]/20 to-cyan-500/10 border-cyan-500/20 text-white rounded-tr-none"
-                          : "bg-white/[0.03] border-white/5 text-white/95 rounded-tl-none"
-                      }`}
-                    >
-                      {msg.role === "model" && (
-                        <div className="absolute top-0 left-0 w-1 h-full bg-[#3D81E3]/40" />
-                      )}
-                      {formatText(msg.text)}
-                    </div>
+                    {msg.text && (
+                      <div
+                        className={`max-w-[90%] rounded-2xl px-4 py-3 text-xs shadow-xl border relative overflow-hidden ${
+                          msg.role === "user"
+                            ? "bg-gradient-to-br from-[#3D81E3]/20 to-cyan-500/10 border-cyan-500/20 text-white rounded-tr-none"
+                            : "bg-white/[0.03] border-white/5 text-white/95 rounded-tl-none"
+                        }`}
+                      >
+                        {msg.role === "model" && (
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#3D81E3]/40" />
+                        )}
+                        {formatText(msg.text)}
+                      </div>
+                    )}
 
                     {/* Render Stock Intelligence Card block if available */}
                     {msg.stockCard && (
