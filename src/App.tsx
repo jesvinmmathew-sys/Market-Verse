@@ -314,6 +314,24 @@ export default function App() {
   }, [user]);
 
   const navigate = (path: string) => {
+    if (path === "/pricing") {
+      if (route === "/" || route === "/aura") {
+        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+        setIsMobileMenuOpen(false);
+        setIsMoreOpen(false);
+        return;
+      } else {
+        window.history.pushState(null, "", "/");
+        setRoute("/");
+        setIsMobileMenuOpen(false);
+        setIsMoreOpen(false);
+        setTimeout(() => {
+          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+        return;
+      }
+    }
+
     const isProtectedRoute = 
       path === "/nova-ai" || 
       path === "/portfolio" || 
@@ -528,15 +546,7 @@ export default function App() {
                 );
               })()}
 
-              {/* Premium Upgrade Button */}
-              <button
-                onClick={() => setIsPricingModalOpen(true)}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-cyan-300 font-bold uppercase tracking-wider text-[9px] cursor-pointer transition-all shrink-0 hover:scale-[1.02] shadow-[0_0_15px_rgba(6,182,212,0.15)]"
-                title="Upgrade subscription"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                <span>Upgrade</span>
-              </button>
+
 
               {/* Quick Theme Switcher Dropdown */}
               <div className="relative shrink-0" ref={themeDropdownRef}>

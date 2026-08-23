@@ -30,6 +30,7 @@ import {
 } from "./VisualAssets";
 import { HomepageQuantitativeChat } from "./HomepageQuantitativeChat";
 import { QuantitativeLogo } from "./QuantitativeLogo";
+import { PricingSection } from "./PricingSection";
 
 // Inlined Abstract Curve Mark (Logo)
 export const LogoMark: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
@@ -377,6 +378,7 @@ export const MarketVerseLanding: React.FC<{
                     {[
                       { name: 'News', path: '/news' },
                       { name: 'Learn', path: '/learn' },
+                      { name: 'Pricing', path: '#pricing' },
                       { name: 'About', path: '/about' }
                     ].map((subItem) => (
                       <button
@@ -389,6 +391,8 @@ export const MarketVerseLanding: React.FC<{
                             } else {
                               setIsAboutOpen(true);
                             }
+                          } else if (subItem.path === '#pricing') {
+                            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
                           } else {
                             onNavigate(subItem.path);
                           }
@@ -450,6 +454,7 @@ export const MarketVerseLanding: React.FC<{
                   { name: 'News Intelligence', path: '/news' },
                   { name: 'Quant Academy', path: '/learn' },
                   { name: 'NOVA AI Workspace', path: '/ai' },
+                  { name: 'Pricing Plans', path: '#pricing' },
                   { name: 'About Platform', path: '/about' }
                 ].map((item, i) => (
                   <button
@@ -462,6 +467,8 @@ export const MarketVerseLanding: React.FC<{
                         } else {
                           setIsAboutOpen(true);
                         }
+                      } else if (item.path === '#pricing') {
+                        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
                       } else {
                         onNavigate(item.path);
                       }
@@ -930,6 +937,11 @@ export const MarketVerseLanding: React.FC<{
             </button>
           </div>
         </motion.div>
+      </section>
+
+      {/* Seamless Embedded Pricing Section */}
+      <section id="pricing" className="w-full relative z-20 border-t border-white/5 bg-[#070b12]">
+        <PricingSection />
       </section>
 
       {/* Footer */}
