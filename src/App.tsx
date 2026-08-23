@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MarketVerseLanding, LogoMark } from "./components/AuraLanding";
 import { MarketTerminal } from "./components/MarketTerminal";
 import { StockDetail } from "./components/StockDetail";
+import { PricingSection } from "./components/PricingSection";
 import { FloatingQuantitativeAssistant } from "./components/FloatingQuantitativeAssistant";
 import { QuantitativeEngine } from "./components/QuantitativeEngine";
 import { MarketRadar } from "./components/MarketRadar";
@@ -86,6 +87,7 @@ export default function App() {
   const [authHeadline, setAuthHeadline] = useState<string | null>(null);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [onboardingAgreed, setOnboardingAgreed] = useState(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
   const [customPfp, setCustomPfp] = useState<string | null>(null);
 
@@ -363,6 +365,7 @@ export default function App() {
   const isBullishRoute = route === "/market/bullish";
   const isBearishRoute = route === "/market/bearish";
   const isStockRoute = route.startsWith("/stock/");
+  const isPricingRoute = route === "/pricing";
 
   const mainNavItems = [
     { name: 'Dashboard', path: '/dashboard' },
@@ -374,6 +377,7 @@ export default function App() {
   const moreNavItems = [
     { name: 'News', path: '/news' },
     { name: 'Learn', path: '/learn' },
+    { name: 'Pricing', path: '/pricing' },
   ];
 
   return (
@@ -524,6 +528,16 @@ export default function App() {
                 );
               })()}
 
+              {/* Premium Upgrade Button */}
+              <button
+                onClick={() => setIsPricingModalOpen(true)}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-cyan-300 font-bold uppercase tracking-wider text-[9px] cursor-pointer transition-all shrink-0 hover:scale-[1.02] shadow-[0_0_15px_rgba(6,182,212,0.15)]"
+                title="Upgrade subscription"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span>Upgrade</span>
+              </button>
+
               {/* Quick Theme Switcher Dropdown */}
               <div className="relative shrink-0" ref={themeDropdownRef}>
                 <button
@@ -632,6 +646,17 @@ export default function App() {
 
                         {/* Menu Items */}
                         <div className="space-y-0.5">
+                          <button
+                            onClick={() => {
+                              setIsAvatarDropdownOpen(false);
+                              setIsPricingModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer text-left"
+                          >
+                            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+                            <span>Pricing & Subscription</span>
+                          </button>
+
                           <button
                             onClick={() => {
                               setIsAvatarDropdownOpen(false);
@@ -848,6 +873,8 @@ export default function App() {
                   isInWatchlist={watchlist.includes(route.split("/stock/")[1]?.toUpperCase() || "")}
                 />
               </div>
+            ) : isPricingRoute ? (
+              <PricingSection />
             ) : (
               <MarketTerminal 
                 currentRoute={route} 
@@ -1135,6 +1162,22 @@ export default function App() {
                   Accept & Enter Terminal
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isPricingModalOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" id="pricing-modal-overlay">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="max-w-6xl w-full text-left relative overflow-hidden"
+              id="pricing-modal-box"
+            >
+              <PricingSection isModal={true} onClose={() => setIsPricingModalOpen(false)} />
             </motion.div>
           </div>
         )}
