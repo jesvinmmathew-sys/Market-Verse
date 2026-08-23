@@ -53,21 +53,21 @@ const pricingTiers: PricingTier[] = [
     ctaVariant: 'primary'
   },
   {
-    id: 'campus',
-    name: 'Campus / Institutional Lab',
-    badge: 'FOR E-CELLS & UNIVERSITIES',
+    id: 'business',
+    name: 'Business & Labs',
+    badge: 'ENTERPRISE & ACADEMIA',
     priceMonthly: 3999,
-    priceAnnualMonthly: 2916, // ₹35,000 / year
-    description: 'Turnkey simulated trading lab tailored for college trading clubs and finance departments.',
+    priceAnnualMonthly: 2916, // ₹34,992 billed annually
+    description: 'Turnkey simulated trading labs, risk infrastructure, and API sandboxes for trading teams, E-Cells, and institutions.',
     features: [
-      'Everything in Pro for up to 50 Student Seats',
-      'Host Private College Trading Hackathons & Competitions',
-      'Admin Master Dashboard & Student Risk Scoring',
-      'Downloadable CSV Performance & Audit Reports',
-      'Direct API Sandboxing for Quantitative Backtesting',
-      'Dedicated Campus Success Manager'
+      'Up to 50 Pro Multi-User Seats & Unified Billing',
+      'Custom Trading Tournaments & Private Hackathons',
+      'Admin Master Risk & Performance Audit Console',
+      'Full REST API & WebSocket Sandbox Access',
+      'Exportable Audit-Ready CSV / Excel Tax & P&L Reports',
+      'Dedicated Account Manager & Priority 24/7 SLA Support'
     ],
-    ctaText: 'Request Institutional Access',
+    ctaText: 'Contact Enterprise Sales',
     ctaVariant: 'secondary'
   }
 ];
