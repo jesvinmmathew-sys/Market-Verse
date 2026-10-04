@@ -917,7 +917,7 @@ const PRESET_AVATARS = [
 
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-4">
                 <div className="space-y-3">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-500 tracking-wider">Compliance Disclosures</span>
+                  <span className="text-[9.5px] uppercase font-bold text-slate-500 tracking-wider">Legal Disclosures</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
                     <button 
                       onClick={() => window.dispatchEvent(new CustomEvent("marketverse_open_legal", { detail: "terms" }))}

@@ -93,4 +93,4 @@ This is an **educational, research, and trading-simulation project**. It provide
 
 [Implementation & roadmap](docs/IMPLEMENTATION.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Terms of Use](TERMS.md) · [MIT License](LICENSE)
 
-MIT © 2026 Jesvin M Mathew. Third-party content retains its own terms. The existing website legal copy has unresolved differences with the repository license and data disclosures; see the [publication review notes](docs/LEGAL_REVIEW.md).
+MIT © 2026 Jesvin M Mathew. Third-party content retains its own terms.

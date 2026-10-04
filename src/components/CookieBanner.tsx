@@ -54,7 +54,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({ onCustomize }) => {
           <div className="space-y-1">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider font-sans">Cookie Preferences</h4>
             <p className="text-[10px] text-white/50 leading-relaxed font-sans">
-              MarketVerse uses essential cookies and local storage to persist your terminal theme, glassmorphism levels, and simulated paper trading session.
+              MarketVerse uses browser storage for sign-in, interface preferences, and simulated holdings. Preference controls do not manage third-party services.
             </p>
           </div>
         </div>

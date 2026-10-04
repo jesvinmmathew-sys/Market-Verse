@@ -4,8 +4,6 @@ Repository edition · 5 October 2026
 
 These terms describe use of the MarketVerse India application and public demo. Source-code permissions are governed separately by [LICENSE](LICENSE); vulnerability reporting by [SECURITY.md](SECURITY.md); contributions by [CONTRIBUTING.md](CONTRIBUTING.md).
 
-> **Publication review required:** These terms carry forward the educational, simulation, acceptable-use, and availability principles in the application's existing [legal content](src/components/legal/LegalModal.tsx). That content also contains proprietary redistribution restrictions that conflict with the repository's MIT license, plus data/AI statements needing correction. This document does not silently replace the website terms or resolve those differences. See [the specific conflicts](docs/LEGAL_REVIEW.md) before publication.
-
 ## Purpose and financial responsibility
 
 MarketVerse is an educational, research, and trading-simulation project. It does not accept capital deposits, handle real trading funds, or execute brokerage orders. Virtual balances, holdings, prices, and fills do not establish real ownership or future trading performance.
@@ -41,8 +39,6 @@ Links, embedded charts, authentication providers, market data, and AI services a
 ## Intellectual property and source license
 
 The repository's [MIT license](LICENSE) sets out permissions and notice requirements for the covered software. These application-use terms add no prohibition on copying, modifying, or redistributing that MIT-covered software. Third-party packages, content, data, and services retain their own licenses and terms; the repository license does not grant rights over them.
-
-The website's older proprietary/all-rights-reserved language conflicts with these repository permissions. It remains unchanged pending owner reconciliation, as documented in the [publication review](docs/LEGAL_REVIEW.md).
 
 ## Warranty and liability
 

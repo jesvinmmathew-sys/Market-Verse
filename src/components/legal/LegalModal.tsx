@@ -63,13 +63,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-2 px-2 py-1">
               <Scale className="w-5 h-5 text-cyan-400" />
-              <span className="text-xs font-black tracking-widest text-white uppercase font-sans">Compliance Hub</span>
+              <span className="text-xs font-black tracking-widest text-white uppercase font-sans">Legal & Privacy</span>
             </div>
 
             <nav className="space-y-1" id="legal-nav">
               {[
                 { id: "terms", label: "Terms of Service", icon: FileText },
-                { id: "sebi", label: "SEBI & Risk Notice", icon: ShieldAlert },
+                { id: "sebi", label: "Financial Risk Notice", icon: ShieldAlert },
                 { id: "privacy", label: "Privacy Policy", icon: Lock },
                 { id: "cookies", label: "Cookie Policy", icon: Cookie }
               ].map((tab) => {
@@ -93,7 +93,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             </nav>
           </div>
           <div className="p-4 border-t border-white/5 bg-[#06080F]/20 text-[9px] text-white/30 font-mono text-center">
-            LEGAL ARCHIVE V1.2
+            UPDATED 5 OCTOBER 2026
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between shrink-0">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
               {activeTab === "terms" && "Terms of Service & Platform Agreement"}
-              {activeTab === "sebi" && "SEBI risk disclosures & market risk warning"}
+              {activeTab === "sebi" && "Financial risk & educational-use notice"}
               {activeTab === "privacy" && "Privacy Policy & Data Transparency"}
               {activeTab === "cookies" && "Cookie & Preference Settings"}
             </h2>
@@ -122,34 +122,34 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">1. Platform & Simulated Execution Agreement</h4>
                   <p>
-                    MarketVerse India operates exclusively as a simulated financial analytics and educational paper trading terminal. We do **not** handle real money, capital deposits, or execute actual orders in Indian equity, commodity, or derivatives markets. All virtual portfolios, demo balances (including the default ₹10,00,000 demo paper account), and execution telemetry are entirely simulated for training and backtesting purposes. 
+                    MarketVerse India is an educational, research, and trading-simulation project. We do not handle real trading funds, accept capital deposits, or execute brokerage orders. Virtual portfolios, balances (including the default ₹10,00,000 paper account), and simulated fills do not establish real asset ownership or future trading performance.
                   </p>
                   <p>
-                    The platform does not guarantee continuous, uninterrupted system uptime. Simulated rates, order fills, and queue executions on the virtual ledger may experience latency deviations from live exchange feeds. Users acknowledge that simulated success does not correlate to future performance in real-money brokerages.
+                    The platform is provided as available, without guaranteed uptime, continued access, data accuracy, or uninterrupted provider integrations. Simulated prices and fills may differ from exchange execution. Features and service availability may change or stop; revisions to these terms will update the date shown here and the repository Terms of Use.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">2. Account Responsibility & Terminal Usage</h4>
                   <p>
-                    Users are solely responsible for securing their terminal credentials. By accessing the terminal, you agree not to deploy automated malicious scripts, scraping algorithms, or high-frequency automated telemetry queries that might degrade server bandwidth or active API keys. MarketVerse reserves the right to gate, limit, or revoke terminal access to prevent systemic degradation.
+                    Protect your account credentials. Do not attempt unauthorized access, bypass access restrictions, distribute malicious content, or use automated requests or scraping that disrupt the demo or exhaust provider capacity. Use only data you are authorized to submit. Access may be limited or withdrawn to prevent abuse or service degradation. Authentication on the current public deployment is intentionally restricted to the project owner's authorized account; external visitors are not currently provided account access. This is a demo limitation, not an indication that login is broken.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">3. Intellectual Property & Creator Attribution</h4>
                   <p>
-                    The MarketVerse India ecosystem, including the Nova AI intelligence framework, quantitative chart analytics models, custom indicators, and overall interface architecture is the sole proprietary property of and was built from the ground up by founder and lead architect **Jesvin M Mathew**. 
+                    MarketVerse India is maintained by Jesvin M Mathew. The repository's MIT license permits use, copying, modification, and redistribution of covered software, including commercial use, subject to its copyright and license notice requirements. These application-use terms do not remove those permissions.
                   </p>
                   <p>
-                    All rights are reserved globally. Any unauthorized duplication, reverse engineering, scraping of proprietary calculations, or commercial redistribution of these assets without the express written consent of Jesvin M Mathew is strictly prohibited and subject to legal prosecution.
+                    Third-party packages, market data, embedded charts, authentication providers, and AI services retain their own licenses and terms. The MIT license does not grant rights over their content. External links and integrations are not endorsements or guarantees of content, availability, or security. See the repository LICENSE for source-code permissions and TERMS.md for application-use conditions.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">4. Limitation of Liability</h4>
                   <p>
-                    Under no circumstances shall MarketVerse India, its founder Jesvin M Mathew, or its affiliates be held liable for any real financial losses, gains, brokerage fees, or taxes incurred by users practicing on the simulated trading desk or applying recommendations generated by the Nova AI model in external live trading accounts.
+                    To the extent permitted by applicable law, the application and its content are provided without warranties of accuracy, fitness for a particular purpose, or uninterrupted availability. MarketVerse and its maintainer are not responsible for losses from reliance on simulation data, indicators, AI content, or third-party services, including real trading losses, fees, or taxes. Users remain responsible for their financial decisions. Nothing here excludes liability or rights that applicable law does not permit to be excluded.
                   </p>
                 </section>
               </div>
@@ -159,26 +159,26 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             {activeTab === "sebi" && (
               <div className="space-y-4">
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-mono text-[10px] uppercase leading-relaxed space-y-1">
-                  <span className="font-bold block text-xs">⚠️ Statutory SEBI Warning Notice:</span>
+                  <span className="font-bold block text-xs">⚠️ Financial Risk Warning:</span>
                   <p>
-                    9 out of 10 retail traders in equity Futures & Options (F&O) segment incur net financial losses. On average, loss-makers registered a net trading loss of approximately ₹50,000. Over and above these transaction expenses, loss-makers incurred an additional 15% in transaction costs.
+                    Real-money trading, particularly leveraged and derivatives trading, can cause substantial losses. Simulated success does not guarantee real-world results. MarketVerse provides no financial advice, buy/sell recommendations, guaranteed returns, or guaranteed predictions.
                   </p>
                 </div>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">SEBI Non-Registered Entity Declaration</h4>
                   <p>
-                    MarketVerse India is **not** a SEBI-registered investment advisor (RIA), research analyst, portfolio manager, or stock broker. The platform is designed solely for educational, research, and technical analysis training purposes. 
+                    MarketVerse India is not a SEBI-registered investment adviser, research analyst, portfolio manager, or stock broker, and does not act as an exchange or financial institution. The platform is for educational, research, and trading-simulation purposes only. Use creates no investment advisory relationship. These disclosures do not establish regulatory approval or security certification.
                   </p>
                   <p>
-                    All quantitative signals, candlestick scoring meters, SWOT parameters, option chain Greeks calculations, and Nova AI summaries are purely theoretical indicators calculated from live market feeds. They must **never** be interpreted as buy/sell recommendations or official investment advisory guidance. Consult a registered financial planner before committing real capital to Dalal Street.
+                    Market views, indicators, and NOVA summaries may use third-party, delayed, cached, simulated, seeded, or fallback/demo data. They must never be interpreted as buy/sell recommendations or investment advisory guidance. Displayed timestamps describe when information was produced or updated, not guaranteed exchange freshness. Consult a qualified, registered financial adviser before making real financial decisions.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">Algorithmic & Technical Analysis Disclosures</h4>
                   <p>
-                    Any automated patterns, support/resistance lines, and intelligence scores generated by Nova AI are statistical assessments of historical and current market trends. Algorithmic outputs are subject to processing delays, errors in raw ticker feeds, and computational volatility.
+                    Indicators, rankings, and health/risk scores include heuristics and simplified calculations, not calibrated probabilities or independently validated forecasts. NOVA uses Google Gemini on supported routes and may return templates or heuristic responses when inference is unavailable. Structured analysis and general chat follow different context paths. AI output can be incorrect or incomplete, including when it sounds certain. MarketVerse has not built its own foundation model.
                   </p>
                 </section>
               </div>
@@ -190,28 +190,28 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">1. Data Processing & Google OAuth Scope</h4>
                   <p>
-                    When accessing the terminal using Google 1-Click OAuth, we collect and store only necessary identifier telemetry: email address, verified display name, and avatar profile picture. We use this scope solely to construct your personalized virtual trading profile and maintain your secure ledger state. We do **not** request or access your private Google contacts, files, or external account telemetry.
+                    Authentication uses Supabase and, when selected, Google sign-in. Account information can include your email address, display name, and avatar to support sign-in and your profile. This application does not request access to private Google contacts or files. Portfolio and trading state are browser-local rather than a cloud brokerage ledger.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">2. Strictly Zero-Resale Data Policy</h4>
                   <p>
-                    We protect your personal data with institutional-grade protocols. MarketVerse India does **not** sell, rent, lease, or distribute your email addresses, portfolio performance history, simulated F&O holdings, or conversation records with Nova AI to third-party advertisers, market makers, or stock brokers.
+                    MarketVerse India does not sell, rent, lease, or distribute your email address, portfolio history, or NOVA conversation records to advertisers, market makers, or stock brokers. This does not exclude processing by authentication, hosting, or AI service providers needed to operate the application. Their applicable terms govern that processing; no security certification is claimed.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">3. Gemini API Data Transmission</h4>
                   <p>
-                    When queries are sent to Nova AI, raw prompt inputs and historical messages are encrypted and securely sent directly to Google Gemini API servers. These transmissions are executed over enterprise API keys and are subject to Google's strict corporate privacy terms (which state that prompt queries sent via API endpoints are not used to train generative AI foundation models).
+                    NOVA requests are sent through the MarketVerse server, which may forward prompts and relevant conversation/context to Google Gemini. Google's applicable service terms and deployment configuration govern processing; paid and unpaid services have different data-use conditions. We do not promise that every plan excludes model improvement or human review. Do not submit credentials or sensitive, confidential, or personal information to NOVA. See <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">Google's Gemini API terms</a> for current conditions.
                   </p>
                 </section>
 
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">4. Local Storage & Preferences Cache</h4>
                   <p>
-                    The platform caches essential interface states locally in your browser (theme selection `marketverse_theme`, and glassmorphism levels `marketverse_transparency`) to optimize visual rendering speeds and conserve bandwidth.
+                    Browser storage retains authentication/session information, interface preferences, and local account state such as simulated holdings and chat history. Signed-in portfolio/trading state uses account-scoped local storage; guest state uses session storage. Clearing browser storage may remove local records. This is not guaranteed backup or cross-device portfolio storage.
                   </p>
                 </section>
               </div>
@@ -223,7 +223,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <section className="space-y-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">How MarketVerse Uses Cookies</h4>
                   <p>
-                    MarketVerse uses local cookies and browser local storage cache items to keep you signed in, persist custom layout styles, and retain terminal theme, glassmorphism transparency settings, and mock portfolio ledgers.
+                    MarketVerse uses browser storage for sign-in sessions, interface preferences, simulated holdings, and saved preference choices. Embedded third-party services may use their own cookies or storage under their own policies; these controls do not manage those services.
                   </p>
                 </section>
 
@@ -236,18 +236,18 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                       <div className="space-y-1">
                         <span className="text-[11px] font-bold text-white block">Essential Session Storage (Required)</span>
                         <p className="text-[9.5px] text-white/40 leading-normal">
-                          Required for core authentication states, theme choices (`marketverse_theme`), and custom glassmorphism levels (`marketverse_transparency`). Cannot be disabled.
+                          Browser storage supports sign-in and local preferences. You can clear or block storage in your browser, but doing so may sign you out, reset preferences, or remove locally stored records.
                         </p>
                       </div>
-                      <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded uppercase font-bold">Always Active</span>
+                      <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded uppercase font-bold">Used by app</span>
                     </div>
 
                     {/* Non-essential Toggle */}
                     <div className="flex items-start justify-between bg-white/[0.01] border border-white/5 p-3 rounded-xl">
                       <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-white block">Analytical Performance Telemetry (Optional)</span>
+                        <span className="text-[11px] font-bold text-white block">Analytics Preference (Optional)</span>
                         <p className="text-[9.5px] text-white/40 leading-normal">
-                          Permits the terminal to record system loading performance, chart latency values, and general platform metrics. No personal data is stored.
+                          This control saves your analytics preference in this browser. The current application does not connect it to an analytics collection service. It does not control third-party embeds or provider processing.
                         </p>
                       </div>
                       <div className="flex items-center gap-1 bg-white/[0.03] p-0.5 rounded-lg border border-white/5 shrink-0">
