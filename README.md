@@ -1,152 +1,75 @@
 <div align="center">
-  <img src="docs/images/marketverse-logo.png" alt="MarketVerse India" width="560" />
+  <img src="docs/images/marketverse-hero.svg" alt="MarketVerse India — Indian market intelligence, AI copilot, and trading simulation. Understand markets. Analyze context. Trade with discipline." width="100%" />
 
-# MarketVerse India
+**Market context, portfolio awareness, and AI-assisted exploration. One workspace.**
 
-**Indian market intelligence, portfolio context, and AI-assisted exploration—in one trading simulation workspace.**
-
-Understand markets. Analyze context. Trade with discipline.
-
-![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![TypeScript 5.8](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)
-![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
-![Express 4](https://img.shields.io/badge/Express-4-404040?logo=express)
-![Gemini](https://img.shields.io/badge/AI-Gemini-4285F4)
-[![MIT License](https://img.shields.io/badge/License-MIT-22C7CE)](LICENSE)
-
-[**Live demo ↗**](https://market-verse.vercel.app) · [Architecture](#architecture) · [Features](#key-features) · [Getting started](#local-development)
+[![Live demo](https://img.shields.io/badge/LIVE_DEMO-0891B2?style=for-the-badge)](https://market-verse.vercel.app)
+[![Documentation](https://img.shields.io/badge/DOCUMENTATION-17283F?style=for-the-badge)](docs/IMPLEMENTATION.md)
+[![Architecture](https://img.shields.io/badge/ARCHITECTURE-17283F?style=for-the-badge)](#architecture)
 
 </div>
 
-> **Demo access:** Authentication on the current public deployment is intentionally restricted to the project owner's authorized account. External visitors are not currently provided account access. This is a demo-access limitation; an unsuccessful sign-in does not by itself indicate a broken login system. Explore the public landing page, screenshots, and architecture below.
+> **Demo access:** Authentication on the current public deployment is intentionally restricted to the project owner's authorized account. External visitors are not currently provided account access. This is a demo limitation—not an indication that login is broken. Explore the public landing page and preview below.
 
 ## Product preview
 
-![MarketVerse dashboard with market heatmap and workspace controls](docs/images/dashboard.png)
+![MarketVerse dashboard with configurable widgets and a sector heatmap](docs/images/dashboard.png)
 
-| Portfolio workspace | NOVA AI workspace |
-| :---: | :---: |
-| [![Portfolio import and manual entry](docs/images/portfolio-analyzer.png)](docs/images/portfolio-analyzer.png) | [![NOVA chat workspace and suggested prompts](docs/images/nova-ai.png)](docs/images/nova-ai.png) |
-| Import holdings and explore portfolio context | Ask market questions in a dedicated copilot interface |
+*Real project capture; displayed prices and “live” labels do not establish current market data. [Screenshot and walkthrough brief →](docs/SCREENSHOTS.md)*
 
-*Actual project screenshots supplied by the owner. These are interface previews, not evidence of current prices or live feeds. The portfolio capture predates import hardening: the current limit is 2 MB and 100 holdings, despite the older label shown. [Capture notes](docs/SCREENSHOTS.md).*
+## What is MarketVerse?
 
-## Why MarketVerse exists
+**The problem isn't lack of information. It's fragmented information and lack of context.**
 
-**The problem isn't lack of information. It's fragmented information and lack of context.** Quotes, charts, headlines, and portfolio exposure often sit in separate tools. Reading more does not necessarily make the relationship between a market move and a portfolio clearer.
-
-MarketVerse brings those views together: explore Indian equities, inspect technical signals, review holdings, ask contextual questions, and practice with virtual capital. The project separates code-based calculations and structured market context from generative explanation, while retaining demo paths when external services are unavailable.
+MarketVerse India brings Indian equities, technical signals, headlines, portfolio exposure, and conversational AI into a trading-simulation environment. Explore a market move, understand its context, and practice with virtual capital.
 
 ## Key features
 
-| Workspace | What is implemented |
-| --- | --- |
-| **Dashboard** | Configurable market widgets, sector heatmaps, watchlist and portfolio views. |
-| **Indian Market Hub** | Equity and benchmark browsing, symbol search, stock details, charts, and provider-backed or fallback quotes. |
-| **Bullish / Bearish Radar** | Rule-based ranking using price change, RSI, moving-average position, and MACD-related values. Scores are heuristics, not calibrated probabilities. |
-| **Portfolio Analyzer** | Manual holdings and CSV/XLS/XLSX import, value and P&L summaries, sector allocation, heuristic health/risk ratings, and hypothetical trade analysis. |
-| **Paper trading** | Virtual cash and holdings, simulated buy/sell operations, configurable leverage, and portfolio repricing. Default starting cash is ₹10,00,000. No brokerage execution. |
-| **AI News Feed** | Provider news or seeded fallback headlines, with Gemini enrichment for authenticated requests and heuristic sentiment fallbacks. |
-| **Quant Academy** | Built-in educational lessons and strategy explanations, presented in the AI Learning Academy interface. |
-| **NOVA AI** | Conversational market exploration, stock analysis, comparisons, and educational explanations, with local/server fallback responses. |
+| Explore | Understand | Practice |
+| --- | --- | --- |
+| **Dashboard & Market Hub** — heatmaps, watchlists, stock search, benchmark and chart views. | **Bullish / Bearish Radar** — rule-based rankings from price change and technical indicators. | **Paper trading** — simulated buy/sell operations, virtual holdings, and configurable leverage. |
+| **AI News Feed** — provider or seeded headlines, Gemini enrichment and heuristic fallbacks. | **Portfolio Analyzer** — manual or spreadsheet holdings, P&L, sector allocation, and heuristic health ratings. | **Quant Academy** — built-in market lessons and strategy explanations. |
 
-Portfolio and trading state are stored in **account-scoped browser storage**, not a Supabase portfolio database. Signed-in state uses local storage; guest state uses session storage. It is device/browser-local and is not a brokerage ledger or cross-device backup.
+Default virtual cash: **₹10,00,000**. Holdings are **account-scoped and browser-local**, without cross-device portfolio storage or brokerage execution. Radar and risk scores are heuristics, not calibrated probabilities.
 
 ## NOVA AI
 
-NOVA is the application's market intelligence/copilot interface, powered by **Google Gemini through `@google/genai`**. MarketVerse does not train or host its own foundation model. NOVA is not a financial advisor, and generated text is not an independent source of market facts.
+**A Gemini-powered conversational market copilot.** NOVA supports market questions, stock analysis, comparisons, and educational explanations.
 
-The implementation has distinct paths:
+Supported analysis routes prepare structured market context and code-calculated indicators before generative explanation. General chat uses a separate prompt-and-question path; it does not run the same context pipeline. Inputs may be simulated, and unavailable providers can trigger template or heuristic responses.
 
-- **Contextual analysis:** `/api/ai/chat` constructs context from the server's market store; `/api/ai/analyze-stock` prepares a quote, generated history, RSI, a moving average, and trend before requesting a Gemini explanation. Some inputs are explicitly simulation data.
-- **General chat:** `/api/chat` sends the question with a platform prompt. It does **not** run the same structured market-context pipeline. The client may separately fetch a quote to display a stock card.
-- **Fallbacks:** Missing keys, provider failures, and quota limits can yield templated or heuristic responses. Some fallback values are seeded or randomized; an answer appearing on screen does not prove a live inference or a verified market observation.
-
-The server uses `GEMINI_MODEL`, defaulting to `gemini-2.5-flash`. API credentials remain server-side. Treat explanations as material to inspect alongside the underlying data, not as verified forecasts.
+MarketVerse does not train its own foundation model. NOVA is not a financial advisor or an independent source of verified market facts. [How NOVA works →](docs/IMPLEMENTATION.md#nova-route-behavior)
 
 ## Architecture
 
 ```mermaid
-flowchart TD
-    U[User] --> UI[React + TypeScript UI]
-    UI <--> STORE[Account-scoped browser storage]
-    UI --> AUTH[Supabase Auth]
-    UI --> TV[TradingView embedded charts]
-    UI --> API[Express API]
-    API --> GUARD[Input validation and request limits]
-    GUARD --> MARKET[Market routes and bounded caches]
-    MARKET --> PROVIDERS[Yahoo Finance / Indian stock API / Twelve Data]
-    MARKET --> DEMO[Simulated and fallback data]
-    MARKET --> UI
-    GUARD --> SESSION[Supabase session verification for AI]
-    SESSION --> CONTEXT[AI analysis routes: market store and structured context]
-    CONTEXT --> CALC[RSI / moving average / trend]
-    CALC --> GEMINI[Server-side Gemini]
-    SESSION --> CHAT[General chat: prompt and question]
-    CHAT --> GEMINI
-    GEMINI --> RESPONSE[NOVA response]
-    CONTEXT --> FALLBACK[Heuristic or template fallback]
-    CHAT --> FALLBACK
-    FALLBACK --> RESPONSE
-    RESPONSE --> UI
+flowchart LR
+    UI[React / TypeScript] --> API[Express: validation and limits]
+    UI <--> LOCAL[Account-scoped browser state]
+    API --> DATA[Market providers / simulation]
+    DATA --> UI
+    API --> AUTH[Supabase session check for AI]
+    AUTH --> ANALYSIS[Analysis: market store + indicators]
+    ANALYSIS --> CONTEXT[Structured context]
+    AUTH --> CHAT[General chat: question + prompt]
+    CONTEXT --> AI[Gemini / NOVA]
+    CHAT --> AI
+    AI --> UI
 ```
 
-Market retrieval and server AI context are separate code paths; this diagram does not imply every AI answer uses a fresh provider quote. Frontend indicators and Radar scoring also run in the browser. External chart widgets have their own data path.
+Provider retrieval and server AI context are separate paths; not every answer uses a fresh quote. Frontend indicators also run in the browser. [Detailed architecture, safeguards, and limitations →](docs/IMPLEMENTATION.md#detailed-architecture)
 
-<details>
-<summary><strong>Engineering details and current limits</strong></summary>
+## Tech stack
 
-- **Transport:** HTTP requests with periodic refresh and local simulation updates; no application WebSocket market feed.
-- **Indicators:** `src/services/marketApi.ts` computes SMA, RSI, Bollinger Bands, and simplified MACD-related values. Its MACD path uses rolling means rather than a canonical EMA-based implementation. Separate `marketTools.ts` helpers contain EMA-based MACD calculations; those helpers should not be confused with the primary UI calculation path.
-- **Risk labels:** Radar and portfolio health ratings use application rules. They are neither machine-learning predictions nor statistically calibrated risk estimates. An HHI calculation is not established by the portfolio implementation, even though some assistant copy mentions it.
-- **Deployment:** Development runs Express with Vite middleware. `npm run build` separates browser output in `dist/` from the server bundle in `build/`. Vercel uses `api/index.ts` as the Express entry and the rewrites in `vercel.json`.
-- **Scaling:** Current caches, quotas, and concurrency controls are process-local. Multi-instance deployment requires shared or edge enforcement for global limits.
+| Interface | Backend & AI | Data & tooling |
+| --- | --- | --- |
+| React 19 · TypeScript 5.8 | Node.js · Express 4 | Supabase Auth · provider adapters |
+| Vite 6 · Tailwind CSS 4 | Gemini via `@google/genai` | SheetJS · Node test runner |
+| Recharts · Motion · TradingView | Server-side provider credentials | esbuild · Vercel configuration |
 
-For a compact map from these claims to source, see [implementation notes](docs/IMPLEMENTATION.md).
+## Quick start
 
-</details>
-
-## Security and engineering
-
-Recent remediation work keeps provider credentials on the server, explicitly allowlists browser configuration, verifies Supabase sessions before AI requests, validates API inputs, and bounds request bodies, provider calls, caches, and inference concurrency.
-
-Account changes cancel outstanding client requests and guard against stale writes into another account's state. Spreadsheet imports run in a terminable worker with file, row, column, and numeric validation. Browser and server build artifacts are separated. These are implemented safeguards, not a security certification; see [SECURITY.md](SECURITY.md) for responsible reporting.
-
-## Technology stack
-
-Versions below describe the current package declarations, not promises about future upgrades.
-
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript 5.8, Vite 6, Tailwind CSS 4 |
-| Interface | Recharts 3, Motion 12, Lucide icons, TradingView embeds |
-| Backend | Node.js (22+ recommended), Express 4, TypeScript via `tsx` |
-| AI | Google Gemini; `@google/genai` 2.x |
-| Data / authentication | Market provider adapters; Supabase JS 2.x for authentication |
-| Import / analytics | SheetJS 0.20.3; application-defined TypeScript calculations |
-| Tooling / deployment | npm lockfile, Node test runner through `tsx`, esbuild, Vercel configuration |
-
-TypeScript is configured without `strict` mode. `npm run lint` runs the TypeScript checker; it is not an ESLint command.
-
-## Project structure
-
-```text
-Market-Verse/
-├── src/
-│   ├── components/       # Workspaces, charts, portfolio, NOVA
-│   └── services/         # Market client, indicators, trading, account storage
-├── server.ts             # Express routes, AI orchestration, development host
-├── server/               # Auth routes, validation, limits, provider safeguards
-├── marketProviders/      # Quote and history adapters, simulation fallbacks
-├── api/index.ts          # Vercel Express entry
-├── shared/               # Public configuration validation
-├── tests/                # Security, account isolation, import regression tests
-└── docs/                 # Screenshots and implementation notes
-```
-
-## Local development
-
-Use Node.js 22+ and npm. Bring your own provider credentials and Supabase project to exercise authenticated features; the restricted public demo does not grant local account access.
+Use **Node.js 22+** and npm:
 
 ```sh
 git clone https://github.com/jesvinmmathew-sys/Market-Verse.git
@@ -154,63 +77,20 @@ cd Market-Verse
 npm ci
 ```
 
-Copy `.env.example` to `.env` (PowerShell: `Copy-Item .env.example .env`; macOS/Linux: `cp .env.example .env`). Replace the placeholders locally:
+Copy `.env.example` to `.env` (`Copy-Item .env.example .env` in PowerShell; `cp .env.example .env` on macOS/Linux). Replace placeholders with your own Supabase configuration and server-only provider keys, then run `npm run dev` and open **http://localhost:3000** locally. Never commit `.env`.
 
-| Variable | Purpose |
-| --- | --- |
-| `GEMINI_API_KEY` | Server-only Gemini access; without it, AI paths use demo/fallback behavior. |
-| `GEMINI_MODEL` | Optional model override; example defaults to `gemini-2.5-flash`. |
-| `MARKET_API_KEY` | Server-only Twelve Data access; other providers/fallbacks are also used. |
-| `VITE_SUPABASE_URL` | Your Supabase project URL, exposed to the browser. |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Your project's public publishable key. |
-| `SUPABASE_URL` | The same project URL for server authentication verification. |
-| `SUPABASE_ANON_KEY` | A publishable/legacy anon key for server verification; never a service-role key. |
+**Checks:** `npm test` · `npm run lint` (TypeScript check) · `npm run build`.
 
-Do not leave example project values in place and expect login to work. Authentication requires a configured project and valid session; provider keys alone do not unlock AI endpoints. Never prefix provider secrets with `VITE_` or commit `.env`.
+Authenticated features require your own configured project and valid session. `npm run preview` serves only the frontend, not the API. [Environment variables, build outputs, and setup details →](docs/IMPLEMENTATION.md#full-local-development-setup)
 
-```sh
-npm run dev
-```
+## Demo data and responsible use
 
-Open **http://localhost:3000** for local development. Express serves API routes and Vite middleware together.
+MarketVerse may display **delayed, cached, simulated, seeded, or fallback/demo data**, depending on provider availability and application state. Timestamps indicate when displayed or generated information was produced or updated; they do not guarantee exchange freshness.
 
-| Command | Purpose |
-| --- | --- |
-| `npm run build` | Build `dist/` and `build/server.cjs`. |
-| `npm run lint` | Check TypeScript with `tsc --noEmit`. |
-| `npm test` | Run the existing TypeScript tests with Node's test runner. |
-| `npm run preview` | Preview the Vite frontend build only; it does not start the Express API. |
+This is an **educational, research, and trading-simulation project**. It provides no financial advice, investment advisory relationship, buy/sell recommendations, guaranteed returns, or guaranteed predictions. AI output may be inaccurate; users remain responsible for real financial decisions.
 
-There is no production `start` script. The checked-in production wiring targets Vercel; invoking the generated server bundle alone is not a documented standalone listener.
+## Documentation
 
-## Demo access and data notice
+[Implementation & roadmap](docs/IMPLEMENTATION.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Terms of Use](TERMS.md) · [MIT License](LICENSE)
 
-**Authentication on the current public deployment is intentionally restricted to the project owner's authorized account. External visitors are not currently provided account access.** This describes demo availability, not an application security mechanism. Review the screenshots, source, architecture, and publicly accessible landing experience without signing in.
-
-Market views can contain **delayed, cached, simulated, or fallback/demo data**, depending on provider availability and application state. News can come from seed templates. Generated histories and rule-based analysis can still be displayed when provider calls fail. Interface labels such as “live” do not guarantee exchange-real-time data across the application.
-
-Refer to displayed timestamps and data-status labels where available to understand when information was generated or last updated. A timestamp can describe a generated demo record; it does not certify exchange freshness. Screenshots are historical interface captures, not current market information.
-
-## Project direction
-
-MarketVerse explores how market browsing, portfolio awareness, and conversational explanations can share one workspace. Its current engineering emphasis includes resilient provider handling, bounded AI access, account isolation, and validated portfolio imports.
-
-Potential next steps, rather than shipped capabilities:
-
-- A documented public demo account flow.
-- Clearer source/freshness labels and stronger production data integrations.
-- Persistent portfolio infrastructure with cross-device recovery.
-- Consolidated, independently tested indicator implementations.
-- Shared production quotas and a contribution-focused CI workflow.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Small, focused improvements to documentation, data provenance, analytics correctness, accessibility, and tests are welcome. Discuss substantial changes in an issue first. Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
-
-## Disclaimer
-
-MarketVerse is an educational, research, and trading-simulation project. It does not provide financial advice, investment recommendations, guaranteed returns, or guaranteed market predictions. Scores and generated explanations should not be treated as buy/sell recommendations or validated prediction probabilities.
-
-## License
-
-[MIT](LICENSE) © 2026 Jesvin M Mathew. Third-party packages, provider data, and embedded services retain their own terms; this license does not grant redistribution rights to their content.
+MIT © 2026 Jesvin M Mathew. Third-party content retains its own terms. The existing website legal copy has unresolved differences with the repository license and data disclosures; see the [publication review notes](docs/LEGAL_REVIEW.md).

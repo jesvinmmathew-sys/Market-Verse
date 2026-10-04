@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="500" viewBox="0 0 1600 500" role="img" aria-labelledby="title desc">
+  <title id="title">MarketVerse India</title>
+  <desc id="desc">Indian market intelligence, AI copilot, and trading simulation. Dark navy banner with cyan branding and a decorative market trace.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#07111e"/><stop offset="1" stop-color="#091b30"/></linearGradient>
+    <linearGradient id="accent"><stop stop-color="#31e5ef"/><stop offset="1" stop-color="#508cff"/></linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#21d4e7" stop-opacity=".17"/><stop offset="1" stop-color="#21d4e7" stop-opacity="0"/></linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#87b9e9" stroke-opacity=".08"/></pattern>
+  </defs>
+  <rect width="1600" height="500" rx="24" fill="url(#bg)"/>
+  <rect x="1010" y="1" width="589" height="498" rx="24" fill="url(#grid)"/>
+  <rect x="1" y="1" width="1598" height="498" rx="23" fill="none" stroke="#244057"/>
+  <path d="M72 68h21l8-20 8 20h21v20l-20 9-9 20-9-20-20-9z" fill="url(#accent)"/>
+  <path d="m101 66 15 17-15 16-15-16z" fill="#07111e"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="151" y="89" fill="#8da9be" font-size="16" font-weight="600" letter-spacing="4">CONTEXT BEFORE CONVICTION</text>
+    <text x="64" y="225" fill="#f0f8ff" font-size="116" font-weight="800" letter-spacing="-4">MARKETVERSE</text>
+    <text x="74" y="289" fill="url(#accent)" font-size="45" font-weight="700" letter-spacing="18">INDIA</text>
+    <text x="74" y="345" fill="#adc6da" font-size="23">Indian Market Intelligence × AI Copilot × Trading Simulation</text>
+    <path d="M74 379H927" stroke="#284156"/>
+    <text x="74" y="424" fill="#d1e1ed" font-size="20">Understand markets.</text>
+    <text x="334" y="424" fill="#d1e1ed" font-size="20">Analyze context.</text>
+    <text x="567" y="424" fill="#d1e1ed" font-size="20">Trade with discipline.</text>
+    <text x="1092" y="89" fill="#64dce8" font-size="14" letter-spacing="3">SIGNAL / CONTEXT / SCENARIO</text>
+  </g>
+  <g fill="none" stroke="#327496" stroke-opacity=".45">
+    <path d="M1090 350h432M1090 270h432M1090 190h432"/>
+    <path d="M1130 315v-91m45 66v-90m45 66v-102m45 136v-84m45 43V150m45 72V130m45 107V155m45 22V94"/>
+  </g>
+  <g fill="#163f51" stroke="#41a5b9" stroke-opacity=".55">
+    <rect x="1123" y="249" width="14" height="43"/><rect x="1168" y="224" width="14" height="45"/>
+    <rect x="1213" y="189" width="14" height="43"/><rect x="1258" y="239" width="14" height="37"/>
+    <rect x="1303" y="181" width="14" height="51"/><rect x="1348" y="153" width="14" height="44"/>
+    <rect x="1393" y="176" width="14" height="38"/><rect x="1438" y="117" width="14" height="36"/>
+  </g>
+  <path d="m1090 340 43-27 40 10 42-68 46 19 47-65 43 19 43-48 46 17 39-62 42 9v244h-431z" fill="url(#area)"/>
+  <path d="m1090 340 43-27 40 10 42-68 46 19 47-65 43 19 43-48 46 17 39-62 42 9" fill="none" stroke="url(#accent)" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="1521" cy="144" r="11" fill="#31e5ef" fill-opacity=".12"/>
+  <circle cx="1521" cy="144" r="4" fill="#6df2f1"/>
+  <text x="1092" y="424" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#809db4" letter-spacing="2">ILLUSTRATIVE TRACE · NOT MARKET DATA</text>
+</svg>
