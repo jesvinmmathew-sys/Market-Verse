@@ -1,6 +1,7 @@
+import { accountStorage } from '../services/accountStorage';
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import * as XLSX from "xlsx";
+import { importPortfolioFile } from "../services/importPortfolioFile";
 import { 
   Briefcase, 
   UploadCloud, 
@@ -68,9 +69,10 @@ interface PortfolioAnalyzerProps {
 
 export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps) {
   // Saved custom portfolio state
+  const scopedStorage = React.useMemo(() => accountStorage(), []);
   const [customPortfolio, setCustomPortfolio] = useState<CustomHolding[]>(() => {
     try {
-      const stored = localStorage.getItem("marketverse_custom_portfolio");
+      const stored = scopedStorage.getItem("marketverse_custom_portfolio");
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -327,10 +329,10 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
   // Sync custom portfolio changes with localStorage and trigger event dispatching
   useEffect(() => {
     if (customPortfolio.length > 0) {
-      localStorage.setItem("marketverse_custom_portfolio", JSON.stringify(customPortfolio));
+      scopedStorage.setItem("marketverse_custom_portfolio", JSON.stringify(customPortfolio));
       window.dispatchEvent(new Event("aura_portfolio_updated"));
     } else if (customPortfolio.length === 0) {
-      localStorage.removeItem("marketverse_custom_portfolio");
+      scopedStorage.removeItem("marketverse_custom_portfolio");
       window.dispatchEvent(new Event("aura_portfolio_updated"));
     }
   }, [customPortfolio]);
@@ -370,138 +372,24 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
   };
 
   // CSV parsing logic
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const importController = useRef<AbortController | null>(null);
+  useEffect(() => () => importController.current?.abort(), []);
+  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setUploadError("");
-    
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const text = evt.target?.result as string;
-        const lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-        
-        if (lines.length === 0) {
-          throw new Error("CSV file is empty");
-        }
-
-        // Detect columns from headers
-        const headers = lines[0].split(",").map(h => h.trim().toUpperCase());
-        const hasHeaders = headers.some(h => h.includes("SYMBOL") || h.includes("QTY") || h.includes("PRICE") || h.includes("AVERAGE"));
-        
-        let symbolIdx = 0;
-        let qtyIdx = 1;
-        let priceIdx = 2;
-
-        let startIndex = 0;
-        if (hasHeaders) {
-          startIndex = 1;
-          const sIdx = headers.findIndex(h => h.includes("SYMBOL") || h.includes("TICKER"));
-          const qIdx = headers.findIndex(h => h.includes("QTY") || h.includes("QUANTITY") || h.includes("SHARES"));
-          const pIdx = headers.findIndex(h => h.includes("PRICE") || h.includes("AVG") || h.includes("BUY") || h.includes("COST"));
-          
-          if (sIdx !== -1) symbolIdx = sIdx;
-          if (qIdx !== -1) qtyIdx = qIdx;
-          if (pIdx !== -1) priceIdx = pIdx;
-        }
-
-        const parsedList = [];
-        for (let i = startIndex; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.trim());
-          if (cols.length >= 3) {
-            const symbol = cols[symbolIdx]?.toUpperCase() || "";
-            const shares = parseFloat(cols[qtyIdx]) || 0;
-            const avgBuyPrice = parseFloat(cols[priceIdx]) || 0;
-            
-            if (symbol && shares > 0 && avgBuyPrice > 0) {
-              parsedList.push({ symbol, shares, avgBuyPrice });
-            }
-          }
-        }
-
-        if (parsedList.length === 0) {
-          throw new Error("No valid holdings parsed. Please check headers: Symbol, Quantity, Average Price.");
-        }
-
-        triggerAnalysis(parsedList);
-      } catch (err: any) {
-        setUploadError(err.message || "Failed to parse CSV file.");
-      }
-    };
-    reader.readAsText(file);
+    importController.current?.abort();
+    const controller = new AbortController();
+    importController.current = controller;
+    setUploadError('');
+    try {
+      const holdings = await importPortfolioFile(file, controller.signal);
+      if (!controller.signal.aborted) triggerAnalysis(holdings);
+    } catch (error) {
+      if (!controller.signal.aborted) setUploadError(error instanceof Error ? error.message : 'Unable to import file.');
+    }
   };
-
-  // Excel parsing logic
-  const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadError("");
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: "binary" });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-
-        if (data.length === 0) {
-          throw new Error("Worksheet is empty");
-        }
-
-        let symbolIdx = -1;
-        let qtyIdx = -1;
-        let priceIdx = -1;
-
-        // Check if any of the first 3 rows is a header row
-        const headerRowIdx = data.slice(0, 3).findIndex(row => 
-          Array.isArray(row) && row.some(cell => {
-            const str = String(cell).toUpperCase();
-            return str.includes("SYMBOL") || str.includes("QTY") || str.includes("QUANTITY") || str.includes("PRICE") || str.includes("AVG");
-          })
-        );
-
-        let startIndex = 0;
-        if (headerRowIdx !== -1) {
-          startIndex = headerRowIdx + 1;
-          const headers = data[headerRowIdx].map(h => String(h).trim().toUpperCase());
-          symbolIdx = headers.findIndex(h => h.includes("SYMBOL") || h.includes("STOCK") || h.includes("TICKER"));
-          qtyIdx = headers.findIndex(h => h.includes("QTY") || h.includes("QUANTITY") || h.includes("SHARES"));
-          priceIdx = headers.findIndex(h => h.includes("PRICE") || h.includes("AVG") || h.includes("BUY") || h.includes("COST"));
-        }
-
-        if (symbolIdx === -1) symbolIdx = 0;
-        if (qtyIdx === -1) qtyIdx = 1;
-        if (priceIdx === -1) priceIdx = 2;
-
-        const parsedList = [];
-        for (let i = startIndex; i < data.length; i++) {
-          const row = data[i];
-          if (Array.isArray(row) && row.length >= 3) {
-            const symbol = String(row[symbolIdx] || "").trim().toUpperCase();
-            const shares = parseFloat(row[qtyIdx]) || 0;
-            const avgBuyPrice = parseFloat(row[priceIdx]) || 0;
-
-            if (symbol && symbol !== "UNDEFINED" && shares > 0 && avgBuyPrice > 0) {
-              parsedList.push({ symbol, shares, avgBuyPrice });
-            }
-          }
-        }
-
-        if (parsedList.length === 0) {
-          throw new Error("No valid records found in worksheet. Check columns matching Symbol, Quantity, Average Price.");
-        }
-
-        triggerAnalysis(parsedList);
-      } catch (err: any) {
-        setUploadError(err.message || "Failed to parse Excel workbook.");
-      }
-    };
-    reader.readAsBinaryString(file);
-  };
+  const handleCSVUpload = handlePortfolioUpload;
+  const handleExcelUpload = handlePortfolioUpload;
 
   // Manual input list actions
   const addManualStock = () => {
@@ -587,8 +475,8 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
     setIsAnalyzing(false);
     setIsSimulatorOpen(false);
     setConfirmReset(false);
-    localStorage.removeItem("marketverse_portfolio");
-    localStorage.removeItem("marketverse_custom_portfolio");
+    scopedStorage.removeItem("marketverse_portfolio");
+    scopedStorage.removeItem("marketverse_custom_portfolio");
     TradingService.resetAccount();
   };
 
@@ -1043,7 +931,7 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
               <div className="flex flex-col items-center justify-center space-y-2 text-center px-4">
                 <UploadCloud className="w-6 h-6 text-white/40 animate-pulse" />
                 <span className="text-[11px] font-mono font-medium text-white/60">Choose file or drag and drop</span>
-                <span className="text-[9px] text-white/30">Max 5MB</span>
+                <span className="text-[9px] text-white/30">Max 2MB · 100 holdings</span>
               </div>
               <input 
                 type="file" 
@@ -1643,7 +1531,7 @@ export default function PortfolioAnalyzer({ onNavigate }: PortfolioAnalyzerProps
                     <div className="p-3 bg-black/20 border border-white/5 rounded-xl text-white/70 font-sans text-xs leading-relaxed">
                       <div className="flex items-start gap-2">
                         <Sparkles className="w-4.5 h-4.5 text-violet-400 shrink-0 mt-0.5" />
-                        <p className="text-left font-sans text-[11.5px]" dangerouslySetInnerHTML={{ __html: simResult.commentary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                        <p className="text-left font-sans text-[11.5px]">{simResult.commentary.split(/(\*\*.*?\*\*)/g).map((part: string, index: number) => part.startsWith('**') && part.endsWith('**') ? <strong key={index}>{part.slice(2, -2)}</strong> : part)}</p>
                       </div>
                     </div>
                   </motion.div>

@@ -195,4 +195,3 @@ test('rate limit keys remain distinct for separate verified users', () => {
   middleware({ userId: 'b' } as any, res, () => allowed++);
   assert.equal(allowed, 2);
 });
-
