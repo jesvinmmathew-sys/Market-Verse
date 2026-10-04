@@ -1,3 +1,4 @@
+import { apiFetch } from './apiClient';
 import { NewsItem } from "../types";
 
 const SIMULATED_NEWS: NewsItem[] = [
@@ -87,7 +88,7 @@ export const newsApi = {
 
   async getLatestNews(): Promise<NewsItem[]> {
     try {
-      const res = await fetch("/api/market/news");
+      const res = await apiFetch("/api/market/news");
       if (res.ok) {
         const liveNews = await res.json();
         if (Array.isArray(liveNews) && liveNews.length > 0) {
@@ -108,7 +109,7 @@ export const newsApi = {
 
   async analyzeNewsSentiment(title: string, preview: string): Promise<{ sentiment: string; impact: string; confidence: number; explanation: string }> {
     try {
-      const res = await fetch("/api/ai/news-sentiment", {
+      const res = await apiFetch("/api/ai/news-sentiment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, text: preview })

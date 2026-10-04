@@ -1,3 +1,4 @@
+import { accountStorage, getVerifiedUser } from './services/accountStorage';
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MarketVerseLanding, LogoMark } from "./components/AuraLanding";
@@ -66,14 +67,8 @@ export default function App() {
     return path;
   });
 
-  const [user, setUser] = useState<any>(() => {
-    try {
-      const stored = localStorage.getItem("supabase_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<any>(() => getVerifiedUser());
+  const scopedStorage = React.useMemo(() => accountStorage(), []);
   // Removed isAuthModalOpen modal state in favor of dedicated /auth page
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
@@ -114,9 +109,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
+    setCustomPfp(scopedStorage.getItem("marketverse_user_pfp"));
     const handlePfpUpdate = () => {
-      setCustomPfp(localStorage.getItem("marketverse_user_pfp"));
+      setCustomPfp(scopedStorage.getItem("marketverse_user_pfp"));
     };
     const handleOpenLegal = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -152,43 +147,6 @@ export default function App() {
     localStorage.removeItem("supabase_user");
     setUser(null);
   };
-
-  // Load session and subscribe to auth state changes using getSession and onAuthStateChange
-  useEffect(() => {
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          localStorage.setItem("supabase_user", JSON.stringify(session.user));
-          localStorage.setItem("supabase_session", JSON.stringify(session));
-        } else {
-          setUser(null);
-          localStorage.removeItem("supabase_user");
-          localStorage.removeItem("supabase_session");
-        }
-      } catch (err) {
-        console.error("Error retrieving active session", err);
-      }
-    };
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        localStorage.setItem("supabase_user", JSON.stringify(session.user));
-        localStorage.setItem("supabase_session", JSON.stringify(session));
-      } else {
-        setUser(null);
-        localStorage.removeItem("supabase_user");
-        localStorage.removeItem("supabase_session");
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   // Sync profile metadata updates from custom events
   useEffect(() => {
@@ -227,7 +185,7 @@ export default function App() {
 
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     try {
-      const stored = localStorage.getItem("marketverse_watchlist");
+      const stored = scopedStorage.getItem("marketverse_watchlist");
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -259,7 +217,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("marketverse_watchlist", JSON.stringify(watchlist));
+    scopedStorage.setItem("marketverse_watchlist", JSON.stringify(watchlist));
   }, [watchlist]);
 
   useEffect(() => {

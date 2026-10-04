@@ -1,3 +1,6 @@
+import { boundedChatHistory } from './chatHistory';
+import { getAccountEpoch, assertAccountEpoch } from './accountStorage';
+import { apiFetch } from './apiClient';
 /**
  * @file marketVerseAnalytics.ts
  * @author Jesvin M Mathew
@@ -113,11 +116,12 @@ export const marketVerseAnalytics = {
    * Complete natural language chat with conversation memory support.
    */
   async chatWithMarketAI(question: string, history: { role: string; text: string }[] = []): Promise<string> {
+    const operationEpoch = getAccountEpoch();
     try {
-      const response = await fetch("/api/ai/chat", {
+      const response = await apiFetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, history })
+        body: JSON.stringify({ question, history: boundedChatHistory(history) })
       });
       if (response.ok) {
         const data = await response.json();
@@ -125,6 +129,7 @@ export const marketVerseAnalytics = {
       }
       throw new Error("Server /api/ai/chat returned status " + response.status);
     } catch (error) {
+      assertAccountEpoch(operationEpoch);
       console.error("AI API Error (chatWithMarketAI):", error);
       return queryQuantitativeEngine(question, history);
     }
@@ -134,8 +139,9 @@ export const marketVerseAnalytics = {
    * Detailed technical and sentiment review of an Indian stock symbol.
    */
   async analyzeStock(symbol: string): Promise<AIAnalysisResponse> {
+    const operationEpoch = getAccountEpoch();
     try {
-      const response = await fetch("/api/ai/analyze-stock", {
+      const response = await apiFetch("/api/ai/analyze-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol })
@@ -145,9 +151,10 @@ export const marketVerseAnalytics = {
       }
       throw new Error("Server /api/ai/analyze-stock returned status " + response.status);
     } catch (error) {
+      assertAccountEpoch(operationEpoch);
       console.error("AI API Error (analyzeStock for " + symbol + "):", error);
 
-      // Attempt direct client-side fallback
+      // Attempt authenticated backend fallback
       try {
         let quoteText = "";
         let price = 500;
@@ -190,12 +197,14 @@ export const marketVerseAnalytics = {
           "Do not write any markdown fences, prefix, or suffix - return raw valid JSON.";
 
         const prompt = quoteText + "\nAnalyze the technicals, risk, and price targets for " + symbol + ".";
+        assertAccountEpoch(operationEpoch);
         const rawResult = await queryQuantitativeEngine(prompt, []);
         
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedJsonStr);
       } catch (directErr: any) {
-        console.error("Direct Gemini API Client-Side Fallback Error (analyzeStock for " + symbol + "):", directErr);
+        assertAccountEpoch(operationEpoch);
+        console.error("Backend fallback error (analyzeStock for " + symbol + "):", directErr);
         
         // Return local high-fidelity quant breakdown formatted as structured response object
         const fallbackObj = INDIAN_STOCK_UNIVERSE.find(s => s.symbol === symbol.toUpperCase());

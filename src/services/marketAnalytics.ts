@@ -1,3 +1,5 @@
+import { getAccountEpoch, assertAccountEpoch } from './accountStorage';
+import { apiFetch } from './apiClient';
 /**
  * @file marketAnalytics.ts
  * @author Jesvin M Mathew
@@ -61,8 +63,9 @@ export const marketAnalytics = {
    * Comprehensive comparative analysis of two Indian stocks with technical parameters.
    */
   async compareStocks(symbolA: string, symbolB: string): Promise<ComparisonResponse> {
+    const operationEpoch = getAccountEpoch();
     try {
-      const response = await fetch("/api/ai/compare", {
+      const response = await apiFetch("/api/ai/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbolA, symbolB })
@@ -72,20 +75,9 @@ export const marketAnalytics = {
       }
       throw new Error("Server /api/ai/compare returned status " + response.status);
     } catch (error) {
+      assertAccountEpoch(operationEpoch);
       console.error("AI API Error (compareStocks for " + symbolA + " vs " + symbolB + "):", error);
       
-      const apiKey =
-        import.meta.env.VITE_GEMINI_API_KEY ||
-        (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-        "";
-
-      if (!apiKey) {
-        throw new Error(
-          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
-        );
-      }
-
-      console.log("Using direct client-side Gemini fallback for comparing " + symbolA + " and " + symbolB + "...");
       try {
         const systemPrompt = "You are a premium institutional stock market analyst. Compare " + symbolA + " and " + symbolB + " technically, and return a JSON object ONLY matching this schema:\n" +
           "{\n" +
@@ -104,7 +96,8 @@ export const marketAnalytics = {
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedJsonStr);
       } catch (directErr) {
-        console.error("Direct Gemini API Client-Side Fallback Error (compareStocks):", directErr);
+        assertAccountEpoch(operationEpoch);
+        console.error("Backend fallback error (compareStocks):", directErr);
         throw directErr;
       }
     }
@@ -114,27 +107,17 @@ export const marketAnalytics = {
    * Retrieves today's high-intelligence dynamic market summary.
    */
   async getMarketSummary(): Promise<MarketSummaryResponse> {
+    const operationEpoch = getAccountEpoch();
     try {
-      const response = await fetch("/api/ai/summary");
+      const response = await apiFetch("/api/ai/summary");
       if (response.ok) {
         return response.json();
       }
       throw new Error("Server /api/ai/summary returned status " + response.status);
     } catch (error) {
+      assertAccountEpoch(operationEpoch);
       console.error("AI API Error (getMarketSummary):", error);
       
-      const apiKey =
-        import.meta.env.VITE_GEMINI_API_KEY ||
-        (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-        "";
-
-      if (!apiKey) {
-        throw new Error(
-          "⚠️ **Gemini API Key Missing:** Please add `VITE_GEMINI_API_KEY=your_key_here` to your `.env` file and restart the Vite dev server (`npm run dev`)."
-        );
-      }
-
-      console.log("Using direct client-side Gemini fallback for market summary...");
       try {
         const systemPrompt = "You are a premium institutional stock market analyst. Return a JSON object ONLY matching this schema:\n" +
           "{\n" +
@@ -150,7 +133,8 @@ export const marketAnalytics = {
         const cleanedJsonStr = rawResult.replace(/```json/g, "").replace(/```/g, "").trim();
         return JSON.parse(cleanedJsonStr);
       } catch (directErr) {
-        console.error("Direct Gemini API Client-Side Fallback Error (getMarketSummary):", directErr);
+        assertAccountEpoch(operationEpoch);
+        console.error("Backend fallback error (getMarketSummary):", directErr);
         throw directErr;
       }
     }

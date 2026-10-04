@@ -1,3 +1,4 @@
+import { getAccountEpoch, assertAccountEpoch, getVerifiedUser } from '../services/accountStorage';
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoMark } from "./AuraLanding";
@@ -41,15 +42,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
     blurStrength, 
     setBlurStrength 
   } = useTheme();
-  const [user, setUser] = useState<any>(() => {
-    if (propUser) return propUser;
-    try {
-      const stored = localStorage.getItem("supabase_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<any>(() => propUser || getVerifiedUser());
 
   const [fullName, setFullName] = useState(user?.user_metadata?.full_name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.user_metadata?.avatar_url || "");
@@ -65,50 +58,6 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
       setAvatarUrl(propUser.user_metadata?.avatar_url || "");
     }
   }, [propUser]);
-
-  // Load session and subscribe to auth state changes using getSession and onAuthStateChange
-  useEffect(() => {
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
-        
-        const activeUser = authUser || session?.user;
-        if (activeUser) {
-          setUser(activeUser);
-          setFullName(activeUser.user_metadata?.full_name || "");
-          setAvatarUrl(activeUser.user_metadata?.avatar_url || "");
-          localStorage.setItem("supabase_user", JSON.stringify(activeUser));
-          if (session) {
-            localStorage.setItem("supabase_session", JSON.stringify(session));
-          }
-        }
-      } catch (err) {
-        console.error("Error retrieving active session", err);
-      }
-    };
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        setFullName(session.user.user_metadata?.full_name || "");
-        setAvatarUrl(session.user.user_metadata?.avatar_url || "");
-        localStorage.setItem("supabase_user", JSON.stringify(session.user));
-        localStorage.setItem("supabase_session", JSON.stringify(session));
-      } else {
-        setUser(null);
-        setFullName("");
-        setAvatarUrl("");
-        localStorage.removeItem("supabase_user");
-        localStorage.removeItem("supabase_session");
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,6 +79,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const operationEpoch = getAccountEpoch();
     setError(null);
     setSuccessMsg(null);
     setLoading(true);
@@ -138,6 +88,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
       // Dynamically fetch current user and check session health
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
 
+      assertAccountEpoch(operationEpoch);
       if (!currentUser || userError) {
         setError("No active auth session found. Please re-login.");
         return;
@@ -151,6 +102,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
         }
       });
 
+      assertAccountEpoch(operationEpoch);
       if (updateError) {
         throw updateError;
       }
@@ -170,7 +122,7 @@ export default function ProfileSettings({ onNavigate, onAuthSuccess, onLogout, u
 
       // Auto-close / redirect back to Dashboard after 600ms
       setTimeout(() => {
-        onNavigate("/dashboard");
+        if (getAccountEpoch() === operationEpoch) onNavigate("/dashboard");
       }, 600);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");

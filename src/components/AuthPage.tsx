@@ -125,9 +125,6 @@ export function AuthPage({ onNavigate, onAuthSuccess, headline }: AuthPageProps)
           throw signInError;
         }
 
-        if (data.session) {
-          localStorage.setItem("supabase_session", JSON.stringify(data.session));
-        }
         if (data.user) {
           localStorage.setItem("supabase_user", JSON.stringify(data.user));
         }

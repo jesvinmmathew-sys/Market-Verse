@@ -1,3 +1,5 @@
+import { accountStorage } from '../services/accountStorage';
+import { apiFetch } from '../services/apiClient';
 /**
  * @file QuantitativeEngine.tsx
  * @author Jesvin M Mathew
@@ -269,7 +271,7 @@ const fetchFullStockAnalysis = async (symbol: string): Promise<StockAnalysisCard
   try {
     const [quoteRes, aiRes] = await Promise.all([
       fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}`),
-      fetch("/api/ai/analyze-stock", {
+      apiFetch("/api/ai/analyze-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol })
@@ -439,6 +441,7 @@ const StockIntelligenceCard: React.FC<{ card: StockAnalysisCardData }> = ({ card
 };
 
 export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNavigate }) => {
+  const scopedStorage = React.useMemo(() => accountStorage(), []);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [inputValue, setInputValue] = useState("");
@@ -522,12 +525,12 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
   // Fetch full conversation sessions from localStorage on load
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("marketverse_ai_sessions");
+      const stored = scopedStorage.getItem("marketverse_ai_sessions");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed && parsed.length > 0) {
           const hydrated = parsed.map((s: ChatSession) => {
-            const sessionMsgs = localStorage.getItem(`nova_active_session_${s.id}`);
+            const sessionMsgs = scopedStorage.getItem(`nova_active_session_${s.id}`);
             if (sessionMsgs) {
               try {
                 return { ...s, messages: JSON.parse(sessionMsgs) };
@@ -559,9 +562,9 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
   const saveSessions = (updated: ChatSession[]) => {
     setSessions(updated);
     try {
-      localStorage.setItem("marketverse_ai_sessions", JSON.stringify(updated));
+      scopedStorage.setItem("marketverse_ai_sessions", JSON.stringify(updated));
       updated.forEach(s => {
-        localStorage.setItem(`nova_active_session_${s.id}`, JSON.stringify(s.messages));
+        scopedStorage.setItem(`nova_active_session_${s.id}`, JSON.stringify(s.messages));
       });
     } catch (e) {
       console.warn("Could not save AI sessions:", e);
@@ -855,7 +858,7 @@ export const QuantitativeEngine: React.FC<QuantitativeEngineProps> = ({ onNaviga
   const handleDeleteSession = (idToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      localStorage.removeItem(`nova_active_session_${idToDelete}`);
+      scopedStorage.removeItem(`nova_active_session_${idToDelete}`);
     } catch (err) {}
 
     if (sessions.length <= 1) {

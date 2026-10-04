@@ -1,18 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
+import { validatePublicConfig } from '../shared/publicConfig';
 
-// Retrieve URL and Key from both process.env (injected by Vite define) and environment defaults
-const supabaseUrl = (typeof process !== "undefined" && process.env?.SUPABASE_URL) || "https://yddycgrgvmlalznepvop.supabase.co";
-const supabaseAnonKey = (typeof process !== "undefined" && process.env?.SUPABASE_ANON_KEY) || "sb_publishable_yaa1MyV9NR4fe1-ppLbTNQ_V6Lylk_6";
+const url = import.meta.env.VITE_SUPABASE_URL || '';
+const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+validatePublicConfig(url, key);
+export const supabaseConfigured = Boolean(url && key);
 
-// Sanitize URL in case it has the rest/v1 suffix
-const cleanUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, "");
-
-export const supabase = createClient(cleanUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+// An inert client keeps the public demo usable without contacting any default project.
+export const supabase = createClient(
+  url.replace(/\/rest\/v1\/?$/, '') || 'https://configuration-required.invalid',
+  key || 'unconfigured',
+  {
+    auth: { persistSession: supabaseConfigured, autoRefreshToken: supabaseConfigured, detectSessionInUrl: supabaseConfigured },
+    global: { fetch: (input, init) => {
+      if (!supabaseConfigured) return Promise.reject(new Error('Sign-in is unavailable: Supabase configuration is missing.'));
+      return fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(12000) });
+    } },
   }
-});
-
+);
 export default supabase;

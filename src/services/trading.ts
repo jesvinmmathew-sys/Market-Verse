@@ -1,22 +1,12 @@
+import { accountStorage, getAccountEpoch } from './accountStorage';
 import { PortfolioItem, Stock } from "../types";
 import { marketApi } from "./marketApi";
 
-const getUserId = (): string => {
-  try {
-    const userStored = localStorage.getItem("supabase_user");
-    if (userStored) {
-      const parsed = JSON.parse(userStored);
-      return parsed.id || "guest";
-    }
-  } catch (_) {}
-  return "guest";
-};
-
-const getPortfolioKey = () => `marketverse_portfolio_${getUserId()}`;
-const getCashKey = () => `marketverse_cash_${getUserId()}`;
-const getLeverageKey = () => `marketverse_leverage_${getUserId()}`;
-const getCurrencyKey = () => `marketverse_currency_${getUserId()}`;
-const getSandboxInitKey = () => `marketverse_sandbox_init_${getUserId()}`;
+const getPortfolioKey = () => 'portfolio';
+const getCashKey = () => 'cash';
+const getLeverageKey = () => 'leverage';
+const getCurrencyKey = () => 'currency';
+const getSandboxInitKey = () => 'sandbox_initialized';
 
 const INITIAL_PORTFOLIO: PortfolioItem[] = [];
 const INITIAL_CASH = 1000000; // Starting with ₹10,00,000 cash balance
@@ -24,7 +14,7 @@ const INITIAL_CASH = 1000000; // Starting with ₹10,00,000 cash balance
 export const TradingService = {
   getLeverage(): number {
     const key = getLeverageKey();
-    const stored = localStorage.getItem(key);
+    const stored = accountStorage().getItem(key);
     if (stored) {
       const parsed = parseInt(stored, 10);
       return isNaN(parsed) ? 1 : parsed;
@@ -33,23 +23,23 @@ export const TradingService = {
   },
 
   setLeverage(leverage: number) {
-    localStorage.setItem(getLeverageKey(), leverage.toString());
+    accountStorage().setItem(getLeverageKey(), leverage.toString());
     this.notifyChange();
   },
 
   getCurrency(): string {
     const key = getCurrencyKey();
-    return localStorage.getItem(key) || "INR";
+    return accountStorage().getItem(key) || "INR";
   },
 
   setCurrency(currency: string) {
-    localStorage.setItem(getCurrencyKey(), currency);
+    accountStorage().setItem(getCurrencyKey(), currency);
     this.notifyChange();
   },
 
   getPortfolio(): PortfolioItem[] {
     const key = getPortfolioKey();
-    const stored = localStorage.getItem(key);
+    const stored = accountStorage().getItem(key);
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -57,47 +47,47 @@ export const TradingService = {
         return INITIAL_PORTFOLIO;
       }
     }
-    localStorage.setItem(key, JSON.stringify(INITIAL_PORTFOLIO));
+    accountStorage().setItem(key, JSON.stringify(INITIAL_PORTFOLIO));
     return INITIAL_PORTFOLIO;
   },
 
   getCash(): number {
     const key = getCashKey();
-    const stored = localStorage.getItem(key);
+    const stored = accountStorage().getItem(key);
     if (stored) {
       const parsed = parseFloat(stored);
       return isNaN(parsed) ? INITIAL_CASH : parsed;
     }
-    localStorage.setItem(key, INITIAL_CASH.toString());
+    accountStorage().setItem(key, INITIAL_CASH.toString());
     return INITIAL_CASH;
   },
 
   setPortfolio(portfolio: PortfolioItem[]) {
-    localStorage.setItem(getPortfolioKey(), JSON.stringify(portfolio));
+    accountStorage().setItem(getPortfolioKey(), JSON.stringify(portfolio));
     this.notifyChange();
   },
 
   setCash(cash: number) {
-    localStorage.setItem(getCashKey(), cash.toString());
+    accountStorage().setItem(getCashKey(), cash.toString());
     this.notifyChange();
   },
 
   isSandboxInitialized(): boolean {
     const key = getSandboxInitKey();
-    return localStorage.getItem(key) === "true";
+    return accountStorage().getItem(key) === "true";
   },
 
   setSandboxInitialized(initialized: boolean) {
-    localStorage.setItem(getSandboxInitKey(), initialized ? "true" : "false");
+    accountStorage().setItem(getSandboxInitKey(), initialized ? "true" : "false");
     this.notifyChange();
   },
 
   resetAccount() {
-    localStorage.setItem(getPortfolioKey(), JSON.stringify(INITIAL_PORTFOLIO));
-    localStorage.setItem(getCashKey(), INITIAL_CASH.toString());
-    localStorage.setItem(getLeverageKey(), "1");
-    localStorage.setItem(getCurrencyKey(), "INR");
-    localStorage.setItem(getSandboxInitKey(), "false");
+    accountStorage().setItem(getPortfolioKey(), JSON.stringify(INITIAL_PORTFOLIO));
+    accountStorage().setItem(getCashKey(), INITIAL_CASH.toString());
+    accountStorage().setItem(getLeverageKey(), "1");
+    accountStorage().setItem(getCurrencyKey(), "INR");
+    accountStorage().setItem(getSandboxInitKey(), "false");
     this.notifyChange();
   },
 
@@ -121,12 +111,13 @@ export const TradingService = {
     });
 
     if (updated) {
-      localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(newPortfolio));
+      accountStorage().setItem(getPortfolioKey(), JSON.stringify(newPortfolio));
     }
     return newPortfolio;
   },
 
   async buyStock(symbol: string, amount: number): Promise<{ success: boolean; message: string }> {
+    const ownerEpoch = getAccountEpoch();
     const cleanSymbol = symbol.toUpperCase();
     if (amount <= 0 || isNaN(amount)) {
       return { success: false, message: "Please enter a valid amount of shares/contracts." };
@@ -134,6 +125,7 @@ export const TradingService = {
 
     // Get current stock price
     const stock = await marketApi.getStockBySymbol(cleanSymbol);
+    if (ownerEpoch !== getAccountEpoch()) return { success: false, message: 'Account changed. Please try again.' };
     if (!stock) {
       return { success: false, message: `Asset with symbol ${cleanSymbol} not found.` };
     }
@@ -192,6 +184,7 @@ export const TradingService = {
   },
 
   async sellStock(symbol: string, amount: number): Promise<{ success: boolean; message: string }> {
+    const ownerEpoch = getAccountEpoch();
     const cleanSymbol = symbol.toUpperCase();
     if (amount <= 0 || isNaN(amount)) {
       return { success: false, message: "Please enter a valid amount of shares/contracts." };
@@ -214,6 +207,7 @@ export const TradingService = {
 
     // Get current stock price for live sell rate
     const stock = await marketApi.getStockBySymbol(cleanSymbol);
+    if (ownerEpoch !== getAccountEpoch()) return { success: false, message: 'Account changed. Please try again.' };
     const price = stock ? stock.price : existing.currentPrice;
     const totalProceeds = price * amount;
     const currentCash = this.getCash();

@@ -1,3 +1,4 @@
+import { apiFetch } from '../services/apiClient';
 import React, { useState, useEffect } from "react";
 import { 
   Sparkles, 
@@ -401,7 +402,7 @@ export const MarketTerminal: React.FC<MarketTerminalProps> = ({
     async function loadSummary() {
       setLoadingSummary(true);
       try {
-        const response = await fetch("/api/ai/summary");
+        const response = await apiFetch("/api/ai/summary");
         if (response.ok) {
           const data = await response.json();
           if (data && data.summaryText) {

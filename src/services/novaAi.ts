@@ -2,46 +2,12 @@
  * ============================================================================
  * MARKETVERSE INDIA - NOVA AI INTELLIGENT TRADE COPILOT
  * ============================================================================
- * 1. Primary: Secure Server-side API (/api/chat) with fallback to local SDK.
+ * 1. Primary: Secure Server-side API (/api/chat) with an offline educational fallback.
  * 2. Secondary: Complete Dynamic Knowledge Base (Zero-Crash Fallback Engine).
  * ============================================================================
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const GEMINI_API_KEY =
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_GEMINI_API_KEY) ||
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-  process.env.GEMINI_API_KEY ||
-  "";
-
-const NOVA_SYSTEM_PROMPT = `You are Nova AI, the institutional financial intelligence and trade copilot for MarketVerse India.
-- MarketVerse is an all-in-one financial intelligence and paper-trading terminal for Indian equities (NSE/BSE).
-- Key Capabilities:
-  1. Real-time TradingView technical charting.
-  2. Zero-risk simulated execution with a virtual ₹10,00,000 wallet and live virtual P&L.
-  3. Quantitative portfolio risk diagnostics using Modern Portfolio Theory and Herfindahl-Hirschman Index (HHI) concentration auditing.
-  4. Scenario Generation: Objective Bull/Bear trade setups with disciplined stop-loss levels.
-- Guidelines:
-  - If the user asks about Nova AI, MarketVerse, or how you can help them, provide a clear, bulleted overview of your capabilities.
-  - If asked about stocks, provide structured Bull/Bear analysis with support and resistance levels.
-  - If asked about finance or risk concepts (HHI, RSI, beta), provide concise, institutional-grade explanations.`;
-
-let genAI: GoogleGenerativeAI | null = null;
-let liveModel: any = null;
-
-if (GEMINI_API_KEY) {
-  try {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    // Use gemini-2.5-flash (or gemini-2.0-flash) for current generation stability
-    liveModel = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: NOVA_SYSTEM_PROMPT,
-    });
-  } catch (err) {
-    console.warn("[Nova AI] Live API initialization notice:", err);
-  }
-}
+import { apiFetch } from './apiClient';
 
 const knownStocks = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "TATAMOTORS", "SBIN", "ITC", "BHARTIARTL", "NIFTY"];
 
@@ -74,7 +40,7 @@ export function formatStockAnalysisResponse(symbol: string, stockData: any, aiTh
 }
 
 /**
- * Main query handler: Attempts live secure server-side API, fallback to SDK, and then local fallback
+ * Main query handler: Attempts live secure server-side API, then an offline fallback
  */
 export async function askNovaAI(
   userQuery: string,
@@ -87,7 +53,7 @@ export async function askNovaAI(
   // 1. SECURE SERVER-SIDE REST API INFERENCE
   // --------------------------------------------------------------------------
   try {
-    const response = await fetch('/api/chat', {
+    const response = await apiFetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: query, context: stockContext })
@@ -116,44 +82,10 @@ export async function askNovaAI(
       }
     }
   } catch (serverErr) {
-    console.warn("[Nova AI] Secure Server-side chat failed, attempting client-side SDK:", serverErr);
+    console.warn("[Nova AI] Server chat unavailable; using offline demo:", serverErr);
   }
 
-  // --------------------------------------------------------------------------
-  // 2. CLIENT-SIDE GEMINI API INFERENCE (SDK FALLBACK)
-  // --------------------------------------------------------------------------
-  if (liveModel && GEMINI_API_KEY) {
-    try {
-      const result = await liveModel.generateContent(query);
-      const text = result.response.text();
-      if (text && text.trim().length > 0) {
-        // If a stock is matched, format as a STOCK_CARD directly
-        const matched = knownStocks.find((s) => lower.includes(s.toLowerCase()));
-        if (matched) {
-          const quoteResponse = await fetch(`/api/market/quote?symbol=${matched}`).catch(() => null);
-          const quoteData = quoteResponse && quoteResponse.ok ? await quoteResponse.json().catch(() => null) : null;
-          const stockData = {
-            name: quoteData?.name || `${matched} India`,
-            price: quoteData?.price || 1500,
-            change: quoteData?.change || 0,
-            changePercent: quoteData?.percentChange || 0,
-            volume: quoteData?.volume || "1.2M",
-            open: quoteData?.open,
-            high: quoteData?.dayHigh,
-            low: quoteData?.dayLow,
-          };
-          return JSON.stringify(formatStockAnalysisResponse(matched, stockData, text));
-        }
-        return text;
-      }
-    } catch (apiError) {
-      console.warn("[Nova AI] Live API failed, using local intelligence engine:", apiError);
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // 3. CONTEXTUAL LOCAL KNOWLEDGE BASE (NEVER CRASHES)
-  // --------------------------------------------------------------------------
+  // Offline educational fallback; never invokes a provider from the browser.
 
   // A. Creator / Founders / Team
   if (lower.includes("who is the creator") || lower.includes("who made") || lower.includes("who built") || lower.includes("founder") || lower.includes("creator of marketverse")) {

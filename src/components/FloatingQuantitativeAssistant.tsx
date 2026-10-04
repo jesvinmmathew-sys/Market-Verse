@@ -1,3 +1,5 @@
+import { accountStorage } from '../services/accountStorage';
+import { apiFetch } from '../services/apiClient';
 /**
  * @file FloatingQuantitativeAssistant.tsx
  * @author Jesvin M Mathew
@@ -89,7 +91,7 @@ const fetchFullStockAnalysis = async (symbol: string): Promise<StockAnalysisCard
   try {
     const [quoteRes, aiRes] = await Promise.all([
       fetch(`/api/market/quote?symbol=${encodeURIComponent(symbol)}`),
-      fetch("/api/ai/analyze-stock", {
+      apiFetch("/api/ai/analyze-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol })
@@ -306,6 +308,7 @@ const StockIntelligenceCard: React.FC<{ card: StockAnalysisCardData }> = ({ card
 };
 
 export const FloatingQuantitativeAssistant: React.FC<FloatingQuantitativeAssistantProps> = ({ currentRoute }) => {
+  const scopedStorage = React.useMemo(() => accountStorage(), []);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -470,7 +473,7 @@ Try asking me:
       
       // Check if user has a custom portfolio loaded to inject real-time portfolio context
       try {
-        const stored = localStorage.getItem("marketverse_custom_portfolio");
+        const stored = scopedStorage.getItem("marketverse_custom_portfolio");
         if (stored) {
           const portfolio = JSON.parse(stored);
           if (Array.isArray(portfolio) && portfolio.length > 0) {
