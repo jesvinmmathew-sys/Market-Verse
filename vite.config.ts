@@ -6,8 +6,8 @@ import { validatePublicConfig } from './shared/publicConfig';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const publicUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL || '';
-  const publicKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '';
+  const publicUrl = env.VITE_SUPABASE_URL || '';
+  const publicKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
   validatePublicConfig(publicUrl, publicKey);
   return {
     // Explicit allowlist: even accidentally prefixed secrets must not be exported.

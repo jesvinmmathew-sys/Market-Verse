@@ -20,6 +20,7 @@ const PORT = 3000;
 
 app.disable('x-powered-by');
 app.set('query parser', 'simple');
+app.set('trust proxy', 1);
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -68,9 +69,9 @@ const getGeminiClient = () => {
 function triggerGeminiCooldown(errMessage: string) {
   const is429 = errMessage.includes("429") || errMessage.includes("RESOURCE_EXHAUSTED") || errMessage.includes("quota") || errMessage.includes("limit");
   if (is429) {
-    // 3-minute cooldown for Gemini so we don't hammer the API when free-tier limit is reached
-    geminiCooldownUntil = Date.now() + 3 * 60 * 1000;
-    console.log(`[GEMINI COOLDOWN] Quota exceeded or rate limited. Triggering 3-minute cooldown. (Reason: ${errMessage.slice(0, 100)})`);
+    // 60-second cooldown for Gemini so we don't hammer the API when free-tier limit is reached
+    geminiCooldownUntil = Date.now() + 60 * 1000;
+    console.log(`[GEMINI COOLDOWN] Quota exceeded or rate limited. Triggering 60-second cooldown. (Reason: ${errMessage.slice(0, 100)})`);
   }
 }
 
@@ -329,42 +330,19 @@ app.post("/api/chat", asyncHandler(async (req, res) => {
   - If asked about platform features (News, Portfolio Analyzer, Paper Trading), give concise, structured bullet points.
   - If asked general conversation or finance questions, answer accurately and professionally.`;
 
-    // Try primary modern model: gemini-2.5-flash, fallback to gemini-2.0-flash
-    const candidateModels = [process.env.GEMINI_MODEL || "gemini-2.5-flash"];
+    const ai = getGeminiClient();
     let aiText = "";
-    let lastError = null;
 
-    for (const modelName of candidateModels) {
+    if (ai) {
       try {
-        const response = await withInferenceLimit(() => providerFetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-            body: JSON.stringify({
-              generationConfig: { maxOutputTokens: 2048 },
-              contents: [
-                {
-                  parts: [
-                    { text: `${systemPrompt}\n\nUser Question: ${message}` }
-                  ]
-                }
-              ]
-            })
-          }
-        ));
-
-        if (response.ok) {
-          const data = await response.json();
-          aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          if (aiText) break;
-        } else {
-          const errDetail = await response.text();
-          console.warn(`[Nova AI] Provider returned status ${response.status}`);
-          lastError = errDetail;
-        }
-      } catch (fetchErr) {
-        lastError = fetchErr;
+        const response = await ai.models.generateContent({
+          contents: `${systemPrompt}\n\nUser Question: ${message}`,
+        });
+        aiText = response.text || "";
+      } catch (geminiErr: any) {
+        const errMsg = geminiErr?.message || String(geminiErr);
+        triggerGeminiCooldown(errMsg);
+        console.warn("[Nova AI] Gemini call failed, using fallback:", errMsg);
       }
     }
 
@@ -2201,7 +2179,8 @@ async function analyzeNewsPipelineWithGemini(articles: any[], ai: any): Promise<
   if (!ai) {
     // Robust rule-based fallback if Gemini client is not configured
     return articles.map((art, idx) => {
-      const titleLower = art.title.toLowerCase();
+      const rawTitle = typeof art?.title === 'string' ? art.title : '';
+      const titleLower = rawTitle.toLowerCase();
       
       let sentiment: "Positive" | "Negative" | "Neutral" = "Neutral";
       let impact: "High" | "Medium" | "Low" = "Medium";
@@ -2229,7 +2208,7 @@ async function analyzeNewsPipelineWithGemini(articles: any[], ai: any): Promise<
       if (titleLower.includes("loonie") || titleLower.includes("cad") || titleLower.includes("canadian")) { related.push("USDCAD"); }
       
       if (related.length === 0) {
-        if (art.category === "Forex" || art.category === "Forex Markets") {
+        if (art?.category === "Forex" || art?.category === "Forex Markets") {
           related.push("USDINR", "EURUSD");
         } else {
           related.push("NIFTY50", "SENSEX");
@@ -2257,15 +2236,18 @@ async function analyzeNewsPipelineWithGemini(articles: any[], ai: any): Promise<
         summary = `Balanced market stance. Market participants are neutral on ${related.join(", ")}, monitoring further catalysts.`;
       }
 
+      const displayTitle = rawTitle || (typeof art?.id === 'string' ? art.id : `News Update #${idx + 1}`);
+      const displayPreview = typeof art?.preview === 'string' ? art.preview : displayTitle;
+
       return {
-        id: art.id || `news-fallback-${idx}`,
-        title: art.title,
-        source: art.source || "Market News",
-        time: art.time || "Recently",
-        category: art.category || "Global",
+        id: art?.id || `news-fallback-${idx}`,
+        title: displayTitle,
+        source: art?.source || "Market News",
+        time: art?.time || "Recently",
+        category: art?.category || "Global",
         marketImpact: impact,
         impactDirection: sentiment,
-        preview: art.preview || art.title,
+        preview: displayPreview,
         aiSummary: summary,
         impactScore: score,
         relatedSymbols: related
@@ -2283,7 +2265,10 @@ Analyze the following news articles. For each article, determine:
 5. "relatedSymbols": An array of specific asset symbols (from: RELIANCE, TATAMOTORS, TCS, INFY, HDFCBANK, ICICIBANK, SBIN, ITC, BHARTIARTL, ADANIENT, NIFTY50, SENSEX, EURUSD, GBPUSD, USDJPY, USDINR, AUDUSD, USDCAD) that are most directly affected by this news. Always assign at least one related symbol or index (like NIFTY50) to each article!
 
 Articles to process:
-${JSON.stringify(articles.map(a => ({ id: a.id, title: a.title, preview: a.preview || a.title, category: a.category })))}
+${JSON.stringify(articles.map((a, i) => {
+  const t = typeof a?.title === 'string' ? a.title : (typeof a?.id === 'string' ? a.id : `News Update #${i + 1}`);
+  return { id: a?.id || `news-${i}`, title: t, preview: typeof a?.preview === 'string' ? a.preview : t, category: a?.category || 'Global' };
+}))}
 
 You must return a single JSON array of objects matching this schema exactly (preserve the original id, title, source, time, and category of the input articles):
 [
@@ -2313,16 +2298,18 @@ You must return a single JSON array of objects matching this schema exactly (pre
     const parsed = JSON.parse(response.text || "[]");
     
     // Map parsed values back to original article keys to make sure no fields are missing
-    return articles.map((art) => {
-      const analyzed = Array.isArray(parsed) ? parsed.find((p: any) => p.id === art.id) : null;
+    return articles.map((art, idx) => {
+      const analyzed = Array.isArray(parsed) ? parsed.find((p: any) => p.id === art?.id) : null;
+      const rawTitle = typeof art?.title === 'string' ? art.title : (typeof art?.id === 'string' ? art.id : `News Update #${idx + 1}`);
+      const displayPreview = typeof art?.preview === 'string' ? art.preview : rawTitle;
       if (analyzed) {
         return {
-          id: art.id,
-          title: art.title,
-          source: art.source || "Financial Source",
-          time: art.time || "Recently",
-          category: art.category || "Global",
-          preview: art.preview || art.title,
+          id: art?.id || `news-${idx}`,
+          title: rawTitle,
+          source: art?.source || "Financial Source",
+          time: art?.time || "Recently",
+          category: art?.category || "Global",
+          preview: displayPreview,
           marketImpact: analyzed.marketImpact || "Medium",
           impactDirection: analyzed.impactDirection || "Neutral",
           aiSummary: analyzed.aiSummary || "Analyzed by MarketVerse AI.",
@@ -2333,12 +2320,12 @@ You must return a single JSON array of objects matching this schema exactly (pre
 
       // If specific analysis failed, use fallback mapping for this single item
       return {
-        id: art.id,
-        title: art.title,
-        source: art.source || "Financial Source",
-        time: art.time || "Recently",
-        category: art.category || "Global",
-        preview: art.preview || art.title,
+        id: art?.id || `news-${idx}`,
+        title: rawTitle,
+        source: art?.source || "Financial Source",
+        time: art?.time || "Recently",
+        category: art?.category || "Global",
+        preview: displayPreview,
         marketImpact: "Medium",
         impactDirection: "Neutral",
         aiSummary: "Analyzed by MarketVerse AI.",
@@ -2349,10 +2336,7 @@ You must return a single JSON array of objects matching this schema exactly (pre
 
   } catch (err: any) {
     const errMsg = err?.message || String(err);
-    if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
-      geminiCooldownUntil = Date.now() + 60000;
-      console.log("[GEMINI COOLDOWN] Quota exceeded detected in analyzeNewsPipelineWithGemini. Triggering 1-minute cooldown.");
-    }
+    triggerGeminiCooldown(errMsg);
     console.log("Gemini batch news analysis failed, falling back to heuristic:", errMsg);
     // Safe heuristic fallback
     return analyzeNewsPipelineWithGemini(articles, null);

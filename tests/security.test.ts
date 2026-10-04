@@ -88,6 +88,15 @@ test('guest news stays available without Gemini enrichment', async () => {
   assert.equal(paidCalls, count);
 });
 
+test('news analysis validates title and handles empty or malformed articles safely', async () => {
+  const resBad = await request('/api/ai/news-sentiment', { title: '' }, token);
+  assert.equal(resBad.status, 400);
+  const resOk = await request('/api/ai/news-sentiment', { title: 'RBI announces liquidity measures' }, token);
+  assert.equal(resOk.status, 200);
+  const data = await resOk.json();
+  assert.ok(data.sentiment);
+});
+
 test('malformed inputs including case/trailing-slash variants return JSON 400', async () => {
   for (const [path, body] of [
     ['/api/ai/chat', { question: 123 }], ['/API/AI/CHAT/', { question: {} }],
@@ -195,3 +204,45 @@ test('rate limit keys remain distinct for separate verified users', () => {
   middleware({ userId: 'b' } as any, res, () => allowed++);
   assert.equal(allowed, 2);
 });
+
+test('trust proxy 1 configuration trusts immediate proxy hop and rejects spoofed headers', async () => {
+  const app = express();
+  app.set('trust proxy', 1);
+  app.use(rateLimit(1, 60000));
+  app.get('/proxy-test', (req, res) => res.json({ ip: req.ip }));
+  const local = app.listen(0, '127.0.0.1');
+  await new Promise<void>(resolve => local.once('listening', resolve));
+  try {
+    const port = (local.address() as any).port;
+    // Client 1 through 1 hop proxy
+    const r1 = await nativeFetch(`http://127.0.0.1:${port}/proxy-test`, {
+      headers: { 'x-forwarded-for': '203.0.113.10' }
+    });
+    assert.equal(r1.status, 200);
+    assert.equal((await r1.json()).ip, '203.0.113.10');
+
+    // Client 1 second request -> 429
+    const r1Blocked = await nativeFetch(`http://127.0.0.1:${port}/proxy-test`, {
+      headers: { 'x-forwarded-for': '203.0.113.10' }
+    });
+    assert.equal(r1Blocked.status, 429);
+
+    // Client 2 through same proxy -> different bucket, allowed
+    const r2 = await nativeFetch(`http://127.0.0.1:${port}/proxy-test`, {
+      headers: { 'x-forwarded-for': '203.0.113.20' }
+    });
+    assert.equal(r2.status, 200);
+    assert.equal((await r2.json()).ip, '203.0.113.20');
+
+    // Spoofed prefix is ignored; 1-hop proxy trusts only immediate client hop (198.51.100.5)
+    const rSpoofed = await nativeFetch(`http://127.0.0.1:${port}/proxy-test`, {
+      headers: { 'x-forwarded-for': '1.2.3.4, 198.51.100.5' }
+    });
+    assert.equal(rSpoofed.status, 200);
+    assert.equal((await rSpoofed.json()).ip, '198.51.100.5');
+  } finally {
+    local.closeAllConnections();
+    await new Promise<void>(resolve => local.close(() => resolve()));
+  }
+});
+

@@ -73,11 +73,19 @@ export const validateApiInput: RequestHandler = (req, _res, next) => {
 /** Per-process limits; production replicas also need an edge/shared quota. */
 export function rateLimit(limit: number, windowMs: number, key: (req: Request) => string = req => req.ip || 'unknown'): RequestHandler {
   const entries = new Map<string, { count: number; reset: number }>();
+  let lastPrune = 0;
   return (req, res, next) => {
     const now = Date.now();
-    for (const [id, entry] of entries) if (entry.reset <= now) entries.delete(id);
+    if (now - lastPrune > 30000 || entries.size >= 10000) {
+      lastPrune = now;
+      for (const [id, entry] of entries) if (entry.reset <= now) entries.delete(id);
+    }
     const id = key(req);
     let entry = entries.get(id);
+    if (entry && entry.reset <= now) {
+      entries.delete(id);
+      entry = undefined;
+    }
     if (!entry) {
       if (entries.size >= 10000) return res.status(503).json({ error: 'Request capacity reached' });
       entry = { count: 0, reset: now + windowMs }; entries.set(id, entry);
