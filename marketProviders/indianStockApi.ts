@@ -1,3 +1,4 @@
+import { providerFetch } from '../server/lib/provider.js';
 import { REAL_NSE_STOCKS } from "../src/services/nseFallbackList.js";
 import { StockQuoteRaw, indianMarketProvider } from "./indianMarketProvider.js";
 import { generateDynamicUniverseStock } from "../src/services/indianStocksDb.js";
@@ -18,7 +19,7 @@ export async function searchIndianStock(query: string): Promise<any[]> {
   const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}`;
   console.log(`[Indian Stock API] Searching for: ${query}`);
   try {
-    const response = await fetch(url);
+    const response = await providerFetch(url);
     if (!response.ok) {
       throw new Error(`Search API responded with status ${response.status}`);
     }
@@ -60,7 +61,7 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
         "Cache-Control": "no-cache"
       };
 
-      let response = await fetch(url, { headers });
+      let response = await providerFetch(url, { headers });
       let data: any;
 
       if (response.ok) {
@@ -75,7 +76,7 @@ export async function getIndianStockQuote(symbol: string): Promise<StockQuoteRaw
         const suffixedSym = exchange === "BSE" ? `${cleanSym}.BO` : `${cleanSym}.NS`;
         const fallbackUrl = `${BASE_URL}/stock?symbol=${encodeURIComponent(suffixedSym)}&res=num`;
         
-        response = await fetch(fallbackUrl, { headers });
+        response = await providerFetch(fallbackUrl, { headers });
         if (!response.ok) {
           throw new Error(`Stock API responded with status ${response.status} for both clean and suffixed symbols`);
         }
@@ -177,7 +178,7 @@ export async function getMultipleStocks(symbols: string[]): Promise<Record<strin
     };
 
     try {
-      const response = await fetch(url, { headers });
+      const response = await providerFetch(url, { headers });
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -294,7 +295,7 @@ export async function getStockHistory(symbol: string, timeframe: string = "1D"):
 
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?range=${range}&interval=${interval}`;
 
-    const response = await fetch(url);
+    const response = await providerFetch(url);
     if (!response.ok) {
       throw new Error(`History chart fetch failed with status ${response.status}`);
     }

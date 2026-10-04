@@ -1,3 +1,4 @@
+import { providerFetch } from '../server/lib/provider.js';
 import { REAL_NSE_STOCKS } from "../src/services/nseFallbackList.js";
 import { StockQuoteRaw } from "./indianMarketProvider.js";
 
@@ -23,7 +24,7 @@ export const twelveDataProvider = {
     
     console.log(`[Twelve Data] Fetching quote for ${symbol} as ${twelveSymbol}`);
     
-    const response = await fetch(url);
+    const response = await providerFetch(url);
     if (!response.ok) {
       throw new Error(`Twelve Data HTTP Error: ${response.status}`);
     }
@@ -72,7 +73,7 @@ export const twelveDataProvider = {
     
     console.log(`[Twelve Data] Fetching batch quotes for ${symbols.length} symbols`);
     
-    const response = await fetch(url);
+    const response = await providerFetch(url);
     if (!response.ok) {
       throw new Error(`Twelve Data Batch HTTP Error: ${response.status}`);
     }
@@ -141,7 +142,7 @@ export const twelveDataProvider = {
     const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(twelveSymbol)}&interval=${interval}&outputsize=${outputsize}&apikey=${apiKey}`;
     console.log(`[Twelve Data] Fetching history for ${symbol} (${twelveSymbol}) with interval=${interval}, outputsize=${outputsize}`);
 
-    const response = await fetch(url);
+    const response = await providerFetch(url);
     if (!response.ok) {
       throw new Error(`Twelve Data History HTTP Error: ${response.status}`);
     }

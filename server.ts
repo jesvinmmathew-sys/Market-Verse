@@ -6,6 +6,10 @@ import { INDIAN_STOCK_UNIVERSE, generateDynamicUniverseStock } from "./src/servi
 import { indianMarketProvider } from "./marketProviders/indianMarketProvider.js";
 import { twelveDataProvider } from "./marketProviders/twelveData.js";
 import { getIndianStockQuote, getMultipleStocks, getStockHistory, searchIndianStock, cleanSymbolForApi } from "./marketProviders/indianStockApi.js";
+import { asyncHandler, errorHandler, validateApiInput, rateLimit } from "./server/lib/http.js";
+import { verifySession, attachVerifiedIdentity, aiMinuteQuota, aiDailyQuota } from "./server/lib/access.js";
+import { BoundedCache } from "./server/lib/cache.js";
+import { providerFetch, withInferenceLimit } from "./server/lib/provider.js";
 import authRoutes from "./server/routes/authRoutes.js";
 
 // Load environment secrets
@@ -14,18 +18,24 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
-
-// Custom JSON parsing error handler to return JSON instead of HTML on malformed payloads
-app.use((err: any, req: any, res: any, next: any) => {
-  if (err instanceof SyntaxError && 'status' in err && err.status === 400) {
-    return res.status(400).json({ error: "Invalid JSON payload" });
-  }
+app.disable('x-powered-by');
+app.set('query parser', 'simple');
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'");
   next();
 });
-
-// Mount authentication routes
-app.use("/api/auth", authRoutes);
+app.use('/api', rateLimit(180, 60000));
+app.use(express.json({ limit: '64kb' }));
+app.use('/api', validateApiInput);
+app.use('/api/auth', rateLimit(10, 60000), authRoutes);
+app.use(['/api/ai', '/api/chat'], rateLimit(30, 60000), verifySession(true), attachVerifiedIdentity, aiMinuteQuota, aiDailyQuota);
+// News remains public; only verified, quota-limited users receive paid enrichment.
+app.use('/api/market/news', rateLimit(30, 60000), verifySession(false), attachVerifiedIdentity,
+  (req, res, next) => res.locals.userId ? aiMinuteQuota(req, res, next) : next(),
+  (req, res, next) => res.locals.userId ? aiDailyQuota(req, res, next) : next());
 
 // Global state to track Gemini rate limit cooldowns dynamically
 let geminiCooldownUntil = 0;
@@ -40,14 +50,19 @@ const getGeminiClient = () => {
   if (!apiKey) {
     return null;
   }
-  return new GoogleGenAI({
+  const client = new GoogleGenAI({
     apiKey: apiKey,
     httpOptions: {
+      timeout: 15000,
       headers: {
         'User-Agent': 'aistudio-build',
       }
     }
   });
+  return { models: { generateContent: (params: any) => withInferenceLimit(() => client.models.generateContent({
+    ...params, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    config: { ...params.config, maxOutputTokens: 2048 },
+  })) } };
 };
 
 function triggerGeminiCooldown(errMessage: string) {
@@ -128,7 +143,7 @@ function generateServerFallback(symbol: string, price: number, historySnippet: a
 }
 
 // API: Server-side Gemini stock analysis proxy
-app.post("/api/ai/analyze", async (req, res) => {
+app.post("/api/ai/analyze", asyncHandler(async (req, res) => {
   const { symbol, price, historySnippet } = req.body;
   if (!symbol || !price) {
     return res.status(400).json({ error: "Missing stock parameters" });
@@ -192,10 +207,10 @@ You must return a single JSON object matching this schema exactly:
     const fallback = generateServerFallback(symbol, price, historySnippet);
     return res.json(fallback);
   }
-});
+}));
 
 // API: AI News Sentiment Analyzer
-app.post("/api/ai/news-sentiment", async (req, res) => {
+app.post("/api/ai/news-sentiment", asyncHandler(async (req, res) => {
   const { title, text } = req.body;
   if (!title) {
     return res.status(400).json({ error: "Missing news title to analyze" });
@@ -287,16 +302,13 @@ You must return a single JSON object matching this schema exactly:
 
      return res.json({ sentiment, impact, confidence, explanation });
   }
-});
+}));
 
 // API: Server-side secure Gemini Chat Route
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", asyncHandler(async (req, res) => {
   try {
     const { message } = req.body;
-    const apiKey = 
-      process.env.GEMINI_API_KEY || 
-      process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
-      process.env.VITE_GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       console.error("[Nova AI] GEMINI_API_KEY is not defined in environment variables.");
@@ -318,18 +330,19 @@ app.post("/api/chat", async (req, res) => {
   - If asked general conversation or finance questions, answer accurately and professionally.`;
 
     // Try primary modern model: gemini-2.5-flash, fallback to gemini-2.0-flash
-    const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    const candidateModels = [process.env.GEMINI_MODEL || "gemini-2.5-flash"];
     let aiText = "";
     let lastError = null;
 
     for (const modelName of candidateModels) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+        const response = await withInferenceLimit(() => providerFetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify({
+              generationConfig: { maxOutputTokens: 2048 },
               contents: [
                 {
                   parts: [
@@ -339,7 +352,7 @@ app.post("/api/chat", async (req, res) => {
               ]
             })
           }
-        );
+        ));
 
         if (response.ok) {
           const data = await response.json();
@@ -347,7 +360,7 @@ app.post("/api/chat", async (req, res) => {
           if (aiText) break;
         } else {
           const errDetail = await response.text();
-          console.warn(`[Nova AI] ${modelName} returned status ${response.status}:`, errDetail);
+          console.warn(`[Nova AI] Provider returned status ${response.status}`);
           lastError = errDetail;
         }
       } catch (fetchErr) {
@@ -383,7 +396,7 @@ app.post("/api/chat", async (req, res) => {
       reply: "MarketVerse India provides institutional-grade paper trading, live TradingView charting, and automated portfolio risk scoring."
     });
   }
-});
+}));
 
 // Helper: Compute RSI, MA, and Trend
 function computeIndicators(history: any[]) {
@@ -546,7 +559,7 @@ function fetchChatContext(question: string) {
 }
 
 // API: Detailed Stock Analysis Panel API
-app.post("/api/ai/analyze-stock", async (req, res) => {
+app.post("/api/ai/analyze-stock", asyncHandler(async (req, res) => {
   const { symbol } = req.body;
   if (!symbol) {
     return res.status(400).json({ error: "Missing symbol parameters" });
@@ -680,7 +693,7 @@ You must return a single JSON object matching this schema exactly:
       }
     });
   }
-});
+}));
 
 // Helper: Smart Symbol Detector for User Prompts
 function detectSymbolInText(text: string): string | null {
@@ -736,7 +749,7 @@ async function getRealtimeStockAnalysisContext(symbol: string) {
       history = await indianMarketProvider.fetchHistory(symbol, "1M", exchange);
     } catch (err1) {
       // Priority 3: Twelve Data
-      const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+      const apiKey = process.env.MARKET_API_KEY;
       if (apiKey && !isTwelveDataInCooldown()) {
         try {
           quote = await twelveDataProvider.fetchQuote(symbol, apiKey);
@@ -993,7 +1006,7 @@ Educational analysis, not financial advice.`;
 }
 
 // API: Natural Language Market Chat Route
-app.post("/api/ai/chat", async (req, res) => {
+app.post("/api/ai/chat", asyncHandler(async (req, res) => {
   const { question, history } = req.body;
   if (!question) {
     return res.status(400).json({ error: "Missing user question" });
@@ -1252,10 +1265,10 @@ Answer the user's question clearly. Format your response beautifully using Markd
 
     return res.json({ answer: `⚠️ **AI analysis temporarily unavailable. Showing technical market analysis.**\n\nThe general trend in Indian benchmark Nifty 50 remains stable with support near 24,100. Watch sector indicators carefully. Educational analysis, not financial advice.` });
   }
-});
+}));
 
 // API: Comparative Analysis of Two Indian Stocks
-app.post("/api/ai/compare", async (req, res) => {
+app.post("/api/ai/compare", asyncHandler(async (req, res) => {
   const { symbolA, symbolB } = req.body;
   if (!symbolA || !symbolB) {
     return res.status(400).json({ error: "Missing symbol parameters to compare" });
@@ -1350,10 +1363,10 @@ You must return a single JSON object matching this schema exactly:
       winner: qA.percentChange > qB.percentChange ? qA.symbol : qB.symbol
     });
   }
-});
+}));
 
 // API: Dynamic Daily Market Intelligence Summary
-app.get("/api/ai/summary", async (req, res) => {
+app.get("/api/ai/summary", asyncHandler(async (req, res) => {
   initServerQuotesStore();
   
   // Calculate average performance of major sectors
@@ -1426,11 +1439,11 @@ You must return a single JSON object matching this schema exactly:
       keyDrivers: [strongestSector.sector, "Technical Pivots"]
     });
   }
-});
+}));
 
 // Helper to fetch and robustly parse Twelve Data response without crash/syntax issues
 async function fetchTwelveDataJson(url: string): Promise<any> {
-  const response = await fetch(url);
+  const response = await providerFetch(url);
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${text.slice(0, 150)}`);
@@ -1445,8 +1458,8 @@ async function fetchTwelveDataJson(url: string): Promise<any> {
 import { REAL_NSE_STOCKS } from "./src/services/nseFallbackList.js";
 
 // Cache for Twelve Data requests
-const quoteCache: Record<string, { timestamp: number; data: any }> = {};
-const historyCache: Record<string, { timestamp: number; data: any }> = {};
+const quoteCache = new BoundedCache<{ timestamp: number; data: any }>(1000, 180000);
+const historyCache = new BoundedCache<{ timestamp: number; data: any }>(500, 300000);
 
 let twelveDataCooldownUntil = 0;
 
@@ -1533,12 +1546,12 @@ async function loadDynamicNseRegistry() {
     });
   });
 
-  const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+  const apiKey = process.env.MARKET_API_KEY;
   // Twelve Data public stocks list endpoint is accessible without an API key too
   const url = `https://api.twelvedata.com/stocks?exchange=NSE${apiKey ? `&apikey=${apiKey}` : ""}`;
   
   try {
-    const res = await fetch(url);
+    const res = await providerFetch(url);
     if (res.ok) {
       const json = await res.json();
       if (json && json.status === "ok" && Array.isArray(json.data)) {
@@ -1586,10 +1599,10 @@ async function loadDynamicNseRegistry() {
 }
 
 // Trigger loading on start
-loadDynamicNseRegistry();
+if (process.env.NODE_ENV !== "test") void loadDynamicNseRegistry();
 
 // Server-side market simulation fallback data
-const serverQuotesStore: Record<string, any> = {};
+const serverQuotesStore: Record<string, any> = Object.create(null);
 
 function initServerQuotesStore() {
   if (Object.keys(serverQuotesStore).length > 0) return;
@@ -1658,6 +1671,7 @@ function updateServerQuotesStoreFromReal(quotes: Record<string, any>) {
     // If it doesn't exist yet, we will generate dynamic meta to preseed properties
     if (!serverQuotesStore[cleanSym]) {
       getOrCreateServerQuote(cleanSym);
+      if (!serverQuotesStore[cleanSym]) return;
     }
     
     serverQuotesStore[cleanSym] = {
@@ -1714,7 +1728,7 @@ function getOrCreateServerQuote(symbol: string) {
     timestamp: new Date().toISOString()
   };
 
-  serverQuotesStore[cleanSym] = quote;
+  if (Object.keys(serverQuotesStore).length < 5000) serverQuotesStore[cleanSym] = quote;
   return quote;
 }
 
@@ -1748,7 +1762,7 @@ function tickServerQuotes() {
 }
 
 // Keep simulated quotes ticking every 5 seconds
-setInterval(tickServerQuotes, 5000);
+if (process.env.NODE_ENV !== "test") setInterval(tickServerQuotes, 5000).unref();
 
 function generateServerHistory(symbol: string, timeframe: string, price: number): any[] {
   const points = timeframe === "1D" ? 24 : timeframe === "5D" ? 40 : timeframe === "1M" ? 30 : timeframe === "6M" ? 120 : timeframe === "1Y" ? 52 : 60;
@@ -1784,7 +1798,7 @@ function generateServerHistory(symbol: string, timeframe: string, price: number)
 }
 
 // API: Flexible Market Provider Quote Proxy with Comparison Logic
-app.get("/api/market/quote", async (req, res) => {
+app.get("/api/market/quote", asyncHandler(async (req, res) => {
   const symbol = (req.query.symbol as string || "").toUpperCase().trim();
   if (!symbol) {
     return res.status(400).json({ error: "Missing asset symbol" });
@@ -1795,7 +1809,7 @@ app.get("/api/market/quote", async (req, res) => {
   const exchange = fallbackItem?.exchange || "NSE";
 
   // Check cache - short cache (10s) to keep freshness high but prevent spam
-  const cached = quoteCache[symbol];
+  const cached = quoteCache.get(symbol);
   if (cached && Date.now() - cached.timestamp < 10000) {
     return res.json(cached.data);
   }
@@ -1811,7 +1825,7 @@ app.get("/api/market/quote", async (req, res) => {
     }
   ];
 
-  const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+  const apiKey = process.env.MARKET_API_KEY;
   if (apiKey && !isTwelveDataInCooldown()) {
     providers.push({
       name: "Twelve Data API Provider",
@@ -1901,7 +1915,7 @@ app.get("/api/market/quote", async (req, res) => {
         }
       };
 
-      quoteCache[symbol] = { timestamp: Date.now(), data: responseData };
+      quoteCache.set(symbol, { timestamp: Date.now(), data: responseData });
       
       // Update local simulation cache with real data
       try {
@@ -1934,12 +1948,12 @@ app.get("/api/market/quote", async (req, res) => {
     };
     return res.json(responseData);
   }
-});
+}));
 
 // API: Flexible Market Provider Batch Quotes Proxy
-app.get("/api/market/all_quotes", async (req, res) => {
+app.get("/api/market/all_quotes", asyncHandler(async (req, res) => {
   const cacheKey = "all_quotes_batch";
-  const cached = quoteCache[cacheKey];
+  const cached = quoteCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < 180000) { // 3 min cache
     return res.json(cached.data);
   }
@@ -1956,7 +1970,7 @@ app.get("/api/market/all_quotes", async (req, res) => {
   try {
     // Priority 1: Indian Stock Market API
     const quotes = await getMultipleStocks(symbols);
-    quoteCache[cacheKey] = { timestamp: Date.now(), data: quotes };
+    quoteCache.set(cacheKey, { timestamp: Date.now(), data: quotes });
     try {
       updateServerQuotesStoreFromReal(quotes);
     } catch (errStore) {
@@ -1969,7 +1983,7 @@ app.get("/api/market/all_quotes", async (req, res) => {
     try {
       // Priority 2: Indian market provider (Yahoo Finance batch)
       const quotes = await indianMarketProvider.fetchBatchQuotes(symbols);
-      quoteCache[cacheKey] = { timestamp: Date.now(), data: quotes };
+      quoteCache.set(cacheKey, { timestamp: Date.now(), data: quotes });
       try {
         updateServerQuotesStoreFromReal(quotes);
       } catch (errStore) {
@@ -1980,11 +1994,11 @@ app.get("/api/market/all_quotes", async (req, res) => {
       console.error("[Provider Error] Indian Market Provider batch failed:", err1.message);
 
       // Priority 3: Twelve Data batch
-      const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+      const apiKey = process.env.MARKET_API_KEY;
       if (apiKey && !isTwelveDataInCooldown()) {
         try {
           const quotes = await twelveDataProvider.fetchBatchQuotes(symbols, apiKey);
-          quoteCache[cacheKey] = { timestamp: Date.now(), data: quotes };
+          quoteCache.set(cacheKey, { timestamp: Date.now(), data: quotes });
           try {
             updateServerQuotesStoreFromReal(quotes);
           } catch (errStore) {
@@ -2002,12 +2016,12 @@ app.get("/api/market/all_quotes", async (req, res) => {
       return res.json(serverQuotesStore);
     }
   }
-});
+}));
 
 // API: Flexible Market Provider History Proxy
-app.get("/api/market/history", async (req, res) => {
+app.get("/api/market/history", asyncHandler(async (req, res) => {
   const symbol = (req.query.symbol as string || "").toUpperCase().trim();
-  const timeframe = (req.query.timeframe as string || "1M").toUpperCase();
+  const timeframe = (req.query.timeframe as string || "1M");
 
   if (!symbol) {
     return res.status(400).json({ error: "Missing asset symbol" });
@@ -2017,7 +2031,7 @@ app.get("/api/market/history", async (req, res) => {
   const exchange = fallbackItem?.exchange || "NSE";
 
   const cacheKey = `${symbol}_${timeframe}`;
-  const cached = historyCache[cacheKey];
+  const cached = historyCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < 300000) { // 5 min cache
     return res.json(cached.data);
   }
@@ -2025,7 +2039,7 @@ app.get("/api/market/history", async (req, res) => {
   try {
     // Priority 1: Indian Stock Market API
     const historyList = await getStockHistory(symbol, timeframe);
-    historyCache[cacheKey] = { timestamp: Date.now(), data: historyList };
+    historyCache.set(cacheKey, { timestamp: Date.now(), data: historyList });
     return res.json(historyList);
   } catch (errApi: any) {
     console.error(`[Provider Error] Indian Stock Market API history failed for ${symbol}:`, errApi.message);
@@ -2033,17 +2047,17 @@ app.get("/api/market/history", async (req, res) => {
     try {
       // Priority 2: Indian Market Provider (Yahoo Finance)
       const historyList = await indianMarketProvider.fetchHistory(symbol, timeframe, exchange);
-      historyCache[cacheKey] = { timestamp: Date.now(), data: historyList };
+      historyCache.set(cacheKey, { timestamp: Date.now(), data: historyList });
       return res.json(historyList);
     } catch (err1: any) {
       console.error(`[Provider Error] Indian Market Provider history failed for ${symbol}:`, err1.message);
 
       // Priority 3: Twelve Data
-      const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+      const apiKey = process.env.MARKET_API_KEY;
       if (apiKey && !isTwelveDataInCooldown()) {
         try {
           const historyList = await twelveDataProvider.fetchHistory(symbol, timeframe, apiKey);
-          historyCache[cacheKey] = { timestamp: Date.now(), data: historyList };
+          historyCache.set(cacheKey, { timestamp: Date.now(), data: historyList });
           return res.json(historyList);
         } catch (err2: any) {
           console.error(`[Provider Error] Twelve Data history failed for ${symbol}:`, err2.message);
@@ -2057,10 +2071,10 @@ app.get("/api/market/history", async (req, res) => {
       return res.json(simulatedHistory);
     }
   }
-});
+}));
 
 // API: Dynamic NSE Stock Registry Search
-app.get("/api/market/search", async (req, res) => {
+app.get("/api/market/search", asyncHandler(async (req, res) => {
   const query = (req.query.query as string || "").toUpperCase().trim();
   if (!query) {
     return res.json([]);
@@ -2112,7 +2126,7 @@ app.get("/api/market/search", async (req, res) => {
   }
 
   return res.json(matches.slice(0, 80));
-});
+}));
 
 // Template articles used when Twelve Data News is not configured or fails
 const DEFAULT_NEWS_TEMPLATES = [
@@ -2346,22 +2360,22 @@ You must return a single JSON array of objects matching this schema exactly (pre
 }
 
 // Cache for news
-let newsCache: { timestamp: number; data: any[] } | null = null;
+const newsCache = new BoundedCache<{ timestamp: number; data: any[] }>(2, 300000);
 
 // API: Twelve Data News Proxy with Gemini Sentiment & Relevance Pipeline
-app.get("/api/market/news", async (req, res) => {
-  if (newsCache && Date.now() - newsCache.timestamp < 300000) { // 5 mins cache
-    return res.json(newsCache.data);
-  }
+app.get("/api/market/news", asyncHandler(async (req, res) => {
+  const newsKey = res.locals.userId ? 'authenticated' : 'guest';
+  const cachedNews = newsCache.get(newsKey);
+  if (cachedNews) return res.json(cachedNews.data);
 
-  const ai = getGeminiClient();
-  const apiKey = process.env.MARKET_API_KEY || process.env.VITE_MARKET_API_KEY;
+  const ai = res.locals.userId ? getGeminiClient() : null;
+  const apiKey = process.env.MARKET_API_KEY;
 
   if (!apiKey || isTwelveDataInCooldown()) {
     // If Twelve Data is not configured or in cooldown, we use the fallback default seed templates processed by Gemini
     try {
       const processed = await analyzeNewsPipelineWithGemini(DEFAULT_NEWS_TEMPLATES, ai);
-      newsCache = { timestamp: Date.now(), data: processed };
+      newsCache.set(newsKey, { timestamp: Date.now(), data: processed });
       return res.json(processed);
     } catch (err: any) {
       console.log("Fallback News pipeline failed:", err);
@@ -2389,14 +2403,14 @@ app.get("/api/market/news", async (req, res) => {
 
     const processed = await analyzeNewsPipelineWithGemini(rawArticles, ai);
 
-    newsCache = { timestamp: Date.now(), data: processed };
+    newsCache.set(newsKey, { timestamp: Date.now(), data: processed });
     return res.json(processed);
   } catch (err: any) {
     triggerTwelveDataCooldown(err.message || String(err));
     // Safe graceful degradation using DEFAULT_NEWS_TEMPLATES
     try {
       const processed = await analyzeNewsPipelineWithGemini(DEFAULT_NEWS_TEMPLATES, null);
-      newsCache = { timestamp: Date.now(), data: processed };
+      newsCache.set(newsKey, { timestamp: Date.now(), data: processed });
       return res.json(processed);
     } catch (innerErr) {
       const fallbackNews = DEFAULT_NEWS_TEMPLATES.map((item, idx) => ({
@@ -2415,12 +2429,15 @@ app.get("/api/market/news", async (req, res) => {
       return res.json(fallbackNews);
     }
   }
-});
+}));
 
 // API: Health probe
 app.get("/api/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
+
+app.use('/api', (_req, res) => { res.status(404).json({ error: 'API route not found' }); });
+app.use(errorHandler);
 
 // ----------------- VITE MIDDLEWARE SETUP -----------------
 
@@ -2446,6 +2463,6 @@ async function start() {
   }
 }
 
-start();
+if (process.env.NODE_ENV !== "test") start().catch(() => { console.error("Server startup failed"); process.exitCode = 1; });
 
 export default app;

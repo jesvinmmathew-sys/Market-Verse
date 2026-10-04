@@ -1,3 +1,4 @@
+import { providerFetch } from '../server/lib/provider.js';
 import { REAL_NSE_STOCKS } from "../src/services/nseFallbackList.js";
 
 export interface StockQuoteRaw {
@@ -162,7 +163,7 @@ async function fetchYahoo(url: string): Promise<any> {
   };
 
   try {
-    const response = await fetch(url, { headers });
+    const response = await providerFetch(url, { headers });
     if (response.ok) {
       return await response.json();
     }
@@ -171,7 +172,7 @@ async function fetchYahoo(url: string): Promise<any> {
     if (url.includes("query1.finance.yahoo.com")) {
       const fallbackUrl = url.replace("query1.finance.yahoo.com", "query2.finance.yahoo.com");
       try {
-        const response = await fetch(fallbackUrl, { headers });
+        const response = await providerFetch(fallbackUrl, { headers });
         if (response.ok) {
           return await response.json();
         }
