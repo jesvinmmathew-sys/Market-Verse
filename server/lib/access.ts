@@ -18,8 +18,18 @@ export const verifySession = (required: boolean): RequestHandler => asyncHandler
 });
 
 // Per-instance quotas; production replicas also need shared/edge enforcement.
-export const aiMinuteQuota = rateLimit(20, 60000, req => (req as any).verifiedUserId || req.ip || 'unknown');
-export const aiDailyQuota = rateLimit(200, 86400000, req => (req as any).verifiedUserId || req.ip || 'unknown');
+export const aiMinuteQuota = rateLimit(
+  20,
+  60000,
+  req => (req as any).verifiedUserId || req.ip || 'unknown',
+  'Too many NOVA requests. Please wait a moment and try again.'
+);
+export const aiDailyQuota = rateLimit(
+  75,
+  86400000,
+  req => (req as any).verifiedUserId || req.ip || 'unknown',
+  'Daily NOVA limit reached. Please try again tomorrow.'
+);
 export const attachVerifiedIdentity: RequestHandler = (req, res, next) => {
   (req as any).verifiedUserId = res.locals.userId;
   next();

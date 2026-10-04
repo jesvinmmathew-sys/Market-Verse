@@ -133,6 +133,7 @@ test('real API enforces verified-user quota before inference', async () => {
     if (response.status === 429) {
       assert.equal(paidCalls, count);
       assert.ok(response.headers.get('retry-after'));
+      assert.deepEqual(await response.json(), { error: 'Too many NOVA requests. Please wait a moment and try again.' });
       limited = true; break;
     }
     assert.equal(response.status, 200);
@@ -195,12 +196,14 @@ test('async rejection is forwarded to the centralized error handler', async () =
 });
 
 test('rate limit keys remain distinct for separate verified users', () => {
-  const middleware = rateLimit(1, 60000, req => (req as any).userId);
+  let jsonBody: any = null;
+  const middleware = rateLimit(1, 60000, req => (req as any).userId, 'Custom limit reached');
   let allowed = 0, status = 0;
-  const res: any = { setHeader() {}, status(value: number) { status = value; return this; }, json() {} };
+  const res: any = { setHeader() {}, status(value: number) { status = value; return this; }, json(data: any) { jsonBody = data; } };
   middleware({ userId: 'a' } as any, res, () => allowed++);
   middleware({ userId: 'a' } as any, res, () => allowed++);
   assert.equal(status, 429);
+  assert.deepEqual(jsonBody, { error: 'Custom limit reached' });
   middleware({ userId: 'b' } as any, res, () => allowed++);
   assert.equal(allowed, 2);
 });

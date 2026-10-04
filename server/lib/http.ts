@@ -71,7 +71,12 @@ export const validateApiInput: RequestHandler = (req, _res, next) => {
 };
 
 /** Per-process limits; production replicas also need an edge/shared quota. */
-export function rateLimit(limit: number, windowMs: number, key: (req: Request) => string = req => req.ip || 'unknown'): RequestHandler {
+export function rateLimit(
+  limit: number,
+  windowMs: number,
+  key: (req: Request) => string = req => req.ip || 'unknown',
+  message = 'Request limit reached. Please try again later.'
+): RequestHandler {
   const entries = new Map<string, { count: number; reset: number }>();
   let lastPrune = 0;
   return (req, res, next) => {
@@ -92,7 +97,7 @@ export function rateLimit(limit: number, windowMs: number, key: (req: Request) =
     }
     if (++entry.count > limit) {
       res.setHeader('Retry-After', Math.ceil((entry.reset - now) / 1000));
-      return res.status(429).json({ error: 'Request limit reached. Please try again later.' });
+      return res.status(429).json({ error: message });
     }
     next();
   };
